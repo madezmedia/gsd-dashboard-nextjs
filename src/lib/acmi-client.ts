@@ -254,13 +254,33 @@ export async function fetchWorkItems(): Promise<ACMIWorkItem[]> {
         ? rawStatus as ACMIWorkItem["status"]
         : "active";
       
+      let completedMilestones: string[] = [];
+      if (signals?.completed_milestones) {
+        try {
+          completedMilestones = typeof signals.completed_milestones === "string"
+            ? JSON.parse(signals.completed_milestones)
+            : signals.completed_milestones;
+          if (!Array.isArray(completedMilestones)) {
+            completedMilestones = [];
+          }
+        } catch {
+          completedMilestones = [];
+        }
+      }
+
+      const milestones: string[] = profile?.milestones || [];
+      const stages = milestones.map((m: string) => ({
+        name: m,
+        done: completedMilestones.includes(m),
+      }));
+
       items.push({
         id,
         title,
         status,
         owner: profile?.owner || profile?.team?.lead || "unassigned",
         progress: signals?.progress ? parseInt(String(signals.progress)) || 0 : 0,
-        stages: profile?.milestones?.map((m: string) => ({ name: m, done: false })) || [],
+        stages,
         createdAt: profile?.timeline?.created,
         updatedAt: profile?.timeline?.updated || profile?.timeline?.target,
       });
@@ -268,6 +288,39 @@ export async function fetchWorkItems(): Promise<ACMIWorkItem[]> {
   }
   
   return items;
+}
+
+export async function updateWorkItemMilestones(
+  id: string,
+  completedMilestones: string[],
+  progress: number,
+  status?: ACMIWorkItem["status"]
+): Promise<boolean> {
+  try {
+    const signalsToUpdate: Record<string, unknown> = {
+      completed_milestones: JSON.stringify(completedMilestones),
+      progress,
+    };
+    if (status) {
+      signalsToUpdate.status = status;
+    }
+
+    const signalResult = await acmiCall("acmi_work_signal", {
+      id,
+      signals: JSON.stringify(signalsToUpdate),
+    });
+
+    const eventResult = await acmiCall("acmi_work_event", {
+      id,
+      source: "vector-sync-agent",
+      summary: `[milestone-completed] Auto-completed milestones: [${completedMilestones.join(", ")}] with overall progress set to ${progress}%`,
+    });
+
+    return !!(signalResult && eventResult);
+  } catch (err) {
+    console.error(`Failed to update milestones for work ${id}:`, err);
+    return false;
+  }
 }
 
 export async function fetchWorkItem(id: string): Promise<ACMIWorkItem | null> {
