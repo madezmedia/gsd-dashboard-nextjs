@@ -347,42 +347,171 @@ export async function fetchApprovals(): Promise<
 }
 
 export async function fetchAgentBootstrap(id: string): Promise<ACMIBootstrap | null> {
-  const data = await acmiCall("acmi_get", { namespace: "agent", id });
-  if (!data) return null;
-  
-  const result = data.result || data;
-  const profile = result.profile || {};
-  const signals = result.signals || {};
-  const timeline: Record<string, unknown>[] = result.timeline_recent || [];
-  
-  return {
-    profile: {
-      id,
-      name: profile.name || AGENT_DISPLAY_NAMES[id] || id,
-      role: profile.role || signals.role || "agent",
-      status: parseStatus(signals.status || profile.status),
-      capabilities: profile.expertise || [],
-      model: signals.model_id || "unknown",
-      lastActive: signals.last_heartbeat_ts
-        ? new Date(Number(signals.last_heartbeat_ts)).toISOString()
-        : undefined,
-    },
-    signals: Object.entries(signals).map(([key, value]) => ({
-      key,
-      value,
-      timestamp: new Date().toISOString(),
-    })),
-    timeline: timeline.slice(0, 10).map((e, i) => ({
-      id: `evt-${i}`,
-      ts: typeof e.ts === 'number' ? new Date(e.ts).toISOString() : String(e.ts || ""),
-      source: String(e.source || "system"),
-      kind: String(e.kind || "event"),
-      summary: String(e.summary || ""),
-      correlationId: String(e.correlationId || ""),
-    })),
-    activeThreads: [],
-    rollup: {},
-  };
+  try {
+    // 1. Fetch base agent profile, signals, coordination thread events, and active work items in parallel
+    const [agentRes, threadRes, allWorkItems] = await Promise.all([
+      acmiCall("acmi_get", { namespace: "agent", id }),
+      acmiCall("acmi_get", { namespace: "thread", id: "agent-coordination" }),
+      fetchWorkItems().catch(() => [] as ACMIWorkItem[])
+    ]);
+    
+    if (!agentRes) return null;
+    
+    const result = agentRes.result || agentRes;
+    const profile = result.profile || {};
+    const signals = result.signals || {};
+    
+    // Direct agent timeline events
+    const directTimeline: Record<string, unknown>[] = result.timeline_recent || [];
+    
+    // Coordination thread timeline events
+    const coordinationTimeline: Record<string, unknown>[] = 
+      threadRes?.timeline_recent || threadRes?.result?.timeline_recent || [];
+    
+    // 2. Filter work items owned by this agent and fetch their timeline logs
+    const ownedWorkItems = allWorkItems.filter(w => {
+      const owner = (w.owner || "").toLowerCase();
+      const agentId = id.toLowerCase();
+      return owner.includes(agentId) || agentId.includes(owner);
+    });
+    
+    const workTimelines: Record<string, unknown>[][] = [];
+    if (ownedWorkItems.length > 0) {
+      const workDetailResults = await Promise.allSettled(
+        ownedWorkItems.slice(0, 5).map(w => acmiCall("acmi_get", { namespace: "work", id: w.id }))
+      );
+      workDetailResults.forEach((res) => {
+        if (res.status === "fulfilled" && res.value) {
+          const wData = res.value.result || res.value;
+          const wTimeline = wData.timeline || wData.timeline_recent || [];
+          if (Array.isArray(wTimeline)) {
+            workTimelines.push(wTimeline);
+          }
+        }
+      });
+    }
+    
+    // 3. Aggregate all raw events with unified normalization
+    const rawEvents: Array<{ ts: number; source: string; kind: string; summary: string; correlationId?: string }> = [];
+    
+    // Add direct events
+    directTimeline.forEach(e => {
+      rawEvents.push({
+        ts: typeof e.ts === "number" ? e.ts : new Date(String(e.ts || "")).getTime() || Date.now(),
+        source: String(e.source || id),
+        kind: String(e.kind || "event"),
+        summary: String(e.summary || ""),
+        correlationId: String(e.correlationId || ""),
+      });
+    });
+    
+    // Add coordination events where the source field relates to the agent
+    coordinationTimeline.forEach(e => {
+      const sourceStr = String(e.source || "").toLowerCase();
+      const agentId = id.toLowerCase();
+      if (sourceStr.includes(agentId) || agentId.includes(sourceStr)) {
+        rawEvents.push({
+          ts: typeof e.ts === "number" ? e.ts : new Date(String(e.ts || "")).getTime() || Date.now(),
+          source: String(e.source || "agent-coordination"),
+          kind: String(e.kind || "event"),
+          summary: String(e.summary || ""),
+          correlationId: String(e.correlationId || ""),
+        });
+      }
+    });
+    
+    // Add owned work item events logged by this agent or flagged as milestones
+    workTimelines.forEach((timelineList, idx) => {
+      const workItem = ownedWorkItems[idx];
+      timelineList.forEach(e => {
+        const sourceStr = String(e.source || "").toLowerCase();
+        const agentId = id.toLowerCase();
+        const matchesAgent = sourceStr.includes(agentId) || agentId.includes(sourceStr);
+        
+        if (matchesAgent || e.kind === "stalled-alert" || e.kind === "status-update" || e.kind === "milestone-completed") {
+          rawEvents.push({
+            ts: typeof e.ts === "number" ? e.ts : new Date(String(e.ts || "")).getTime() || Date.now(),
+            source: String(e.source || workItem?.id || "work"),
+            kind: String(e.kind || "event"),
+            summary: workItem ? `[${workItem.title}] ${e.summary}` : String(e.summary || ""),
+            correlationId: String(e.correlationId || ""),
+          });
+        }
+      });
+    });
+    
+    // 4. De-duplicate raw events using a hybrid fuzzy strategy.
+    // If the normalized summary is extremely similar and they occur within 5 seconds,
+    // de-duplicate them to keep the feed clean. Otherwise, preserve them to ensure a full chronological audit trail.
+    const seen = new Set<string>();
+    const uniqueEvents: ACMIEvent[] = [];
+    
+    // Sort descending chronologically
+    const sortedRaw = rawEvents.sort((a, b) => b.ts - a.ts);
+    
+    sortedRaw.forEach(e => {
+      const roundedTs = Math.round(e.ts / 500) * 500;
+      const normalizedSummary = e.summary.trim().toLowerCase().replace(/\s+/g, " ").substring(0, 100);
+      const hash = `${roundedTs}-${e.kind}-${normalizedSummary}`;
+      
+      let isFuzzyDuplicate = false;
+      for (const existing of uniqueEvents) {
+        const existingTs = new Date(existing.ts).getTime();
+        const timeDiff = Math.abs(e.ts - existingTs);
+        if (timeDiff <= 5000) {
+          const existingSummary = existing.summary.trim().toLowerCase().replace(/\s+/g, " ").substring(0, 100);
+          if (
+            existingSummary === normalizedSummary ||
+            existingSummary.includes(normalizedSummary) ||
+            normalizedSummary.includes(existingSummary)
+          ) {
+            isFuzzyDuplicate = true;
+            break;
+          }
+        }
+      }
+      
+      if (!seen.has(hash) && !isFuzzyDuplicate) {
+        seen.add(hash);
+        uniqueEvents.push({
+          id: `aggregated-evt-${uniqueEvents.length}`,
+          ts: new Date(e.ts).toISOString(),
+          source: e.source,
+          kind: e.kind,
+          summary: e.summary,
+          correlationId: e.correlationId,
+        });
+      }
+    });
+    
+    return {
+      profile: {
+        id,
+        name: profile.name || AGENT_DISPLAY_NAMES[id] || id,
+        role: profile.role || signals.role || "agent",
+        status: parseStatus(signals.status || profile.status),
+        capabilities: profile.expertise || [],
+        model: signals.model_id || "unknown",
+        lastActive: signals.last_heartbeat_ts
+          ? new Date(Number(signals.last_heartbeat_ts)).toISOString()
+          : undefined,
+      },
+      signals: Object.entries(signals).map(([key, value]) => ({
+        key,
+        value,
+        timestamp: new Date().toISOString(),
+      })),
+      timeline: uniqueEvents.slice(0, 50),
+      activeThreads: [],
+      rollup: {
+        decisions: uniqueEvents.filter(e => e.kind === "decision").length,
+        actions: uniqueEvents.filter(e => e.kind !== "decision" && e.kind !== "stalled-alert").length,
+      },
+    };
+  } catch (err) {
+    console.error(`Failed to bootstrap agent data for ${id}:`, err);
+    return null;
+  }
 }
 
 export async function updateWorkItemStatus(
