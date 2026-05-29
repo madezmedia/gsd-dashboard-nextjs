@@ -96,21 +96,34 @@ function WorkflowListContent() {
   const token = searchParams.get("token");
 
   useEffect(() => {
+    let active = true;
+
     // Immediate load
-    fetchWorkItems().then(setItems);
+    fetchWorkItems().then((data) => {
+      if (active) setItems(data);
+    });
 
     // Dynamic background polling every 5 seconds
     const interval = setInterval(() => {
+      if (!active) return;
       setIsPolling(true);
       fetchWorkItems()
         .then((data) => {
+          if (!active) return;
           setItems(data);
-          setTimeout(() => setIsPolling(false), 600);
+          setTimeout(() => {
+            if (active) setIsPolling(false);
+          }, 600);
         })
-        .catch(() => setIsPolling(false));
+        .catch(() => {
+          if (active) setIsPolling(false);
+        });
     }, 5000);
 
-    return () => clearInterval(interval);
+    return () => {
+      active = false;
+      clearInterval(interval);
+    };
   }, []);
 
   const filtered = items.filter((w) => {

@@ -1,12 +1,13 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Activity, Bot, Workflow, CheckCircle2, AlertTriangle } from "lucide-react";
+import { Activity, Bot, Workflow, CheckCircle2, AlertTriangle, RefreshCw } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { fetchDashboardRollup, type ACMIDashboardRollup, type ACMIEvent } from "@/lib/acmi-client";
 import { busStream, type BusEvent } from "@/lib/bus-stream";
+import { cn } from "@/lib/utils";
 
 function KpiCard({
   title,
@@ -71,30 +72,68 @@ function EventItem({ event }: { event: ACMIEvent }) {
 export default function CommandCenter() {
   const [rollup, setRollup] = useState<ACMIDashboardRollup | null>(null);
   const [busEvents, setBusEvents] = useState<BusEvent[]>([]);
+  const [syncStatus, setSyncStatus] = useState<"idle" | "syncing" | "stalled">("idle");
 
   useEffect(() => {
-    fetchDashboardRollup().then(setRollup);
+    let active = true;
+
+    const loadData = () => {
+      setSyncStatus("syncing");
+      fetchDashboardRollup()
+        .then((data) => {
+          if (!active) return;
+          setRollup(data);
+          setSyncStatus("idle");
+        })
+        .catch((err) => {
+          if (!active) return;
+          console.error("Failed to fetch dashboard rollup:", err);
+          setSyncStatus("stalled");
+        });
+    };
+
+    // Initial load
+    loadData();
+
+    // 5-second polling interval
+    const interval = setInterval(loadData, 5000);
 
     const unsubscribe = busStream.subscribe((event) => {
       setBusEvents((prev) => [event, ...prev].slice(0, 20));
     });
 
-    return unsubscribe;
+    return () => {
+      active = false;
+      clearInterval(interval);
+      unsubscribe();
+    };
   }, []);
 
   if (!rollup) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-pulse text-muted-foreground">Loading fleet data...</div>
+      <div className="flex items-center justify-center h-64 font-mono text-xs uppercase animate-pulse text-[#1a1a1a]/60">
+        Extracting CommandCenter context...
       </div>
     );
   }
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight">Command Center</h1>
-        <p className="text-muted-foreground">Fleet-wide status overview and real-time activity.</p>
+      <div className="flex items-start justify-between border-b border-[#1a1a1a]/15 pb-4">
+        <div className="space-y-1">
+          <h1 className="text-2xl font-bold tracking-tight uppercase font-mono text-[#1a1a1a]">
+            Command Center
+          </h1>
+          <p className="text-xs font-mono text-[#1a1a1a]/60">
+            Fleet-wide status overview and real-time activity.
+          </p>
+        </div>
+        <div className="flex items-center gap-2 font-mono text-[10px] uppercase bg-[#f4f2eb] px-3 py-1 border border-[#1a1a1a]/10">
+          <RefreshCw className={cn("h-3 w-3", syncStatus === "syncing" && "animate-spin text-[#2d4a3e]", syncStatus === "stalled" && "text-[#c4903a]")} />
+          {syncStatus === "syncing" && <span className="text-[#2d4a3e] font-bold">[SYNCING...]</span>}
+          {syncStatus === "stalled" && <span className="text-[#c4903a] font-bold">[SYNC STALLED]</span>}
+          {syncStatus === "idle" && <span className="text-[#1a1a1a]/40">[SYNCED]</span>}
+        </div>
       </div>
 
       {/* KPI Strip */}

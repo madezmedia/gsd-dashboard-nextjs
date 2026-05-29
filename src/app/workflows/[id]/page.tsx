@@ -36,21 +36,34 @@ function WorkflowTraceContent({ id }: { id: string }) {
   const token = searchParams.get("token");
 
   useEffect(() => {
+    let active = true;
+
     // Initial fetch
-    fetchWorkItem(id).then(setItem);
+    fetchWorkItem(id).then((data) => {
+      if (active) setItem(data);
+    });
 
     // Dynamic background polling every 5 seconds
     const interval = setInterval(() => {
+      if (!active) return;
       setIsPolling(true);
       fetchWorkItem(id)
         .then((data) => {
+          if (!active) return;
           setItem(data);
-          setTimeout(() => setIsPolling(false), 500);
+          setTimeout(() => {
+            if (active) setIsPolling(false);
+          }, 500);
         })
-        .catch(() => setIsPolling(false));
+        .catch(() => {
+          if (active) setIsPolling(false);
+        });
     }, 5000);
 
-    return () => clearInterval(interval);
+    return () => {
+      active = false;
+      clearInterval(interval);
+    };
   }, [id]);
 
   if (!item) {
