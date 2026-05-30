@@ -56,8 +56,12 @@ export interface ACMIDashboardRollup {
   activeAgents: number;
   totalWorkItems: number;
   activeWorkItems: number;
+  stalledWorkItems: number;
+  completedWorkItems: number;
+  pendingWorkItems: number;
   pendingApprovals: number;
   recentEvents: ACMIEvent[];
+  rawWorkItems: ACMIWorkItem[];
 }
 
 // Known agent name display overrides
@@ -187,10 +191,14 @@ export async function fetchDashboardRollup(): Promise<ACMIDashboardRollup> {
   const agentIds: string[] = agentData?.result || agentData || [];
   const totalAgents = agentIds.filter(id => !id.includes("-coordination")).length;
   
-  // Get work item count  
-  const workData = await acmiCall("acmi_work_list");
-  const workRaw: string[] = workData?.result || workData || [];
-  const workIds = workRaw.map(id => id.replace(/^"+|"+$/g, ''));
+  // Get dynamic work items
+  const rawWorkItems = await fetchWorkItems();
+  const totalWorkItems = rawWorkItems.length;
+  const activeWorkItems = rawWorkItems.filter(w => w.status === "active").length;
+  const stalledWorkItems = rawWorkItems.filter(w => w.status === "stalled").length;
+  const completedWorkItems = rawWorkItems.filter(w => w.status === "completed").length;
+  const pendingWorkItems = rawWorkItems.filter(w => w.status === "pending").length;
+  const pendingApprovals = stalledWorkItems;
 
   // Get recent events from agent-coordination thread
   const threadData = await acmiCall("acmi_get", { namespace: "thread", id: "agent-coordination" });
@@ -210,10 +218,14 @@ export async function fetchDashboardRollup(): Promise<ACMIDashboardRollup> {
   return {
     totalAgents,
     activeAgents: Math.min(18, totalAgents), // approx from signals
-    totalWorkItems: workIds.length,
-    activeWorkItems: workIds.length,
-    pendingApprovals: 12,
+    totalWorkItems,
+    activeWorkItems,
+    stalledWorkItems,
+    completedWorkItems,
+    pendingWorkItems,
+    pendingApprovals,
     recentEvents: events,
+    rawWorkItems,
   };
 }
 
