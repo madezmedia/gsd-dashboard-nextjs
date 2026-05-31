@@ -202,7 +202,8 @@ export async function fetchDashboardRollup(): Promise<ACMIDashboardRollup> {
 
   // Get recent events from agent-coordination thread
   const threadData = await acmiCall("acmi_get", { namespace: "thread", id: "agent-coordination" });
-  const timeline: Record<string, unknown>[] = threadData?.timeline_recent || [];
+  const threadResult = threadData?.result || threadData;
+  const timeline: Record<string, unknown>[] = threadResult?.timeline || threadResult?.timeline_recent || [];
   
   const events: ACMIEvent[] = timeline
     .slice(0, 10)
@@ -374,11 +375,11 @@ export async function fetchAgentBootstrap(id: string): Promise<ACMIBootstrap | n
     const signals = result.signals || {};
     
     // Direct agent timeline events
-    const directTimeline: Record<string, unknown>[] = result.timeline_recent || [];
+    const directTimeline: Record<string, unknown>[] = result.timeline || result.timeline_recent || [];
     
     // Coordination thread timeline events
     const coordinationTimeline: Record<string, unknown>[] = 
-      threadRes?.timeline_recent || threadRes?.result?.timeline_recent || [];
+      threadRes?.timeline || threadRes?.timeline_recent || threadRes?.result?.timeline || threadRes?.result?.timeline_recent || [];
     
     // 2. Filter work items owned by this agent and fetch their timeline logs
     const ownedWorkItems = allWorkItems.filter(w => {
