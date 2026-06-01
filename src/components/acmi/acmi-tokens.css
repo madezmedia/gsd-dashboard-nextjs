@@ -1,0 +1,253 @@
+/* ============================================================================
+   ACMI Dashboard — Mad EZ v3 Design Tokens
+   ============================================================================
+   Palette: Deep teal canvas, mint accent, blue accent, light text.
+   Radius:  large 48px corners with soft shadows.
+   Font:    Inter across all text.
+   ============================================================================ */
+
+:root {
+  /* ── Core palette ─────────────────────────────────────────────── */
+  --acmi-bg:        #0F2A2E;
+  --acmi-surface:   #162F33;
+  --acmi-surface-2: #1C363B;
+  --acmi-surface-3: #233E43;
+  --acmi-fg:        #EAF7F7;
+  --acmi-muted:     #9BBCBE;
+  --acmi-subtle:    #577A7E;
+
+  /* ── Accent colors ────────────────────────────────────────────── */
+  --acmi-mint:      #5EF2C6;
+  --acmi-mint-dim:  #3EC89C;
+  --acmi-mint-bg:   rgba(94, 242, 198, 0.10);
+  --acmi-blue:      #7DB8FF;
+  --acmi-blue-dim:  #5A99E0;
+  --acmi-blue-bg:   rgba(125, 184, 255, 0.10);
+
+  /* ── Semantic colors ──────────────────────────────────────────── */
+  --acmi-success:   #5EF2C6;
+  --acmi-warning:   #F2C94C;
+  --acmi-danger:    #FF6B6B;
+  --acmi-info:      #7DB8FF;
+
+  /* ── Typography ───────────────────────────────────────────────── */
+  --acmi-font:      'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  --acmi-font-mono: 'JetBrains Mono', 'SF Mono', ui-monospace, 'Cascadia Code', Menlo, monospace;
+
+  /* ── Spacing scale ────────────────────────────────────────────── */
+  --acmi-space-xs:  4px;
+  --acmi-space-sm:  8px;
+  --acmi-space-md:  16px;
+  --acmi-space-lg:  24px;
+  --acmi-space-xl:  32px;
+  --acmi-space-2xl: 48px;
+
+  /* ── Radii ────────────────────────────────────────────────────── */
+  --acmi-radius-sm:  8px;
+  --acmi-radius-md:  16px;
+  --acmi-radius-lg:  32px;
+  --acmi-radius-xl:  48px;
+
+  /* ── Shadows ──────────────────────────────────────────────────── */
+  --acmi-shadow-sm:  0 2px 8px  rgba(0, 0, 0, 0.25);
+  --acmi-shadow-md:  0 4px 16px rgba(0, 0, 0, 0.30);
+  --acmi-shadow-lg:  0 8px 32px rgba(0, 0, 0, 0.35);
+  --acmi-shadow-xl:  0 12px 48px rgba(0, 0, 0, 0.40);
+
+  /* ── Transitions ──────────────────────────────────────────────── */
+  --acmi-transition: 200ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ── Shared component styles ──────────────────────────────────── */
+
+.acmi-card {
+  background: var(--acmi-surface);
+  border-radius: var(--acmi-radius-xl);
+  box-shadow: var(--acmi-shadow-md);
+  padding: var(--acmi-space-lg);
+  transition: box-shadow var(--acmi-transition), transform var(--acmi-transition);
+  border: 1px solid rgba(94, 242, 198, 0.06);
+  font-family: var(--acmi-font);
+  color: var(--acmi-fg);
+}
+
+.acmi-card:hover {
+  box-shadow: var(--acmi-shadow-lg);
+}
+
+.acmi-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--acmi-space-md);
+}
+
+.acmi-card-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--acmi-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.acmi-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--acmi-space-xs);
+  padding: 2px 10px;
+  border-radius: 100px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-family: var(--acmi-font);
+}
+
+.acmi-badge--mint {
+  background: var(--acmi-mint-bg);
+  color: var(--acmi-mint);
+}
+
+.acmi-badge--blue {
+  background: var(--acmi-blue-bg);
+  color: var(--acmi-blue);
+}
+
+.acmi-badge--success {
+  background: rgba(94, 242, 198, 0.12);
+  color: var(--acmi-success);
+}
+
+.acmi-badge--warning {
+  background: rgba(242, 201, 76, 0.12);
+  color: var(--acmi-warning);
+}
+
+.acmi-badge--danger {
+  background: rgba(255, 107, 107, 0.12);
+  color: var(--acmi-danger);
+}
+
+.acmi-badge--info {
+  background: rgba(125, 184, 255, 0.12);
+  color: var(--acmi-info);
+}
+
+/* ── Spinner ────────────────────────────────────────────────────── */
+
+.acmi-spinner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--acmi-space-xl);
+  color: var(--acmi-muted);
+  font-family: var(--acmi-font);
+  font-size: 13px;
+  gap: var(--acmi-space-sm);
+}
+
+.acmi-spinner::before {
+  content: '';
+  width: 18px;
+  height: 18px;
+  border: 2px solid var(--acmi-subtle);
+  border-top-color: var(--acmi-mint);
+  border-radius: 50%;
+  animation: acmi-spin 0.7s linear infinite;
+}
+
+@keyframes acmi-spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ── Empty state ────────────────────────────────────────────────── */
+
+.acmi-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--acmi-space-2xl);
+  text-align: center;
+  color: var(--acmi-subtle);
+  font-family: var(--acmi-font);
+  font-size: 13px;
+  gap: var(--acmi-space-sm);
+}
+
+.acmi-empty-icon {
+  font-size: 24px;
+  opacity: 0.5;
+}
+
+/* ── Error state ────────────────────────────────────────────────── */
+
+.acmi-error {
+  display: flex;
+  align-items: center;
+  gap: var(--acmi-space-sm);
+  padding: var(--acmi-space-md);
+  border-radius: var(--acmi-radius-md);
+  background: rgba(255, 107, 107, 0.08);
+  border: 1px solid rgba(255, 107, 107, 0.15);
+  color: var(--acmi-danger);
+  font-family: var(--acmi-font);
+  font-size: 13px;
+}
+
+.acmi-error-icon {
+  font-size: 16px;
+}
+
+/* ── Section tag ────────────────────────────────────────────────── */
+
+.acmi-section-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  border-radius: 100px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  background: rgba(94, 242, 198, 0.08);
+  color: var(--acmi-mint);
+  border: 1px solid rgba(94, 242, 198, 0.12);
+}
+
+/* ── Kind badge color map ────────────────────────────────────────── */
+
+.acmi-kind-badge--spawn          { background: rgba(125, 184, 255, 0.12); color: var(--acmi-blue); }
+.acmi-kind-badge--milestone      { background: rgba(94, 242, 198, 0.12); color: var(--acmi-mint); }
+.acmi-kind-badge--handoff        { background: rgba(242, 201, 76, 0.12); color: var(--acmi-warning); }
+.acmi-kind-badge--work           { background: rgba(125, 184, 255, 0.12); color: var(--acmi-blue); }
+.acmi-kind-badge--incident       { background: rgba(255, 107, 107, 0.12); color: var(--acmi-danger); }
+.acmi-kind-badge--coord          { background: rgba(94, 242, 198, 0.12); color: var(--acmi-mint); }
+.acmi-kind-badge--heartbeat      { background: rgba(155, 188, 190, 0.12); color: var(--acmi-muted); }
+.acmi-kind-badge--hitl           { background: rgba(242, 201, 76, 0.15); color: var(--acmi-warning); }
+.acmi-kind-badge--journal        { background: rgba(125, 184, 255, 0.12); color: var(--acmi-blue); }
+.acmi-kind-badge--artifact       { background: rgba(94, 242, 198, 0.12); color: var(--acmi-mint); }
+.acmi-kind-badge--decision       { background: rgba(125, 184, 255, 0.12); color: var(--acmi-blue); }
+.acmi-kind-badge--namespace      { background: rgba(155, 188, 190, 0.10); color: var(--acmi-subtle); }
+.acmi-kind-badge--review         { background: rgba(242, 201, 76, 0.12); color: var(--acmi-warning); }
+.acmi-kind-badge--default        { background: rgba(155, 188, 190, 0.08); color: var(--acmi-muted); }
+
+/* ── Scrollbar ──────────────────────────────────────────────────── */
+
+.acmi-scrollable::-webkit-scrollbar {
+  width: 6px;
+}
+
+.acmi-scrollable::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.acmi-scrollable::-webkit-scrollbar-thumb {
+  background: var(--acmi-surface-3);
+  border-radius: 3px;
+}
+
+.acmi-scrollable::-webkit-scrollbar-thumb:hover {
+  background: var(--acmi-subtle);
+}
