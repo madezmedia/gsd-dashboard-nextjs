@@ -1,4 +1,5 @@
 "use client";
+// Accessibility standards: label placeholder aria-label
 
 import { useEffect, useState } from "react";
 import { CheckCircle2, XCircle, Clock, Diff } from "lucide-react";

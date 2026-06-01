@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { fetchWorkItems, fetchDashboardRollup, updateWorkItemMilestones } from "@/lib/acmi-client";
 import { calculateSemanticScore } from "@/lib/vector-engine";
 
@@ -12,7 +12,7 @@ interface SyncResult {
   completed: boolean;
 }
 
-export async function POST(req: NextRequest) {
+export async function POST() {
   try {
     const workItems = await fetchWorkItems();
     const rollup = await fetchDashboardRollup();
@@ -28,7 +28,6 @@ export async function POST(req: NextRequest) {
 
       const currentCompleted = milestones.filter(m => m.done).map(m => m.name);
       const newlyCompleted: string[] = [...currentCompleted];
-      let stateChanged = false;
 
       for (const milestone of milestones) {
         if (milestone.done) continue;
@@ -49,7 +48,6 @@ export async function POST(req: NextRequest) {
         // Vector gate threshold is 85% (>0.85)
         if (highestScore >= 0.85) {
           newlyCompleted.push(milestone.name);
-          stateChanged = true;
 
           // Compute new progress
           const totalCount = milestones.length;
@@ -90,6 +88,6 @@ export async function POST(req: NextRequest) {
 }
 
 // Support GET for fast triggering from UI
-export async function GET(req: NextRequest) {
-  return POST(req);
+export async function GET() {
+  return POST();
 }

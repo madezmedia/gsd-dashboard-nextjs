@@ -138,7 +138,11 @@ export function CopilotPanel() {
 
             {/* Input */}
           <form onSubmit={handleSubmit} className="border-t p-3 flex gap-2">
+            <label htmlFor="copilot-query-input" className="sr-only">
+              Ask about fleet status
+            </label>
             <input
+              id="copilot-query-input"
               value={input}
               onChange={(e) => setInput(e.target.value)}
               placeholder="Ask about fleet status..."

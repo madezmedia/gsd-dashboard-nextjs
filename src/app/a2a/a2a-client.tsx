@@ -3,10 +3,10 @@
 import { useEffect, useState, useMemo } from "react";
 import { 
   Network, Terminal, Layers, RefreshCw, Info, Filter, Search, 
-  Play, Sparkles, CheckCircle, AlertTriangle, ArrowRight, User, Folder
+  Sparkles, CheckCircle
 } from "lucide-react";
 import { 
-  fetchDashboardRollup, fetchWorkItems, updateWorkItemMilestones,
+  fetchDashboardRollup, fetchWorkItems,
   type ACMIEvent, type ACMIWorkItem 
 } from "@/lib/acmi-client";
 import { calculateSemanticScore } from "@/lib/vector-engine";
@@ -60,9 +60,14 @@ export default function A2AClient() {
   };
 
   useEffect(() => {
-    loadData();
+    const timer = setTimeout(() => {
+      loadData();
+    }, 0);
     const interval = setInterval(loadData, 6000);
-    return () => clearInterval(interval);
+    return () => {
+      clearTimeout(timer);
+      clearInterval(interval);
+    };
   }, []);
 
   // Trigger Vector Sync API
@@ -291,10 +296,11 @@ export default function A2AClient() {
 
           {/* Search bar */}
           <div className="space-y-1">
-            <label className="text-[9px] uppercase text-[#1a1a1a]/50">Semantic Search query</label>
+            <label htmlFor="semantic-search-input" className="text-[9px] uppercase text-[#1a1a1a]/50">Semantic Search query</label>
             <div className="relative">
               <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-[#1a1a1a]/40" />
               <input
+                id="semantic-search-input"
                 placeholder="Query words (e.g. build)..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
@@ -381,7 +387,7 @@ export default function A2AClient() {
                   </defs>
 
                   {/* Draw connections */}
-                  {semanticLinks.map((link, idx) => {
+                  {semanticLinks.map((link) => {
                     const evtIndex = filteredEvents.findIndex(e => e.id === link.event.id);
                     const workIndex = filteredWorkItems.findIndex(w => w.id === link.work.id);
 
@@ -546,7 +552,7 @@ export default function A2AClient() {
                     <div className="space-y-1">
                       <span className="text-[8px] uppercase text-[#1a1a1a]/40 block">Event Summary</span>
                       <p className="font-sans font-semibold text-[#1a1a1a] text-xs leading-snug bg-[#faf9f5] p-2 border border-[#1a1a1a]/5">
-                        "{hoveredLink.event.summary}"
+                        &quot;{hoveredLink.event.summary}&quot;
                       </p>
                     </div>
 

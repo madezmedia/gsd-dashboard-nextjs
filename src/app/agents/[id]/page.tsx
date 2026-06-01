@@ -1,10 +1,10 @@
 "use client";
+// Accessibility standards: label placeholder aria-label
 
-import { useEffect, useState, use, useMemo } from "react";
+import { useEffect, useState, use, useMemo, useCallback } from "react";
 import Link from "next/link";
 import { ArrowLeft, Bot, Activity, Clock, Zap, Brain } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -63,7 +63,7 @@ export default function AgentDetail({ params }: { params: Promise<{ id: string }
   const [timelineFilter, setTimelineFilter] = useState<"all" | "direct" | "coordination" | "work">("all");
   const [syncStatus, setSyncStatus] = useState<"idle" | "syncing" | "stalled">("idle");
 
-  const loadData = () => {
+  const loadData = useCallback(() => {
     setSyncStatus("syncing");
     fetchAgentBootstrap(id)
       .then((res) => {
@@ -78,13 +78,18 @@ export default function AgentDetail({ params }: { params: Promise<{ id: string }
         console.error("Failed to fetch agent details:", err);
         setSyncStatus("stalled");
       });
-  };
+  }, [id]);
 
   useEffect(() => {
-    loadData();
+    const timer = setTimeout(() => {
+      loadData();
+    }, 0);
     const interval = setInterval(loadData, 5000);
-    return () => clearInterval(interval);
-  }, [id]);
+    return () => {
+      clearTimeout(timer);
+      clearInterval(interval);
+    };
+  }, [loadData]);
 
   const filteredTimeline = useMemo(() => {
     if (!data) return [];

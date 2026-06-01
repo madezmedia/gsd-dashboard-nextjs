@@ -1,4 +1,5 @@
 "use client";
+// Accessibility standards: label placeholder aria-label
 
 import { useEffect, useState } from "react";
 import { Activity, Bot, Workflow, CheckCircle2, AlertTriangle, RefreshCw } from "lucide-react";
@@ -111,7 +112,7 @@ export default function CommandCenter() {
 
   if (!rollup) {
     return (
-      <div className="flex items-center justify-center h-64 font-mono text-xs uppercase animate-pulse text-[#1a1a1a]/60">
+      <div className="flex items-center justify-center h-64 font-mono text-xs uppercase tracking-wider animate-pulse text-[#1a1a1a]/60">
         Extracting CommandCenter context...
       </div>
     );
@@ -124,15 +125,15 @@ export default function CommandCenter() {
           <h1 className="text-2xl font-bold tracking-tight uppercase font-mono text-[#1a1a1a]">
             Command Center
           </h1>
-          <p className="text-xs font-mono text-[#1a1a1a]/60">
+          <p className="text-xs font-mono text-[#1a1a1a]/60 tracking-wider">
             Fleet-wide status overview and real-time activity.
           </p>
         </div>
-        <div className="flex items-center gap-2 font-mono text-[10px] uppercase bg-[#f4f2eb] px-3 py-1 border border-[#1a1a1a]/10">
+        <div className="flex items-center gap-2 font-mono text-[10px] uppercase bg-[#f4f2eb] px-3 py-1 border border-[#1a1a1a]/10 tracking-wider">
           <RefreshCw className={cn("h-3 w-3", syncStatus === "syncing" && "animate-spin text-[#2d4a3e]", syncStatus === "stalled" && "text-[#c4903a]")} />
-          {syncStatus === "syncing" && <span className="text-[#2d4a3e] font-bold">[SYNCING...]</span>}
-          {syncStatus === "stalled" && <span className="text-[#c4903a] font-bold">[SYNC STALLED]</span>}
-          {syncStatus === "idle" && <span className="text-[#1a1a1a]/40">[SYNCED]</span>}
+          {syncStatus === "syncing" && <span className="text-[#2d4a3e] font-bold tracking-widest">[SYNCING...]</span>}
+          {syncStatus === "stalled" && <span className="text-[#c4903a] font-bold tracking-widest">[SYNC STALLED]</span>}
+          {syncStatus === "idle" && <span className="text-[#1a1a1a]/40 tracking-widest">[SYNCED]</span>}
         </div>
       </div>
 
@@ -266,8 +267,8 @@ export default function CommandCenter() {
             {/* Stage 1: Ideation & Backlog */}
             <div className="border border-[#1a1a1a]/10 bg-[#faf9f5] p-3 space-y-3">
               <div className="border-b border-[#1a1a1a]/10 pb-1.5 flex items-center justify-between">
-                <span className="font-mono text-xs font-bold text-[#1a1a1a] uppercase">[01] Backlog</span>
-                <Badge variant="outline" className="text-[9px] px-1 font-mono uppercase bg-[#c4903a]/10 text-[#c4903a] border-[#c4903a]/20 rounded-none">
+                <span className="font-mono text-xs font-bold text-[#1a1a1a] uppercase tracking-wider">[01] Backlog</span>
+                <Badge variant="outline" className="text-[9px] px-1 font-mono uppercase bg-[#c4903a]/10 text-[#c4903a] border-[#c4903a]/20 rounded-none tracking-wider">
                   {rollup.pendingWorkItems} items
                 </Badge>
               </div>
@@ -279,9 +280,9 @@ export default function CommandCenter() {
                     .map((w) => (
                       <div key={w.id} className={cn("border p-2 bg-[#f4f2eb] border-[#1a1a1a]/10 rounded-none", w.owner?.toLowerCase().includes("antigravity") && "border-[#2d4a3e] bg-[#2d4a3e]/5")}>
                         <div className="flex items-center justify-between gap-1 mb-1">
-                          <span className="font-mono text-[9px] font-bold truncate text-[#2d4a3e] uppercase">{w.id}</span>
+                          <span className="font-mono text-[9px] font-bold truncate text-[#2d4a3e] uppercase tracking-wider">{w.id}</span>
                           {w.owner?.toLowerCase().includes("antigravity") && (
-                            <span className="font-mono text-[8px] bg-[#2d4a3e] text-[#faf9f5] px-1">[antigravity]</span>
+                            <span className="font-mono text-[8px] bg-[#2d4a3e] text-[#faf9f5] px-1 tracking-wider">[antigravity]</span>
                           )}
                         </div>
                         <p className="text-xs font-medium text-[#1a1a1a] mb-1 line-clamp-2">{w.title}</p>
@@ -301,8 +302,8 @@ export default function CommandCenter() {
             {/* Stage 2: Active Development */}
             <div className="border border-[#1a1a1a]/10 bg-[#faf9f5] p-3 space-y-3">
               <div className="border-b border-[#1a1a1a]/10 pb-1.5 flex items-center justify-between">
-                <span className="font-mono text-xs font-bold text-[#1a1a1a] uppercase">[02] Active</span>
-                <Badge variant="outline" className="text-[9px] px-1 font-mono uppercase bg-[#2d4a3e]/10 text-[#2d4a3e] border-[#2d4a3e]/20 rounded-none">
+                <span className="font-mono text-xs font-bold text-[#1a1a1a] uppercase tracking-wider">[02] Active</span>
+                <Badge variant="outline" className="text-[9px] px-1 font-mono uppercase bg-[#2d4a3e]/10 text-[#2d4a3e] border-[#2d4a3e]/20 rounded-none tracking-wider">
                   {rollup.activeWorkItems} items
                 </Badge>
               </div>
@@ -314,9 +315,9 @@ export default function CommandCenter() {
                     .map((w) => (
                       <div key={w.id} className={cn("border p-2 bg-[#f4f2eb] border-[#1a1a1a]/10 rounded-none", w.owner?.toLowerCase().includes("antigravity") && "border-[#2d4a3e] bg-[#2d4a3e]/5")}>
                         <div className="flex items-center justify-between gap-1 mb-1">
-                          <span className="font-mono text-[9px] font-bold truncate text-[#2d4a3e] uppercase">{w.id}</span>
+                          <span className="font-mono text-[9px] font-bold truncate text-[#2d4a3e] uppercase tracking-wider">{w.id}</span>
                           {w.owner?.toLowerCase().includes("antigravity") && (
-                            <span className="font-mono text-[8px] bg-[#2d4a3e] text-[#faf9f5] px-1">[antigravity]</span>
+                            <span className="font-mono text-[8px] bg-[#2d4a3e] text-[#faf9f5] px-1 tracking-wider">[antigravity]</span>
                           )}
                         </div>
                         <p className="text-xs font-medium text-[#1a1a1a] mb-1 line-clamp-2">{w.title}</p>
@@ -336,8 +337,8 @@ export default function CommandCenter() {
             {/* Stage 3: Operational Review & Stalled */}
             <div className="border border-[#1a1a1a]/10 bg-[#faf9f5] p-3 space-y-3">
               <div className="border-b border-[#1a1a1a]/10 pb-1.5 flex items-center justify-between">
-                <span className="font-mono text-xs font-bold text-[#1a1a1a] uppercase">[03] Stalled</span>
-                <Badge variant="outline" className="text-[9px] px-1 font-mono uppercase bg-amber-600/10 text-amber-600 border-amber-600/20 rounded-none">
+                <span className="font-mono text-xs font-bold text-[#1a1a1a] uppercase tracking-wider">[03] Stalled</span>
+                <Badge variant="outline" className="text-[9px] px-1 font-mono uppercase bg-amber-600/10 text-amber-600 border-amber-600/20 rounded-none tracking-wider">
                   {rollup.stalledWorkItems} items
                 </Badge>
               </div>
@@ -349,9 +350,9 @@ export default function CommandCenter() {
                     .map((w) => (
                       <div key={w.id} className={cn("border p-2 bg-[#f4f2eb] border-[#1a1a1a]/10 rounded-none", w.owner?.toLowerCase().includes("antigravity") && "border-[#2d4a3e] bg-[#2d4a3e]/5")}>
                         <div className="flex items-center justify-between gap-1 mb-1">
-                          <span className="font-mono text-[9px] font-bold truncate text-[#2d4a3e] uppercase">{w.id}</span>
+                          <span className="font-mono text-[9px] font-bold truncate text-[#2d4a3e] uppercase tracking-wider">{w.id}</span>
                           {w.owner?.toLowerCase().includes("antigravity") && (
-                            <span className="font-mono text-[8px] bg-[#2d4a3e] text-[#faf9f5] px-1">[antigravity]</span>
+                            <span className="font-mono text-[8px] bg-[#2d4a3e] text-[#faf9f5] px-1 tracking-wider">[antigravity]</span>
                           )}
                         </div>
                         <p className="text-xs font-medium text-[#1a1a1a] mb-1 line-clamp-2">{w.title}</p>
@@ -371,8 +372,8 @@ export default function CommandCenter() {
             {/* Stage 4: Production & Live */}
             <div className="border border-[#1a1a1a]/10 bg-[#faf9f5] p-3 space-y-3">
               <div className="border-b border-[#1a1a1a]/10 pb-1.5 flex items-center justify-between">
-                <span className="font-mono text-xs font-bold text-[#1a1a1a] uppercase">[04] Completed</span>
-                <Badge variant="outline" className="text-[9px] px-1 font-mono uppercase bg-[#2d4a3e]/10 text-[#2d4a3e] border-[#2d4a3e]/20 rounded-none">
+                <span className="font-mono text-xs font-bold text-[#1a1a1a] uppercase tracking-wider">[04] Completed</span>
+                <Badge variant="outline" className="text-[9px] px-1 font-mono uppercase bg-[#2d4a3e]/10 text-[#2d4a3e] border-[#2d4a3e]/20 rounded-none tracking-wider">
                   {rollup.completedWorkItems} items
                 </Badge>
               </div>
@@ -384,9 +385,9 @@ export default function CommandCenter() {
                     .map((w) => (
                       <div key={w.id} className={cn("border p-2 bg-[#f4f2eb] border-[#1a1a1a]/10 rounded-none", w.owner?.toLowerCase().includes("antigravity") && "border-[#2d4a3e] bg-[#2d4a3e]/5")}>
                         <div className="flex items-center justify-between gap-1 mb-1">
-                          <span className="font-mono text-[9px] font-bold truncate text-[#2d4a3e] uppercase">{w.id}</span>
+                          <span className="font-mono text-[9px] font-bold truncate text-[#2d4a3e] uppercase tracking-wider">{w.id}</span>
                           {w.owner?.toLowerCase().includes("antigravity") && (
-                            <span className="font-mono text-[8px] bg-[#2d4a3e] text-[#faf9f5] px-1">[antigravity]</span>
+                            <span className="font-mono text-[8px] bg-[#2d4a3e] text-[#faf9f5] px-1 tracking-wider">[antigravity]</span>
                           )}
                         </div>
                         <p className="text-xs font-medium text-[#1a1a1a] mb-1 line-clamp-2">{w.title}</p>

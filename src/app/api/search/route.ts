@@ -13,7 +13,7 @@ export async function GET(req: NextRequest) {
   }
 
   try {
-    let itemsToSearch: Array<{ id: string; title: string; subtitle?: string; extra?: any }> = [];
+    let itemsToSearch: Array<{ id: string; title: string; subtitle?: string; extra?: Record<string, unknown> }> = [];
 
     if (target === "work") {
       const workItems = await fetchWorkItems();

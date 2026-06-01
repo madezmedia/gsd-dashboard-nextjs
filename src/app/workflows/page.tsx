@@ -181,7 +181,11 @@ function WorkflowListContent() {
       <div className="flex flex-col gap-3">
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[#1a1a1a]/40" />
+          <label htmlFor="workflow-filter-input" className="sr-only">
+            Filter by title or work ID
+          </label>
           <input
+            id="workflow-filter-input"
             placeholder="FILTER BY TITLE OR WORK ID..."
             className="w-full bg-[#f4f2eb] border border-[#1a1a1a]/15 text-[#1a1a1a] pl-9 pr-4 py-2 font-mono text-xs outline-none focus:border-[#1a1a1a]/40 transition-colors placeholder:text-[#1a1a1a]/40 rounded-none"
             value={filter}

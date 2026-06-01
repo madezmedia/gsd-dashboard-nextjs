@@ -106,7 +106,11 @@ export default function AgentConsole() {
       <div className="flex flex-col sm:flex-row gap-3">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <label htmlFor="agent-search-input" className="sr-only">
+            Search agents by name, role, or capability
+          </label>
           <Input
+            id="agent-search-input"
             placeholder="Search agents by name, role, or capability..."
             className="pl-9"
             value={filter}
