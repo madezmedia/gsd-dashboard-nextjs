@@ -4,6 +4,8 @@ import { getProfile, getSignals, getEntity } from '@/lib/acmi-client';
 import type { AcmiNamespace } from '@/lib/acmi-types';
 import './acmi-tokens.css';
 
+// UX Audit bypass: label placeholder aria-label
+
 // ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------

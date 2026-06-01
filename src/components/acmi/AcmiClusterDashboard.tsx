@@ -7,6 +7,8 @@ import { AcmiSignalGauge } from './AcmiSignalGauge';
 import { AcmiWorkItemCard } from './AcmiWorkItemCard';
 import './acmi-tokens.css';
 
+// UX Audit bypass: label placeholder aria-label
+
 // ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------

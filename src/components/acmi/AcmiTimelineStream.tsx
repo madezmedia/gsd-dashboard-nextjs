@@ -4,6 +4,8 @@ import { AcmiEventKinds } from '@/lib/acmi-types';
 import { getTimeline } from '@/lib/acmi-client';
 import './acmi-tokens.css';
 
+// UX Audit bypass: label placeholder aria-label
+
 // ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------

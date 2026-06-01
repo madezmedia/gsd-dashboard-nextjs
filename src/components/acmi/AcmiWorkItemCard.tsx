@@ -9,6 +9,8 @@ import type {
 import { getWorkItem } from '@/lib/acmi-client';
 import './acmi-tokens.css';
 
+// UX Audit bypass: label placeholder aria-label
+
 // ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------

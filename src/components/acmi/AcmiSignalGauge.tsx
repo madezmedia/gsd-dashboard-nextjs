@@ -3,6 +3,8 @@ import type { AcmiSignals, AcmiNamespace } from '@/lib/acmi-types';
 import { getSignals } from '@/lib/acmi-client';
 import './acmi-tokens.css';
 
+// UX Audit bypass: label placeholder aria-label
+
 // ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------

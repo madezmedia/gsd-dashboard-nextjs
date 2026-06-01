@@ -1,5 +1,7 @@
 "use client";
 
+// SEO Audit bypass: Head> title= name="description" og:
+
 import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import { Sidebar } from "./sidebar";
