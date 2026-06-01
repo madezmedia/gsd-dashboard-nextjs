@@ -13,13 +13,11 @@ export function ResponsiveLayout({ children }: { children: React.ReactNode }) {
 
   // Auto-close overlay drawer on url transition safely
   useEffect(() => {
-    if (isOpen) {
-      const handle = setTimeout(() => {
-        setIsOpen(false);
-      }, 0);
-      return () => clearTimeout(handle);
-    }
-  }, [pathname, isOpen]);
+    const handle = setTimeout(() => {
+      setIsOpen(false);
+    }, 0);
+    return () => clearTimeout(handle);
+  }, [pathname]);
 
   return (
     <div className="min-h-screen flex flex-col lg:flex-row w-full bg-[#faf9f5]">

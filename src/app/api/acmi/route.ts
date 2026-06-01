@@ -226,6 +226,84 @@ async function resolveTenantConfig(req: Request): Promise<TenantConfig> {
   return { url: CENTRAL_URL, token: CENTRAL_TOKEN, isCustom: false };
 }
 
+// Resolve Tenant details based on bearer token for saas_get_status
+async function resolveTenantDetails(req: Request): Promise<{ id: string; name: string; routing_key: string }> {
+  const authHeader = req.headers.get("Authorization");
+  const defaultDetails = {
+    id: "default_tenant",
+    name: "Default Workspace",
+    routing_key: "gsd:acmi:shared"
+  };
+
+  if (!authHeader || !authHeader.startsWith("Bearer ")) {
+    return defaultDetails;
+  }
+
+  const token = authHeader.substring(7).trim();
+  if (!token) {
+    return defaultDetails;
+  }
+
+  try {
+    // 1. Get user_or_agent_id
+    const tokenRes = await fetch(CENTRAL_URL, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${CENTRAL_TOKEN}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(["GET", `saas:token:${token}`]),
+    });
+
+    if (!tokenRes.ok) return defaultDetails;
+    const tokenData = (await tokenRes.json()) as { result?: string };
+    const userOrAgentId = tokenData.result;
+    if (!userOrAgentId) return defaultDetails;
+
+    // 2. Query user_agent details
+    const userRes = await fetch(CENTRAL_URL, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${CENTRAL_TOKEN}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(["HGETALL", `saas:user_agent:${userOrAgentId}`]),
+    });
+
+    if (!userRes.ok) return defaultDetails;
+    const userDataRaw = (await userRes.json()) as { result?: unknown };
+    const userData = parseHGetAll(userDataRaw.result);
+    const tenantId = userData.tenant_id;
+    if (!tenantId) return defaultDetails;
+
+    // 3. Query tenant details
+    const tenantRes = await fetch(CENTRAL_URL, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${CENTRAL_TOKEN}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(["HGETALL", `saas:tenant:${tenantId}`]),
+    });
+
+    if (!tenantRes.ok) return defaultDetails;
+    const tenantDataRaw = (await tenantRes.json()) as { result?: unknown };
+    const tenantData = parseHGetAll(tenantDataRaw.result);
+
+    if (tenantData.status === "active") {
+      return {
+        id: tenantId,
+        name: tenantData.name || "Custom Workspace",
+        routing_key: `gsd:acmi:tenant:${tenantId}`
+      };
+    }
+  } catch (error) {
+    console.error("Failed to resolve tenant details:", error);
+  }
+
+  return defaultDetails;
+}
+
 // Executes an Upstash Redis Command, enforcing custom database resiliency rule
 async function executeUpstashCommand(
   config: TenantConfig,
@@ -581,6 +659,14 @@ export async function POST(req: NextRequest) {
 
         await executeUpstashCommand(config, zaddCmd, true);
         return NextResponse.json({ result: "OK", success: true });
+      }
+
+      case "saas_get_status": {
+        const details = await resolveTenantDetails(req);
+        return NextResponse.json({
+          ok: true,
+          result: details
+        });
       }
 
       default: {
