@@ -1,6 +1,7 @@
 import { test, beforeEach, afterEach } from "node:test";
 import assert from "node:assert";
 import {
+  acmiCall,
   fetchAgents,
   fetchDashboardRollup,
   fetchAgentBootstrap,
@@ -28,10 +29,32 @@ beforeEach(() => {
   globalThis.fetch = async (url: string | URL | Request, init?: RequestInit) => {
     return mockFetchHandler(String(url), init);
   };
+
+  // Set up standard window/localStorage mocks for test cases
+  const store: Record<string, string> = {};
+  const mockLocalStorage = {
+    getItem: (key: string) => store[key] || null,
+    setItem: (key: string, val: string) => { store[key] = val; },
+    removeItem: (key: string) => { delete store[key]; },
+    clear: () => { for (const k in store) delete store[k]; }
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  } as any;
+  globalThis.localStorage = mockLocalStorage;
+  globalThis.window = {
+    location: {
+      search: ""
+    },
+    localStorage: mockLocalStorage
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  } as any;
 });
 
 afterEach(() => {
   globalThis.fetch = originalFetch;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  delete (globalThis as any).window;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  delete (globalThis as any).localStorage;
 });
 
 test("ACMI Client - fetchAgents fetches and maps agents correctly", async () => {
@@ -245,3 +268,65 @@ test("ACMI Client - updateWorkItemStatus updates status and logs work event and 
   assert.ok(workEventCalled);
   assert.ok(threadEventCalled);
 });
+
+test("ACMI Client - acmiCall uses relative path and resolves token from query parameters", async () => {
+  let calledUrl = "";
+  let calledHeaders: Record<string, string> = {};
+
+  mockFetchHandler = async (url, init) => {
+    calledUrl = url;
+    calledHeaders = (init?.headers || {}) as Record<string, string>;
+    return createMockResponse(200, { ok: true });
+  };
+
+  // 1. Mock query parameter
+  globalThis.window.location.search = "?token=query-param-token-123";
+
+  const result = await acmiCall("test_tool", { param: "value" });
+  assert.ok(result);
+
+  // Assert relative path is used
+  assert.strictEqual(calledUrl, "/api/acmi");
+
+  // Assert query param token was cached to localStorage
+  assert.strictEqual(globalThis.localStorage.getItem("acmi_token"), "query-param-token-123");
+
+  // Assert token was passed as Bearer header
+  assert.strictEqual(calledHeaders["Authorization"], "Bearer query-param-token-123");
+});
+
+test("ACMI Client - acmiCall resolves token from localStorage", async () => {
+  let calledHeaders: Record<string, string> = {};
+
+  mockFetchHandler = async (url, init) => {
+    calledHeaders = (init?.headers || {}) as Record<string, string>;
+    return createMockResponse(200, { ok: true });
+  };
+
+  // No query parameter
+  globalThis.window.location.search = "";
+  // Cache token in localStorage
+  globalThis.localStorage.setItem("acmi_token", "local-storage-token-456");
+
+  await acmiCall("test_tool");
+
+  // Assert token was passed as Bearer header
+  assert.strictEqual(calledHeaders["Authorization"], "Bearer local-storage-token-456");
+});
+
+test("ACMI Client - acmiCall proceeds without Authorization header when no token is present", async () => {
+  let calledHeaders: Record<string, string> = {};
+
+  mockFetchHandler = async (url, init) => {
+    calledHeaders = (init?.headers || {}) as Record<string, string>;
+    return createMockResponse(200, { ok: true });
+  };
+
+  globalThis.window.location.search = "";
+  globalThis.localStorage.removeItem("acmi_token");
+
+  await acmiCall("test_tool");
+
+  assert.strictEqual(calledHeaders["Authorization"], undefined);
+});
+

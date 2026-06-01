@@ -3,7 +3,8 @@
  * Real client that talks to ACMI via proxy.
  */
 
-const ACMI_PROXY = "https://gsd-dashboard-pi.vercel.app/api/acmi";
+const ACMI_PROXY = "/api/acmi";
+
 
 export interface ACMIProfile {
   id: string;
@@ -120,10 +121,35 @@ const AGENT_DISPLAY_NAMES: Record<string, string> = {
   "whop-manager": "Whop Manager",
 };
 
-async function acmiCall(tool: string, params: Record<string, unknown> = {}) {
+export async function acmiCall(tool: string, params: Record<string, unknown> = {}) {
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+  };
+
+  if (typeof window !== "undefined") {
+    try {
+      const searchParams = new URLSearchParams(window.location.search);
+      const urlToken = searchParams.get("token");
+      if (urlToken) {
+        window.localStorage.setItem("acmi_token", urlToken);
+      }
+    } catch (e) {
+      console.error("Error resolving query param token:", e);
+    }
+
+    try {
+      const cachedToken = window.localStorage.getItem("acmi_token");
+      if (cachedToken) {
+        headers["Authorization"] = `Bearer ${cachedToken}`;
+      }
+    } catch (e) {
+      console.error("Error reading cached token:", e);
+    }
+  }
+
   const res = await fetch(ACMI_PROXY, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers,
     body: JSON.stringify({ tool, params }),
   });
   if (!res.ok) {
@@ -132,6 +158,7 @@ async function acmiCall(tool: string, params: Record<string, unknown> = {}) {
   }
   return res.json();
 }
+
 
 export async function fetchAgents(): Promise<ACMIProfile[]> {
   const data = await acmiCall("acmi_list", { namespace: "agent" });
