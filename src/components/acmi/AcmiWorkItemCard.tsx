@@ -88,11 +88,17 @@ export const AcmiWorkItemCard: React.FC<AcmiWorkItemCardProps> = ({
 
   useEffect(() => {
     if (data) {
-      setWorkItem(data);
-      setLoadState('loaded');
-      return;
+      const timer = setTimeout(() => {
+        setWorkItem(data);
+        setLoadState('loaded');
+      }, 0);
+      return () => clearTimeout(timer);
+    } else {
+      const timer = setTimeout(() => {
+        fetchItem();
+      }, 0);
+      return () => clearTimeout(timer);
     }
-    fetchItem();
   }, [fetchItem, data]);
 
   // Polling

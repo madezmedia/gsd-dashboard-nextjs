@@ -7,7 +7,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { fetchApprovals } from "@/lib/acmi-client";
+import { fetchApprovals, approveWorkItem, rejectWorkItem } from "@/lib/acmi-client";
 import { formatRelativeTime } from "@/lib/utils";
 
 interface Approval {
@@ -22,9 +22,11 @@ interface Approval {
 function ApprovalCard({
   approval,
   onAction,
+  isProcessing,
 }: {
   approval: Approval;
   onAction: (id: string, action: "approve" | "reject") => void;
+  isProcessing: boolean;
 }) {
   return (
     <Card className={approval.status !== "pending" ? "opacity-60" : ""}>
@@ -66,18 +68,20 @@ function ApprovalCard({
                 variant="outline"
                 className="border-green-500 text-green-600 hover:bg-green-50"
                 onClick={() => onAction(approval.id, "approve")}
+                disabled={isProcessing}
               >
                 <CheckCircle2 className="h-3.5 w-3.5 mr-1" />
-                Approve
+                {isProcessing ? "Approve..." : "Approve"}
               </Button>
               <Button
                 size="sm"
                 variant="outline"
                 className="border-red-500 text-red-600 hover:bg-red-50"
                 onClick={() => onAction(approval.id, "reject")}
+                disabled={isProcessing}
               >
                 <XCircle className="h-3.5 w-3.5 mr-1" />
-                Reject
+                {isProcessing ? "Reject..." : "Reject"}
               </Button>
             </div>
           )}
@@ -90,15 +94,45 @@ function ApprovalCard({
 export default function ApprovalQueue() {
   const [approvals, setApprovals] = useState<Approval[]>([]);
   const [filter, setFilter] = useState<"all" | "pending" | "resolved">("all");
+  const [actioningId, setActioningId] = useState<string | null>(null);
 
   useEffect(() => {
     fetchApprovals().then(setApprovals);
   }, []);
 
-  function handleAction(id: string, action: "approve" | "reject") {
-    setApprovals((prev) =>
-      prev.map((a) => (a.id === id ? { ...a, status: action === "approve" ? "approved" : "rejected" } : a))
-    );
+  async function handleAction(id: string, action: "approve" | "reject") {
+    setActioningId(id);
+    try {
+      // Optimistically update status to show transition
+      setApprovals((prev) =>
+        prev.map((a) => (a.id === id ? { ...a, status: action === "approve" ? "approved" : "rejected" } : a))
+      );
+
+      const success = action === "approve"
+        ? await approveWorkItem(id)
+        : await rejectWorkItem(id);
+
+      if (!success) {
+        // Revert status back to pending
+        setApprovals((prev) =>
+          prev.map((a) => (a.id === id ? { ...a, status: "pending" } : a))
+        );
+        alert("Failed to submit approval action to ACMI database");
+      } else {
+        // Refresh the approvals queue from database
+        const fresh = await fetchApprovals();
+        setApprovals(fresh);
+      }
+    } catch (err) {
+      console.error("Action error:", err);
+      // Revert status back to pending
+      setApprovals((prev) =>
+        prev.map((a) => (a.id === id ? { ...a, status: "pending" } : a))
+      );
+      alert("Error occurred while communicating with ACMI proxy");
+    } finally {
+      setActioningId(null);
+    }
   }
 
   const filtered = approvals.filter((a) => {
@@ -137,7 +171,12 @@ export default function ApprovalQueue() {
       <ScrollArea className="h-[calc(100vh-260px)]">
         <div className="space-y-3">
           {filtered.map((approval) => (
-            <ApprovalCard key={approval.id} approval={approval} onAction={handleAction} />
+            <ApprovalCard
+              key={approval.id}
+              approval={approval}
+              onAction={handleAction}
+              isProcessing={actioningId === approval.id}
+            />
           ))}
           {filtered.length === 0 && (
             <div className="flex flex-col items-center justify-center h-32 text-muted-foreground">

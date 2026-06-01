@@ -1,9 +1,9 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-
 import { Mic, MicOff, RefreshCw, Settings2, Terminal as TerminalIcon, Activity } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { acmiCall } from "@/lib/acmi-client";
 
 interface TranscribedLine {
   id: string;
@@ -28,24 +28,143 @@ const DEFAULT_LOGS: TranscribedLine[] = [
     text: "ACMI Fleet Agent Bentley standing by. Voice streaming channels synchronized.",
     correlationId: "agentReady-1716910805000",
   },
-  {
-    id: "log-3",
-    timestamp: "11:40:12",
-    speaker: "USER",
-    text: "Bentley, what is the status of the stalled workflows?",
-    correlationId: "userQuery-1716910812000",
-  },
-  {
-    id: "log-4",
-    timestamp: "11:40:15",
-    speaker: "AGENT",
-    text: "I am tracking 40 stalled work items. Standard intervention protocol dictates escalating work item 'dispatch-001' to active status.",
-    correlationId: "agentResponse-1716910815000",
-  },
 ];
 
-export default function VoiceClient() {
+interface CopilotResponseParams {
+  query: string;
+  groqApiKey: string;
+  addSystemLog: (msg: string) => void;
+  stopSpeaking: () => void;
+  setTranscripts: React.Dispatch<React.SetStateAction<TranscribedLine[]>>;
+  queueSpeech: (text: string) => void;
+}
 
+async function triggerCopilotResponseOutside({
+  query,
+  groqApiKey,
+  addSystemLog,
+  stopSpeaking,
+  setTranscripts,
+  queueSpeech,
+}: CopilotResponseParams) {
+  addSystemLog("Posting speech payload to Next.js LLM edge router...");
+  stopSpeaking();
+
+  // Emit live voice query event to the ACMI Super Bus
+  try {
+    await acmiCall("acmi_event", {
+      namespace: "thread",
+      id: "agent-coordination",
+      source: "user:admin",
+      kind: "voice-input",
+      summary: `[voice-input] User spoke query: "${query}"`,
+      correlationId: `voiceInput-${Date.now()}`,
+    });
+  } catch (e) {
+    console.error("Bus emit error:", e);
+  }
+
+  try {
+    const res = await fetch("/api/chat", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-groq-api-key": groqApiKey,
+      },
+      body: JSON.stringify({
+        messages: [{ role: "user", content: query }],
+      }),
+    });
+
+    if (!res.ok) {
+      addSystemLog("ERROR: Next.js Copilot router returned connection error.");
+      return;
+    }
+
+    if (!res.body) {
+      addSystemLog("ERROR: Response stream returned null.");
+      return;
+    }
+
+    const reader = res.body.getReader();
+    const decoder = new TextDecoder();
+    let done = false;
+    let fullResponseText = "";
+    let sentenceBuffer = "";
+
+    // Add placeholder agent line
+    const agentTs = Date.now();
+    const time = new Date().toTimeString().split(" ")[0];
+    setTranscripts((prev) => [
+      ...prev,
+      {
+        id: `agt-${agentTs}`,
+        timestamp: time,
+        speaker: "AGENT",
+        text: "",
+        correlationId: `voiceAgent-${agentTs}`,
+      },
+    ]);
+
+    while (!done) {
+      const { value, done: isDone } = await reader.read();
+      done = isDone;
+      if (value) {
+        const text = decoder.decode(value);
+        fullResponseText = fullResponseText + text;
+        sentenceBuffer = sentenceBuffer + text;
+
+        // Update typewriter console UI text in real-time
+        setTranscripts((prev) => {
+          const copy = [...prev];
+          const last = copy[copy.length - 1];
+          if (last && last.speaker === "AGENT") {
+            last.text = fullResponseText;
+          }
+          return copy;
+        });
+
+        // Match complete sentences using lookbehind for sentence dividers
+        const sentences = sentenceBuffer.split(/(?<=[.?!])\s+/);
+        if (sentences.length > 1) {
+          const completeSentences = sentences.slice(0, -1);
+          sentenceBuffer = sentences[sentences.length - 1] || "";
+
+          for (const s of completeSentences) {
+            const cleanSentence = s.trim();
+            if (cleanSentence) {
+              queueSpeech(cleanSentence);
+            }
+          }
+        }
+      }
+    }
+
+    // Output remaining sentence buffer
+    if (sentenceBuffer.trim()) {
+      queueSpeech(sentenceBuffer.trim());
+    }
+
+    // Emit complete agent response event to the ACMI Super Bus
+    try {
+      await acmiCall("acmi_event", {
+        namespace: "thread",
+        id: "agent-coordination",
+        source: "agent:bentley",
+        kind: "voice-output",
+        summary: `[voice-output] Agent responded: "${fullResponseText}"`,
+        correlationId: `voiceOutput-${Date.now()}`,
+      });
+    } catch (e) {
+      console.error("Bus emit error:", e);
+    }
+  } catch (err) {
+    console.error("Copilot streaming error:", err);
+    addSystemLog("ERROR: Failed to fetch copilot response stream.");
+  }
+}
+
+export default function VoiceClient() {
   const [status, setStatus] = useState<"idle" | "connecting" | "active">("idle");
   const [model, setModel] = useState("nova-2-conversational");
   const [suppression, setSuppression] = useState(true);
@@ -53,12 +172,24 @@ export default function VoiceClient() {
   const [transcripts, setTranscripts] = useState<TranscribedLine[]>(DEFAULT_LOGS);
   const [micInput, setMicInput] = useState(0);
 
+  // API Credentials validation state
+  const [keysLoaded, setKeysLoaded] = useState(false);
+  const [keysMissing, setKeysMissing] = useState({ groq: false, deepgram: false });
+  const [deepgramApiKey, setDeepgramApiKey] = useState("");
+  const [groqApiKey, setGroqApiKey] = useState("");
+
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
   const analyserRef = useRef<AnalyserNode | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const animationFrameRef = useRef<number | null>(null);
-  const mockIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const wsRef = useRef<WebSocket | null>(null);
+
+  // Speech Queue Refs for Sentence-by-Sentence TTS
+  const speakQueueRef = useRef<string[]>([]);
+  const speakingRef = useRef<boolean>(false);
+  const synthRef = useRef<SpeechSynthesis | null>(null);
 
   // Auto-scroll logic for transcription window
   const scrollRef = useRef<HTMLDivElement | null>(null);
@@ -68,7 +199,71 @@ export default function VoiceClient() {
     }
   }, [transcripts]);
 
-  // Toggle simulation
+  // Read keys from localStorage on mount
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      synthRef.current = window.speechSynthesis;
+      const gKey = localStorage.getItem("groq_api_key") || "";
+      const dKey = localStorage.getItem("deepgram_api_key") || "";
+      const timer = setTimeout(() => {
+        setGroqApiKey(gKey);
+        setDeepgramApiKey(dKey);
+        setKeysMissing({
+          groq: !gKey,
+          deepgram: !dKey,
+        });
+        setKeysLoaded(true);
+      }, 0);
+      return () => clearTimeout(timer);
+    }
+  }, []);
+
+  // WebSpeech Synthesis Queue Handlers
+  const speakNext = () => {
+    if (!synthRef.current || speakQueueRef.current.length === 0) {
+      speakingRef.current = false;
+      return;
+    }
+    speakingRef.current = true;
+    const sentence = speakQueueRef.current.shift();
+    if (!sentence) {
+      speakNext();
+      return;
+    }
+
+    const utterance = new SpeechSynthesisUtterance(sentence);
+    const voices = synthRef.current.getVoices();
+    const preferredVoice =
+      voices.find((v) => v.lang.startsWith("en") && v.name.includes("Google")) ||
+      voices.find((v) => v.lang.startsWith("en"));
+    if (preferredVoice) {
+      utterance.voice = preferredVoice;
+    }
+    utterance.onend = () => {
+      speakNext();
+    };
+    utterance.onerror = () => {
+      speakNext();
+    };
+    synthRef.current.speak(utterance);
+  };
+
+  const queueSpeech = (text: string) => {
+    speakQueueRef.current.push(text);
+    if (!speakingRef.current) {
+      speakNext();
+    }
+  };
+
+  const stopSpeaking = () => {
+    if (synthRef.current) {
+      synthRef.current.cancel();
+    }
+    speakQueueRef.current = [];
+    speakingRef.current = false;
+  };
+
+  // Toggle Live Voice Stream (Deepgram WS & MediaRecorder API)
   const handleToggleFeed = async () => {
     if (status === "active") {
       cleanupAudio();
@@ -77,72 +272,140 @@ export default function VoiceClient() {
       return;
     }
 
+    if (keysMissing.deepgram || keysMissing.groq) {
+      alert("Please configure your Groq and Deepgram Cognition Keys in Settings before establishing a live voice feed.");
+      addSystemLog("ERROR: API key credentials missing. Open Settings panel to provide credentials.");
+      return;
+    }
+
     setStatus("connecting");
-    addSystemLog("Requesting local hardware audio interface...");
+    addSystemLog("Establishing connection to Deepgram WS Endpoint...");
 
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      streamRef.current = stream;
+      const wsUrl = `wss://api.deepgram.com/v1/listen?model=${model}&language=${language}&smart_format=true&interim_results=true`;
+      const ws = new WebSocket(wsUrl, ["token", deepgramApiKey]);
+      wsRef.current = ws;
 
-      const AudioContextClass = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
-      const audioCtx = new AudioContextClass();
-      audioContextRef.current = audioCtx;
+      ws.onopen = async () => {
+        addSystemLog("Deepgram socket handshake complete. Requesting physical mic stream...");
+        try {
+          const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+          streamRef.current = stream;
 
-      const analyser = audioCtx.createAnalyser();
-      analyser.fftSize = 256;
-      analyserRef.current = analyser;
+          const AudioContextClass =
+            window.AudioContext ||
+            (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+          const audioCtx = new AudioContextClass();
+          audioContextRef.current = audioCtx;
 
-      const source = audioCtx.createMediaStreamSource(stream);
-      source.connect(analyser);
+          const analyser = audioCtx.createAnalyser();
+          analyser.fftSize = 256;
+          analyserRef.current = analyser;
 
-      setStatus("active");
-      addSystemLog("Microphone stream locked. Deepgram socket connection established at 48kHz (Nova-2 pipeline).");
+          const source = audioCtx.createMediaStreamSource(stream);
+          source.connect(analyser);
 
-      setTimeout(() => {
-        addUserTranscript("Analyzing fleet queue parameters now.");
-      }, 5000);
+          // Configure MediaRecorder for live streaming slices
+          let mimeType = "audio/webm";
+          if (MediaRecorder.isTypeSupported("audio/webm;codecs=opus")) {
+            mimeType = "audio/webm;codecs=opus";
+          } else if (MediaRecorder.isTypeSupported("audio/ogg;codecs=opus")) {
+            mimeType = "audio/ogg;codecs=opus";
+          }
 
-      setTimeout(() => {
-        addAgentTranscript("Copy that. Committing status update to ACMI signal cluster.");
-      }, 10000);
+          const recorder = new MediaRecorder(stream, { mimeType });
+          mediaRecorderRef.current = recorder;
 
-    } catch {
-      console.warn("Local mic access blocked/unsupported. Initializing high-dynamics mathematical simulation pipeline.");
-      setStatus("active");
-      addSystemLog("Microphone fallback: Using high-contrast mathematical noise wave generator.");
-      
-      const interval = setInterval(() => {
-        if (Math.random() > 0.7) {
-          const mockUserSentences = [
-            "Are there any stalled items in pipeline 2?",
-            "Re-route dispatch-002 to client proxy.",
-            "Run full build check on workflows.",
-          ];
-          const sentence = mockUserSentences[Math.floor(Math.random() * mockUserSentences.length)];
-          addUserTranscript(sentence);
+          recorder.ondataavailable = (event) => {
+            if (event.data.size > 0 && ws.readyState === WebSocket.OPEN) {
+              ws.send(event.data);
+            }
+          };
 
-          setTimeout(() => {
-            const mockAgentSentences = [
-              "Executing re-route protocol now. Status signal is updated.",
-              "Work item escalated and queued successfully.",
-              "Checking Next.js builder parameters. Output is normal.",
-            ];
-            const resp = mockAgentSentences[Math.floor(Math.random() * mockAgentSentences.length)];
-            addAgentTranscript(resp);
-          }, 3000);
+          // Chunks sliced every 250ms
+          recorder.start(250);
+
+          setStatus("active");
+          addSystemLog("Microphone stream locked. Live Voice Dispatch channels active (Nova-2 pipeline).");
+        } catch (err) {
+          console.error("Microphone hardware error:", err);
+          addSystemLog("ERROR: Failed to allocate hardware microphone stream. Access denied.");
+          setStatus("idle");
+          ws.close();
         }
-      }, 15000);
+      };
 
-      mockIntervalRef.current = interval;
+      let accumulatedUserTranscript = "";
+
+      ws.onmessage = async (event) => {
+        try {
+          const data = JSON.parse(event.data);
+          const transcriptText = data.channel?.alternatives?.[0]?.transcript;
+          if (!transcriptText) return;
+
+          const isFinal = data.is_final;
+          if (isFinal) {
+            addUserTranscript(transcriptText);
+            accumulatedUserTranscript += " " + transcriptText;
+
+            // Trigger Copilot when speech is complete (speech_final parameter indicates pauses)
+            if (data.speech_final) {
+              const query = accumulatedUserTranscript.trim();
+              accumulatedUserTranscript = "";
+              if (query.length > 2) {
+                await triggerCopilotResponse(query);
+              }
+            }
+          }
+        } catch (e) {
+          console.error("Socket transcript error:", e);
+        }
+      };
+
+      ws.onerror = (e) => {
+        console.error("WS general error:", e);
+        addSystemLog("ERROR: Deepgram WebSocket network layer error occurred.");
+      };
+
+      ws.onclose = () => {
+        addSystemLog("WebSocket connection closed. System idling.");
+        setStatus("idle");
+      };
+    } catch (err) {
+      console.error("WS creation error:", err);
+      addSystemLog("ERROR: Connection failed. Check network routing.");
+      setStatus("idle");
     }
   };
 
+  const triggerCopilotResponse = async (query: string) => {
+    await triggerCopilotResponseOutside({
+      query,
+      groqApiKey,
+      addSystemLog,
+      stopSpeaking,
+      setTranscripts,
+      queueSpeech,
+    });
+  };
+
   const cleanupAudio = () => {
+    stopSpeaking();
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== "inactive") {
+      mediaRecorderRef.current.stop();
+    }
+    mediaRecorderRef.current = null;
+
+    if (wsRef.current) {
+      wsRef.current.close();
+      wsRef.current = null;
+    }
+
     if (animationFrameRef.current) {
       cancelAnimationFrame(animationFrameRef.current);
     }
     if (streamRef.current) {
-      streamRef.current.getTracks().forEach(track => track.stop());
+      streamRef.current.getTracks().forEach((track) => track.stop());
       streamRef.current = null;
     }
     if (audioContextRef.current) {
@@ -150,11 +413,6 @@ export default function VoiceClient() {
       audioContextRef.current = null;
     }
     analyserRef.current = null;
-
-    if (mockIntervalRef.current) {
-      clearInterval(mockIntervalRef.current);
-      mockIntervalRef.current = null;
-    }
   };
 
   useEffect(() => {
@@ -280,7 +538,6 @@ export default function VoiceClient() {
             sum += Math.abs(dataArray[i] - 128);
           }
           setMicInput(Math.min(100, Math.floor(sum * 2)));
-
         } else {
           phase += 0.08;
           ctx.lineWidth = 1.5;
@@ -294,11 +551,11 @@ export default function VoiceClient() {
           waves.forEach((w) => {
             ctx.strokeStyle = w.color;
             ctx.beginPath();
-            
+
             for (let x = 0; x < width; x++) {
               const env = Math.sin((x / width) * Math.PI);
               const y = height / 2 + Math.sin(x * w.freq + phase * w.speed) * w.amp * env;
-              
+
               if (x === 0) {
                 ctx.moveTo(x, y);
               } else {
@@ -310,7 +567,6 @@ export default function VoiceClient() {
 
           setMicInput(30 + Math.floor(Math.sin(phase) * 15) + Math.floor(Math.random() * 5));
         }
-
       } else if (status === "connecting") {
         phase += 0.15;
         ctx.fillStyle = "rgba(45, 74, 62, 0.15)";
@@ -322,7 +578,7 @@ export default function VoiceClient() {
         ctx.fillStyle = "#2d4a3e";
         ctx.textAlign = "center";
         ctx.fillText("CONNECTING DEEPGRAM CLUSTER SOCKET...", width / 2, height / 2 + 3);
-        
+
         ctx.beginPath();
         const centerLineY = height / 2 + Math.sin(phase) * 10;
         ctx.moveTo(0, centerLineY);
@@ -336,7 +592,7 @@ export default function VoiceClient() {
         ctx.moveTo(0, height / 2);
         ctx.lineTo(width, height / 2);
         ctx.stroke();
-        
+
         ctx.font = "9px monospace";
         ctx.fillStyle = "rgba(26, 26, 26, 0.4)";
         ctx.textAlign = "center";
@@ -372,10 +628,36 @@ export default function VoiceClient() {
           </p>
         </div>
         <div className="flex items-center gap-2 font-mono text-[10px] uppercase bg-[#f4f2eb] px-3 py-1 border border-[#1a1a1a]/10">
-          <Activity className={cn("h-3 w-3", status === "active" && "text-[#2d4a3e] animate-pulse", status === "connecting" && "text-[#c4903a] animate-spin")} />
+          <Activity
+            className={cn(
+              "h-3 w-3",
+              status === "active" && "text-[#2d4a3e] animate-pulse",
+              status === "connecting" && "text-[#c4903a] animate-spin"
+            )}
+          />
           <span>STATUS: [{status}]</span>
         </div>
       </div>
+
+      {/* Premium Cognition Warning Banner */}
+      {keysLoaded && (keysMissing.groq || keysMissing.deepgram) && (
+        <div className="border border-[#c4903a]/30 bg-[#faf9f5] p-3 text-xs font-mono text-[#c4903a] flex flex-col sm:flex-row sm:items-center justify-between gap-3 animate-pulse">
+          <div className="flex items-center gap-2">
+            <span className="h-1.5 w-1.5 bg-[#c4903a] rounded-none" />
+            <span>
+              [WARN] Cognition Keys Missing: {keysMissing.groq && "Groq API Key (LLM Copilot)"}{" "}
+              {keysMissing.groq && keysMissing.deepgram && " & "}{" "}
+              {keysMissing.deepgram && "Deepgram API Key (Voice listen)"}.
+            </span>
+          </div>
+          <a
+            href="/settings"
+            className="text-[10px] uppercase font-bold tracking-wider underline hover:text-[#c4903a]/80"
+          >
+            Configure Cognition Keys &rarr;
+          </a>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
         

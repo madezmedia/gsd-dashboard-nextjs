@@ -706,6 +706,68 @@ export async function fetchApprovals(): Promise<
     }));
 }
 
+export async function approveWorkItem(id: string): Promise<boolean> {
+  try {
+    const signalResult = await acmiCall("acmi_work_signal", {
+      id,
+      signals: { status: "active" }
+    });
+
+    const eventResult = await acmiCall("acmi_work_event", {
+      id,
+      source: "human-operator",
+      kind: "hitl-approval",
+      summary: `[hitl-approved] Work item approved by human operator. Resuming execution.`,
+      correlationId: `hitlApprove-${Date.now()}`
+    });
+
+    const busResult = await acmiCall("acmi_event", {
+      namespace: "thread",
+      id: "agent-coordination",
+      source: "user:admin",
+      kind: "milestone-shipped",
+      summary: `[approval] Human operator approved work item ${id}`,
+      correlationId: `hitlApproveBus-${Date.now()}`
+    });
+
+    return !!(signalResult && eventResult && busResult);
+  } catch (err) {
+    console.error(`Failed to approve work item ${id}:`, err);
+    return false;
+  }
+}
+
+export async function rejectWorkItem(id: string): Promise<boolean> {
+  try {
+    const signalResult = await acmiCall("acmi_work_signal", {
+      id,
+      signals: { status: "pending" }
+    });
+
+    const eventResult = await acmiCall("acmi_work_event", {
+      id,
+      source: "human-operator",
+      kind: "hitl-rejection",
+      summary: `[hitl-rejected] Work item rejected by human operator. Stalling execution.`,
+      correlationId: `hitlReject-${Date.now()}`
+    });
+
+    const busResult = await acmiCall("acmi_event", {
+      namespace: "thread",
+      id: "agent-coordination",
+      source: "user:admin",
+      kind: "stalled-alert",
+      summary: `[rejection] Human operator rejected work item ${id}`,
+      correlationId: `hitlRejectBus-${Date.now()}`
+    });
+
+    return !!(signalResult && eventResult && busResult);
+  } catch (err) {
+    console.error(`Failed to reject work item ${id}:`, err);
+    return false;
+  }
+}
+
 export async function fetchAgentBootstrap(id: string): Promise<ACMIBootstrap | null> {
   try {
     const [agentRes, threadRes, allWorkItems] = await Promise.all([

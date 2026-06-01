@@ -3,7 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import { ThemeProvider } from "next-themes";
 import { Suspense } from "react";
 import "./globals.css";
-import { Sidebar } from "@/components/layout/sidebar";
+import { ResponsiveLayout } from "@/components/layout/responsive-layout";
 import { CopilotPanel } from "@/components/openui/copilot-panel";
 import { ShortcutHandler } from "@/components/layout/shortcut-handler";
 
@@ -39,14 +39,15 @@ export default function RootLayout({
           <Suspense fallback={null}>
             <ShortcutHandler />
           </Suspense>
-          <Suspense fallback={<div className="w-60 shrink-0 border-r border-[#1a1a1a]/10 bg-[#f4f2eb] font-mono text-[10px] p-4 text-[#1a1a1a]/40 uppercase">Loading ACMI Sidebar...</div>}>
-            <Sidebar />
+          <Suspense fallback={<div className="w-full h-full flex items-center justify-center font-mono text-[10px] text-[#1a1a1a]/40 uppercase bg-[#faf9f5]">Loading ACMI System...</div>}>
+            <ResponsiveLayout>
+              <main className="flex-1 flex flex-col overflow-hidden">
+                <div className="flex-1 overflow-auto p-4 lg:p-6">
+                  {children}
+                </div>
+              </main>
+            </ResponsiveLayout>
           </Suspense>
-          <main className="flex-1 flex flex-col overflow-hidden">
-            <div className="flex-1 overflow-auto p-6">
-              {children}
-            </div>
-          </main>
           <CopilotPanel />
         </ThemeProvider>
       </body>

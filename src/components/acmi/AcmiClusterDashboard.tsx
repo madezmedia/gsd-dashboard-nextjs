@@ -189,7 +189,10 @@ export const AcmiClusterDashboard: React.FC<AcmiClusterDashboardProps> = ({
   }, [agentIds]);
 
   useEffect(() => {
-    fetchFleet();
+    const timer = setTimeout(() => {
+      fetchFleet();
+    }, 0);
+    return () => clearTimeout(timer);
   }, [fetchFleet]);
 
   // Polling

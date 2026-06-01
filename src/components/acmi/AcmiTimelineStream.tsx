@@ -115,11 +115,17 @@ export const AcmiTimelineStream: React.FC<AcmiTimelineStreamProps> = ({
 
   useEffect(() => {
     if (propsEvents) {
-      setAllEvents(propsEvents);
-      setLoadState('loaded');
-      return;
+      const timer = setTimeout(() => {
+        setAllEvents(propsEvents);
+        setLoadState('loaded');
+      }, 0);
+      return () => clearTimeout(timer);
+    } else {
+      const timer = setTimeout(() => {
+        fetchEvents();
+      }, 0);
+      return () => clearTimeout(timer);
     }
-    fetchEvents();
   }, [fetchEvents, propsEvents]);
 
   // Polling

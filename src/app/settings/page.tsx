@@ -13,6 +13,8 @@ import { acmiCall } from "@/lib/acmi-client";
 export default function Settings() {
   // Existing Settings States
   const [groqKey, setGroqKey] = useState("");
+  const [deepgramKey, setDeepgramKey] = useState("");
+  const [savedKeys, setSavedKeys] = useState(false);
   const [darkMode, setDarkMode] = useState(false);
   const [compactSidebar, setCompactSidebar] = useState(false);
 
@@ -90,6 +92,17 @@ export default function Settings() {
     }, 0);
     return () => clearTimeout(timer);
   }, [activeToken]);
+  
+  // Load AI credentials from localStorage on mount safely
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const timer = setTimeout(() => {
+        setGroqKey(window.localStorage.getItem("groq_api_key") || "");
+        setDeepgramKey(window.localStorage.getItem("deepgram_api_key") || "");
+      }, 0);
+      return () => clearTimeout(timer);
+    }
+  }, []);
 
   const handleRegisterWorkspace = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -142,6 +155,15 @@ export default function Settings() {
       window.localStorage.removeItem("acmi_token");
       setActiveToken(null);
       window.location.reload();
+    }
+  };
+
+  const handleSaveKeys = () => {
+    if (typeof window !== "undefined") {
+      window.localStorage.setItem("groq_api_key", groqKey.trim());
+      window.localStorage.setItem("deepgram_api_key", deepgramKey.trim());
+      setSavedKeys(true);
+      setTimeout(() => setSavedKeys(false), 2000);
     }
   };
 
@@ -440,13 +462,43 @@ export default function Settings() {
                   Used as the default LLM provider for the Fleet Copilot agent.
                 </p>
               </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="deepgram-key" className="text-xs font-mono font-medium text-[#2d4a3e]/80 uppercase">Deepgram API Key</Label>
+                <Input
+                  id="deepgram-key"
+                  type="password"
+                  placeholder="Insert Deepgram API Key..."
+                  value={deepgramKey}
+                  onChange={(e) => setDeepgramKey(e.target.value)}
+                  className="bg-[#faf9f5] border-[#2d4a3e]/20 focus:border-[#2d4a3e] focus:ring-1 focus:ring-[#2d4a3e] font-mono text-xs text-[#2d4a3e]"
+                />
+                <p className="text-xs text-[#2d4a3e]/50 leading-normal">
+                  Used for real-time voice streaming and speech transcription.
+                </p>
+              </div>
+
               <Button 
                 size="sm" 
-                disabled={!groqKey}
-                className="bg-[#2d4a3e] text-white hover:bg-[#1f332a] font-mono text-xs w-full cursor-pointer"
+                onClick={handleSaveKeys}
+                disabled={!groqKey && !deepgramKey}
+                className={`text-white font-mono text-xs w-full cursor-pointer transition-all duration-300 ${
+                  savedKeys 
+                    ? "bg-[#2d4a3e] border border-[#5ef2c6]/30 shadow-[0_0_8px_rgba(94,242,198,0.2)]" 
+                    : "bg-[#2d4a3e] hover:bg-[#1f332a]"
+                }`}
               >
-                <Save className="h-3.5 w-3.5 mr-1" />
-                Save Cognition Key
+                {savedKeys ? (
+                  <>
+                    <Check className="h-3.5 w-3.5 mr-1 text-[#5ef2c6] animate-pulse" />
+                    Cognition Keys Saved ✔
+                  </>
+                ) : (
+                  <>
+                    <Save className="h-3.5 w-3.5 mr-1" />
+                    Save Cognition Keys
+                  </>
+                )}
               </Button>
             </CardContent>
           </Card>

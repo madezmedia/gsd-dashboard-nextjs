@@ -39,9 +39,15 @@ export function CopilotPanel() {
     setLoading(true);
 
     try {
+      const groqApiKey = typeof window !== "undefined" ? window.localStorage.getItem("groq_api_key") || "" : "";
+      const headers: Record<string, string> = { "Content-Type": "application/json" };
+      if (groqApiKey) {
+        headers["x-groq-api-key"] = groqApiKey;
+      }
+
       const res = await fetch("/api/chat", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers,
         body: JSON.stringify({
           messages: [...messages, userMsg].map(({ role, content }) => ({ role, content })),
         }),

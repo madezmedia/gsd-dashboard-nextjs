@@ -256,11 +256,17 @@ export const AcmiSignalGauge: React.FC<AcmiSignalGaugeProps> = ({
 
   useEffect(() => {
     if (data !== undefined) {
-      setSignals(data);
-      setLoadState('loaded');
-      return;
+      const timer = setTimeout(() => {
+        setSignals(data);
+        setLoadState('loaded');
+      }, 0);
+      return () => clearTimeout(timer);
+    } else {
+      const timer = setTimeout(() => {
+        fetchSignals();
+      }, 0);
+      return () => clearTimeout(timer);
     }
-    fetchSignals();
   }, [fetchSignals, data]);
 
   // Polling

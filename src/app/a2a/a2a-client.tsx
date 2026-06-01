@@ -357,10 +357,10 @@ export default function A2AClient() {
               </div>
 
               {/* Flex columns with SVG absolute background lines */}
-              <div className="flex-1 grid grid-cols-2 gap-12 relative min-h-[400px]">
+              <div className="flex-1 grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-12 relative min-h-[400px]">
                 
                 {/* SVG Connections Layer */}
-                <svg className="absolute inset-0 w-full h-full pointer-events-none z-0">
+                <svg className="hidden lg:block absolute inset-0 w-full h-full pointer-events-none z-0">
                   <defs>
                     <marker
                       id="arrow-green"
@@ -475,7 +475,7 @@ export default function A2AClient() {
                 </div>
 
                 {/* Right Side: Active Workspace Nodes */}
-                <div className="space-y-2 z-10 flex flex-col justify-center ml-auto w-full max-w-[280px]">
+                <div className="space-y-2 z-10 flex flex-col justify-center lg:ml-auto w-full lg:max-w-[280px]">
                   <div className="font-mono text-[9px] uppercase text-[#1a1a1a]/40 border-b border-[#1a1a1a]/5 pb-1 mb-2">
                     Project Workspaces
                   </div>

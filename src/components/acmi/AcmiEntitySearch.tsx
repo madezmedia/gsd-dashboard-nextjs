@@ -254,7 +254,7 @@ export const AcmiEntitySearch: React.FC<AcmiEntitySearchProps> = ({
       {searchState === 'no_results' && (
         <div className="acmi-empty" style={{ padding: '24px' }}>
           <div className="acmi-empty-icon">🔎</div>
-          <div>No entities found for "{query}"</div>
+          <div>No entities found for &ldquo;{query}&rdquo;</div>
         </div>
       )}
 

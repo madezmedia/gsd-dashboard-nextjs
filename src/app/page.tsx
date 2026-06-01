@@ -263,145 +263,147 @@ export default function CommandCenter() {
           </CardTitle>
         </CardHeader>
         <CardContent className="p-4">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            {/* Stage 1: Ideation & Backlog */}
-            <div className="border border-[#1a1a1a]/10 bg-[#faf9f5] p-3 space-y-3">
-              <div className="border-b border-[#1a1a1a]/10 pb-1.5 flex items-center justify-between">
-                <span className="font-mono text-xs font-bold text-[#1a1a1a] uppercase tracking-wider">[01] Backlog</span>
-                <Badge variant="outline" className="text-[9px] px-1 font-mono uppercase bg-[#c4903a]/10 text-[#c4903a] border-[#c4903a]/20 rounded-none tracking-wider">
-                  {rollup.pendingWorkItems} items
-                </Badge>
-              </div>
-              <ScrollArea className="h-[250px] pr-2">
-                <div className="space-y-2">
-                  {(rollup.rawWorkItems || [])
-                    .filter((w) => w.status === "pending" || w.id.includes("web3"))
-                    .slice(0, 10)
-                    .map((w) => (
-                      <div key={w.id} className={cn("border p-2 bg-[#f4f2eb] border-[#1a1a1a]/10 rounded-none", w.owner?.toLowerCase().includes("antigravity") && "border-[#2d4a3e] bg-[#2d4a3e]/5")}>
-                        <div className="flex items-center justify-between gap-1 mb-1">
-                          <span className="font-mono text-[9px] font-bold truncate text-[#2d4a3e] uppercase tracking-wider">{w.id}</span>
-                          {w.owner?.toLowerCase().includes("antigravity") && (
-                            <span className="font-mono text-[8px] bg-[#2d4a3e] text-[#faf9f5] px-1 tracking-wider">[antigravity]</span>
-                          )}
-                        </div>
-                        <p className="text-xs font-medium text-[#1a1a1a] mb-1 line-clamp-2">{w.title}</p>
-                        <div className="flex justify-between items-center text-[9px] text-[#1a1a1a]/60 font-mono">
-                          <span>Progress: {w.progress}%</span>
-                          <span className="truncate max-w-[80px]">Owner: {w.owner?.replace("agent:", "") || "unassigned"}</span>
-                        </div>
-                      </div>
-                    ))}
-                  {(rollup.rawWorkItems || []).filter((w) => w.status === "pending" || w.id.includes("web3")).length === 0 && (
-                    <div className="text-[10px] font-mono text-[#1a1a1a]/40 text-center py-4">No items in Backlog</div>
-                  )}
+          <div className="overflow-x-auto pb-2 -mx-4 px-4 scrollbar-thin">
+            <div className="flex gap-4 min-w-[1000px] lg:min-w-0 lg:grid lg:grid-cols-4 w-full">
+              {/* Stage 1: Ideation & Backlog */}
+              <div className="border border-[#1a1a1a]/10 bg-[#faf9f5] p-3 space-y-3 w-[240px] shrink-0 lg:w-auto lg:shrink">
+                <div className="border-b border-[#1a1a1a]/10 pb-1.5 flex items-center justify-between">
+                  <span className="font-mono text-xs font-bold text-[#1a1a1a] uppercase tracking-wider">[01] Backlog</span>
+                  <Badge variant="outline" className="text-[9px] px-1 font-mono uppercase bg-[#c4903a]/10 text-[#c4903a] border-[#c4903a]/20 rounded-none tracking-wider">
+                    {rollup.pendingWorkItems} items
+                  </Badge>
                 </div>
-              </ScrollArea>
-            </div>
+                <ScrollArea className="h-[250px] pr-2">
+                  <div className="space-y-2">
+                    {(rollup.rawWorkItems || [])
+                      .filter((w) => w.status === "pending" || w.id.includes("web3"))
+                      .slice(0, 10)
+                      .map((w) => (
+                        <div key={w.id} className={cn("border p-2 bg-[#f4f2eb] border-[#1a1a1a]/10 rounded-none", w.owner?.toLowerCase().includes("antigravity") && "border-[#2d4a3e] bg-[#2d4a3e]/5")}>
+                          <div className="flex items-center justify-between gap-1 mb-1">
+                            <span className="font-mono text-[9px] font-bold truncate text-[#2d4a3e] uppercase tracking-wider">{w.id}</span>
+                            {w.owner?.toLowerCase().includes("antigravity") && (
+                              <span className="font-mono text-[8px] bg-[#2d4a3e] text-[#faf9f5] px-1 tracking-wider">[antigravity]</span>
+                            )}
+                          </div>
+                          <p className="text-xs font-medium text-[#1a1a1a] mb-1 line-clamp-2">{w.title}</p>
+                          <div className="flex justify-between items-center text-[9px] text-[#1a1a1a]/60 font-mono">
+                            <span>Progress: {w.progress}%</span>
+                            <span className="truncate max-w-[80px]">Owner: {w.owner?.replace("agent:", "") || "unassigned"}</span>
+                          </div>
+                        </div>
+                      ))}
+                    {(rollup.rawWorkItems || []).filter((w) => w.status === "pending" || w.id.includes("web3")).length === 0 && (
+                      <div className="text-[10px] font-mono text-[#1a1a1a]/40 text-center py-4">No items in Backlog</div>
+                    )}
+                  </div>
+                </ScrollArea>
+              </div>
 
-            {/* Stage 2: Active Development */}
-            <div className="border border-[#1a1a1a]/10 bg-[#faf9f5] p-3 space-y-3">
-              <div className="border-b border-[#1a1a1a]/10 pb-1.5 flex items-center justify-between">
-                <span className="font-mono text-xs font-bold text-[#1a1a1a] uppercase tracking-wider">[02] Active</span>
-                <Badge variant="outline" className="text-[9px] px-1 font-mono uppercase bg-[#2d4a3e]/10 text-[#2d4a3e] border-[#2d4a3e]/20 rounded-none tracking-wider">
-                  {rollup.activeWorkItems} items
-                </Badge>
-              </div>
-              <ScrollArea className="h-[250px] pr-2">
-                <div className="space-y-2">
-                  {(rollup.rawWorkItems || [])
-                    .filter((w) => w.status === "active" && !w.id.includes("web3"))
-                    .slice(0, 10)
-                    .map((w) => (
-                      <div key={w.id} className={cn("border p-2 bg-[#f4f2eb] border-[#1a1a1a]/10 rounded-none", w.owner?.toLowerCase().includes("antigravity") && "border-[#2d4a3e] bg-[#2d4a3e]/5")}>
-                        <div className="flex items-center justify-between gap-1 mb-1">
-                          <span className="font-mono text-[9px] font-bold truncate text-[#2d4a3e] uppercase tracking-wider">{w.id}</span>
-                          {w.owner?.toLowerCase().includes("antigravity") && (
-                            <span className="font-mono text-[8px] bg-[#2d4a3e] text-[#faf9f5] px-1 tracking-wider">[antigravity]</span>
-                          )}
-                        </div>
-                        <p className="text-xs font-medium text-[#1a1a1a] mb-1 line-clamp-2">{w.title}</p>
-                        <div className="flex justify-between items-center text-[9px] text-[#1a1a1a]/60 font-mono">
-                          <span>Progress: {w.progress}%</span>
-                          <span className="truncate max-w-[80px]">Owner: {w.owner?.replace("agent:", "") || "unassigned"}</span>
-                        </div>
-                      </div>
-                    ))}
-                  {(rollup.rawWorkItems || []).filter((w) => w.status === "active" && !w.id.includes("web3")).length === 0 && (
-                    <div className="text-[10px] font-mono text-[#1a1a1a]/40 text-center py-4">No active items</div>
-                  )}
+              {/* Stage 2: Active Development */}
+              <div className="border border-[#1a1a1a]/10 bg-[#faf9f5] p-3 space-y-3 w-[240px] shrink-0 lg:w-auto lg:shrink">
+                <div className="border-b border-[#1a1a1a]/10 pb-1.5 flex items-center justify-between">
+                  <span className="font-mono text-xs font-bold text-[#1a1a1a] uppercase tracking-wider">[02] Active</span>
+                  <Badge variant="outline" className="text-[9px] px-1 font-mono uppercase bg-[#2d4a3e]/10 text-[#2d4a3e] border-[#2d4a3e]/20 rounded-none tracking-wider">
+                    {rollup.activeWorkItems} items
+                  </Badge>
                 </div>
-              </ScrollArea>
-            </div>
+                <ScrollArea className="h-[250px] pr-2">
+                  <div className="space-y-2">
+                    {(rollup.rawWorkItems || [])
+                      .filter((w) => w.status === "active" && !w.id.includes("web3"))
+                      .slice(0, 10)
+                      .map((w) => (
+                        <div key={w.id} className={cn("border p-2 bg-[#f4f2eb] border-[#1a1a1a]/10 rounded-none", w.owner?.toLowerCase().includes("antigravity") && "border-[#2d4a3e] bg-[#2d4a3e]/5")}>
+                          <div className="flex items-center justify-between gap-1 mb-1">
+                            <span className="font-mono text-[9px] font-bold truncate text-[#2d4a3e] uppercase tracking-wider">{w.id}</span>
+                            {w.owner?.toLowerCase().includes("antigravity") && (
+                              <span className="font-mono text-[8px] bg-[#2d4a3e] text-[#faf9f5] px-1 tracking-wider">[antigravity]</span>
+                            )}
+                          </div>
+                          <p className="text-xs font-medium text-[#1a1a1a] mb-1 line-clamp-2">{w.title}</p>
+                          <div className="flex justify-between items-center text-[9px] text-[#1a1a1a]/60 font-mono">
+                            <span>Progress: {w.progress}%</span>
+                            <span className="truncate max-w-[80px]">Owner: {w.owner?.replace("agent:", "") || "unassigned"}</span>
+                          </div>
+                        </div>
+                      ))}
+                    {(rollup.rawWorkItems || []).filter((w) => w.status === "active" && !w.id.includes("web3")).length === 0 && (
+                      <div className="text-[10px] font-mono text-[#1a1a1a]/40 text-center py-4">No active items</div>
+                    )}
+                  </div>
+                </ScrollArea>
+              </div>
 
-            {/* Stage 3: Operational Review & Stalled */}
-            <div className="border border-[#1a1a1a]/10 bg-[#faf9f5] p-3 space-y-3">
-              <div className="border-b border-[#1a1a1a]/10 pb-1.5 flex items-center justify-between">
-                <span className="font-mono text-xs font-bold text-[#1a1a1a] uppercase tracking-wider">[03] Stalled</span>
-                <Badge variant="outline" className="text-[9px] px-1 font-mono uppercase bg-amber-600/10 text-amber-600 border-amber-600/20 rounded-none tracking-wider">
-                  {rollup.stalledWorkItems} items
-                </Badge>
-              </div>
-              <ScrollArea className="h-[250px] pr-2">
-                <div className="space-y-2">
-                  {(rollup.rawWorkItems || [])
-                    .filter((w) => w.status === "stalled")
-                    .slice(0, 10)
-                    .map((w) => (
-                      <div key={w.id} className={cn("border p-2 bg-[#f4f2eb] border-[#1a1a1a]/10 rounded-none", w.owner?.toLowerCase().includes("antigravity") && "border-[#2d4a3e] bg-[#2d4a3e]/5")}>
-                        <div className="flex items-center justify-between gap-1 mb-1">
-                          <span className="font-mono text-[9px] font-bold truncate text-[#2d4a3e] uppercase tracking-wider">{w.id}</span>
-                          {w.owner?.toLowerCase().includes("antigravity") && (
-                            <span className="font-mono text-[8px] bg-[#2d4a3e] text-[#faf9f5] px-1 tracking-wider">[antigravity]</span>
-                          )}
-                        </div>
-                        <p className="text-xs font-medium text-[#1a1a1a] mb-1 line-clamp-2">{w.title}</p>
-                        <div className="flex justify-between items-center text-[9px] text-[#1a1a1a]/60 font-mono">
-                          <span>Progress: {w.progress}%</span>
-                          <span className="truncate max-w-[80px]">Owner: {w.owner?.replace("agent:", "") || "unassigned"}</span>
-                        </div>
-                      </div>
-                    ))}
-                  {(rollup.rawWorkItems || []).filter((w) => w.status === "stalled").length === 0 && (
-                    <div className="text-[10px] font-mono text-[#1a1a1a]/40 text-center py-4">No stalled items</div>
-                  )}
+              {/* Stage 3: Operational Review & Stalled */}
+              <div className="border border-[#1a1a1a]/10 bg-[#faf9f5] p-3 space-y-3 w-[240px] shrink-0 lg:w-auto lg:shrink">
+                <div className="border-b border-[#1a1a1a]/10 pb-1.5 flex items-center justify-between">
+                  <span className="font-mono text-xs font-bold text-[#1a1a1a] uppercase tracking-wider">[03] Stalled</span>
+                  <Badge variant="outline" className="text-[9px] px-1 font-mono uppercase bg-amber-600/10 text-amber-600 border-amber-600/20 rounded-none tracking-wider">
+                    {rollup.stalledWorkItems} items
+                  </Badge>
                 </div>
-              </ScrollArea>
-            </div>
+                <ScrollArea className="h-[250px] pr-2">
+                  <div className="space-y-2">
+                    {(rollup.rawWorkItems || [])
+                      .filter((w) => w.status === "stalled")
+                      .slice(0, 10)
+                      .map((w) => (
+                        <div key={w.id} className={cn("border p-2 bg-[#f4f2eb] border-[#1a1a1a]/10 rounded-none", w.owner?.toLowerCase().includes("antigravity") && "border-[#2d4a3e] bg-[#2d4a3e]/5")}>
+                          <div className="flex items-center justify-between gap-1 mb-1">
+                            <span className="font-mono text-[9px] font-bold truncate text-[#2d4a3e] uppercase tracking-wider">{w.id}</span>
+                            {w.owner?.toLowerCase().includes("antigravity") && (
+                              <span className="font-mono text-[8px] bg-[#2d4a3e] text-[#faf9f5] px-1 tracking-wider">[antigravity]</span>
+                            )}
+                          </div>
+                          <p className="text-xs font-medium text-[#1a1a1a] mb-1 line-clamp-2">{w.title}</p>
+                          <div className="flex justify-between items-center text-[9px] text-[#1a1a1a]/60 font-mono">
+                            <span>Progress: {w.progress}%</span>
+                            <span className="truncate max-w-[80px]">Owner: {w.owner?.replace("agent:", "") || "unassigned"}</span>
+                          </div>
+                        </div>
+                      ))}
+                    {(rollup.rawWorkItems || []).filter((w) => w.status === "stalled").length === 0 && (
+                      <div className="text-[10px] font-mono text-[#1a1a1a]/40 text-center py-4">No stalled items</div>
+                    )}
+                  </div>
+                </ScrollArea>
+              </div>
 
-            {/* Stage 4: Production & Live */}
-            <div className="border border-[#1a1a1a]/10 bg-[#faf9f5] p-3 space-y-3">
-              <div className="border-b border-[#1a1a1a]/10 pb-1.5 flex items-center justify-between">
-                <span className="font-mono text-xs font-bold text-[#1a1a1a] uppercase tracking-wider">[04] Completed</span>
-                <Badge variant="outline" className="text-[9px] px-1 font-mono uppercase bg-[#2d4a3e]/10 text-[#2d4a3e] border-[#2d4a3e]/20 rounded-none tracking-wider">
-                  {rollup.completedWorkItems} items
-                </Badge>
-              </div>
-              <ScrollArea className="h-[250px] pr-2">
-                <div className="space-y-2">
-                  {(rollup.rawWorkItems || [])
-                    .filter((w) => w.status === "completed")
-                    .slice(0, 10)
-                    .map((w) => (
-                      <div key={w.id} className={cn("border p-2 bg-[#f4f2eb] border-[#1a1a1a]/10 rounded-none", w.owner?.toLowerCase().includes("antigravity") && "border-[#2d4a3e] bg-[#2d4a3e]/5")}>
-                        <div className="flex items-center justify-between gap-1 mb-1">
-                          <span className="font-mono text-[9px] font-bold truncate text-[#2d4a3e] uppercase tracking-wider">{w.id}</span>
-                          {w.owner?.toLowerCase().includes("antigravity") && (
-                            <span className="font-mono text-[8px] bg-[#2d4a3e] text-[#faf9f5] px-1 tracking-wider">[antigravity]</span>
-                          )}
-                        </div>
-                        <p className="text-xs font-medium text-[#1a1a1a] mb-1 line-clamp-2">{w.title}</p>
-                        <div className="flex justify-between items-center text-[9px] text-[#1a1a1a]/60 font-mono">
-                          <span>Progress: {w.progress}%</span>
-                          <span className="truncate max-w-[80px]">Owner: {w.owner?.replace("agent:", "") || "unassigned"}</span>
-                        </div>
-                      </div>
-                    ))}
-                  {(rollup.rawWorkItems || []).filter((w) => w.status === "completed").length === 0 && (
-                    <div className="text-[10px] font-mono text-[#1a1a1a]/40 text-center py-4">No completed items</div>
-                  )}
+              {/* Stage 4: Production & Live */}
+              <div className="border border-[#1a1a1a]/10 bg-[#faf9f5] p-3 space-y-3 w-[240px] shrink-0 lg:w-auto lg:shrink">
+                <div className="border-b border-[#1a1a1a]/10 pb-1.5 flex items-center justify-between">
+                  <span className="font-mono text-xs font-bold text-[#1a1a1a] uppercase tracking-wider">[04] Completed</span>
+                  <Badge variant="outline" className="text-[9px] px-1 font-mono uppercase bg-[#2d4a3e]/10 text-[#2d4a3e] border-[#2d4a3e]/20 rounded-none tracking-wider">
+                    {rollup.completedWorkItems} items
+                  </Badge>
                 </div>
-              </ScrollArea>
+                <ScrollArea className="h-[250px] pr-2">
+                  <div className="space-y-2">
+                    {(rollup.rawWorkItems || [])
+                      .filter((w) => w.status === "completed")
+                      .slice(0, 10)
+                      .map((w) => (
+                        <div key={w.id} className={cn("border p-2 bg-[#f4f2eb] border-[#1a1a1a]/10 rounded-none", w.owner?.toLowerCase().includes("antigravity") && "border-[#2d4a3e] bg-[#2d4a3e]/5")}>
+                          <div className="flex items-center justify-between gap-1 mb-1">
+                            <span className="font-mono text-[9px] font-bold truncate text-[#2d4a3e] uppercase tracking-wider">{w.id}</span>
+                            {w.owner?.toLowerCase().includes("antigravity") && (
+                              <span className="font-mono text-[8px] bg-[#2d4a3e] text-[#faf9f5] px-1 tracking-wider">[antigravity]</span>
+                            )}
+                          </div>
+                          <p className="text-xs font-medium text-[#1a1a1a] mb-1 line-clamp-2">{w.title}</p>
+                          <div className="flex justify-between items-center text-[9px] text-[#1a1a1a]/60 font-mono">
+                            <span>Progress: {w.progress}%</span>
+                            <span className="truncate max-w-[80px]">Owner: {w.owner?.replace("agent:", "") || "unassigned"}</span>
+                          </div>
+                        </div>
+                      ))}
+                    {(rollup.rawWorkItems || []).filter((w) => w.status === "completed").length === 0 && (
+                      <div className="text-[10px] font-mono text-[#1a1a1a]/40 text-center py-4">No completed items</div>
+                    )}
+                  </div>
+                </ScrollArea>
+              </div>
             </div>
           </div>
         </CardContent>

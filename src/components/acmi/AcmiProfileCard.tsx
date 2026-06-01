@@ -90,8 +90,20 @@ export const AcmiProfileCard: React.FC<AcmiProfileCardProps> = ({
   }, [namespace, id, data]);
 
   useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+    if (data) {
+      const timer = setTimeout(() => {
+        setProfile(data.profile);
+        setSignals(data.signals);
+        setLoadState('loaded');
+      }, 0);
+      return () => clearTimeout(timer);
+    } else {
+      const timer = setTimeout(() => {
+        fetchData();
+      }, 0);
+      return () => clearTimeout(timer);
+    }
+  }, [fetchData, data]);
 
   // ── Loading state ───────────────────────────────────────────────
   if (loadState === 'loading') {
