@@ -170,7 +170,31 @@ export async function acmiCall(tool: string, params: Record<string, unknown> = {
     }
   }
 
-  const res = await fetch(ACMI_PROXY, {
+  // Resolve absolute URL if on the server (relaxed read mapping)
+  let proxyUrl = ACMI_PROXY;
+  if (typeof window === "undefined") {
+    let serverBaseUrl = "http://localhost:3000";
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const { headers: nextHeaders } = require("next/headers");
+      const host = nextHeaders().get("host");
+      const protocol = host?.includes("localhost") || host?.includes("127.0.0.1") ? "http" : "https";
+      if (host) {
+        serverBaseUrl = `${protocol}://${host}`;
+      }
+    } catch (e) {
+      if (process.env.VERCEL_URL) {
+        serverBaseUrl = `https://${process.env.VERCEL_URL}`;
+      } else if (process.env.NEXT_PUBLIC_APP_URL) {
+        serverBaseUrl = process.env.NEXT_PUBLIC_APP_URL;
+      } else if (process.env.PORT) {
+        serverBaseUrl = `http://localhost:${process.env.PORT}`;
+      }
+    }
+    proxyUrl = `${serverBaseUrl}${ACMI_PROXY}`;
+  }
+
+  const res = await fetch(proxyUrl, {
     method: "POST",
     headers,
     body: JSON.stringify({ tool, params }),
@@ -962,6 +986,28 @@ export async function updateWorkItemStatus(
   }
 }
 
+export interface ACMIDashboardBootstrapPayload {
+  agents: any[];
+  workItems: any[];
+  config: Record<string, any>;
+  timeline: any[];
+  events: any[];
+  docs: any[];
+  notes: any[];
+  tasks: any[];
+}
+
+export async function fetchDashboardBootstrap(): Promise<ACMIDashboardBootstrapPayload | null> {
+  try {
+    const res = await acmiCall("acmi_dashboard_bootstrap");
+    if (!res) return null;
+    return res.result || res;
+  } catch (err) {
+    console.error("Failed to fetch dashboard bootstrap bundle:", err);
+    return null;
+  }
+}
+
 // ---------------------------------------------------------------------------
 // Mock data helpers for development/browsers (no Redis needed)
 // ---------------------------------------------------------------------------
@@ -1026,7 +1072,8 @@ export const acmiClient = {
   getSignals, getSignal, setSignal, setSignals, deleteSignal,
   appendEvent, getTimeline, catTimeline,
   getEntity, listIds,
-  createWorkItem, getWorkItem, listWorkItems, updateWorkItemStatus,
+  createWorkItem, getWorkItem, listWorkItems, updateWorkItemStatus, updateWorkItemMilestones,
+  fetchDashboardBootstrap,
   rawCommand,
   getMockBootstrap,
 };

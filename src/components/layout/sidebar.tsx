@@ -12,6 +12,11 @@ import {
   ChevronRight,
   Mic,
   Network,
+  ListTodo,
+  Notebook,
+  Folders,
+  Calendar,
+  FileCode,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -37,6 +42,36 @@ const navItems = [
     label: "Workflow Tracker",
     icon: Workflow,
     badge: "174",
+  },
+  {
+    href: "/todo",
+    label: "Todo Kanban",
+    icon: ListTodo,
+    badge: "KBN",
+  },
+  {
+    href: "/notes",
+    label: "Notes Editor",
+    icon: Notebook,
+    badge: "NOTE",
+  },
+  {
+    href: "/projects",
+    label: "Project Tracker",
+    icon: Folders,
+    badge: "PIPE",
+  },
+  {
+    href: "/calendar",
+    label: "Calendar & Events",
+    icon: Calendar,
+    badge: "CAL",
+  },
+  {
+    href: "/docs",
+    label: "Docs Outline",
+    icon: FileCode,
+    badge: "DOCS",
   },
   {
     href: "/voice",

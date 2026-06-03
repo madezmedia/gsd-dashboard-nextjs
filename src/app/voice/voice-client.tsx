@@ -95,14 +95,15 @@ async function triggerCopilotResponseOutside({
     // Add placeholder agent line
     const agentTs = Date.now();
     const time = new Date().toTimeString().split(" ")[0];
+    const rand = Math.random().toString(36).substring(2, 9);
     setTranscripts((prev) => [
       ...prev,
       {
-        id: `agt-${agentTs}`,
+        id: `agt-${agentTs}-${rand}`,
         timestamp: time,
         speaker: "AGENT",
         text: "",
-        correlationId: `voiceAgent-${agentTs}`,
+        correlationId: `voiceAgent-${agentTs}-${rand}`,
       },
     ]);
 
@@ -363,8 +364,8 @@ export default function VoiceClient() {
       };
 
       ws.onerror = (e) => {
-        console.error("WS general error:", e);
-        addSystemLog("ERROR: Deepgram WebSocket network layer error occurred.");
+        console.error("WS general error: Deepgram connection failed or handshake was rejected.", e);
+        addSystemLog("ERROR: Deepgram WebSocket connection failed. Verify your Cognition Keys in Settings.");
       };
 
       ws.onclose = () => {
@@ -422,14 +423,15 @@ export default function VoiceClient() {
   const addSystemLog = (text: string) => {
     const time = new Date().toTimeString().split(" ")[0];
     const ts = Date.now();
+    const rand = Math.random().toString(36).substring(2, 9);
     setTranscripts((prev) => [
       ...prev,
       {
-        id: `sys-${ts}`,
+        id: `sys-${ts}-${rand}`,
         timestamp: time,
         speaker: "SYSTEM",
         text,
-        correlationId: `voiceSys-${ts}`,
+        correlationId: `voiceSys-${ts}-${rand}`,
       },
     ]);
   };
@@ -437,14 +439,15 @@ export default function VoiceClient() {
   const addUserTranscript = (text: string) => {
     const time = new Date().toTimeString().split(" ")[0];
     const ts = Date.now();
+    const rand = Math.random().toString(36).substring(2, 9);
     setTranscripts((prev) => [
       ...prev,
       {
-        id: `usr-${ts}`,
+        id: `usr-${ts}-${rand}`,
         timestamp: time,
         speaker: "USER",
         text,
-        correlationId: `voiceUser-${ts}`,
+        correlationId: `voiceUser-${ts}-${rand}`,
       },
     ]);
   };
@@ -452,14 +455,15 @@ export default function VoiceClient() {
   const addAgentTranscript = (text: string) => {
     const time = new Date().toTimeString().split(" ")[0];
     const ts = Date.now();
+    const rand = Math.random().toString(36).substring(2, 9);
     setTranscripts((prev) => [
       ...prev,
       {
-        id: `agt-${ts}`,
+        id: `agt-${ts}-${rand}`,
         timestamp: time,
         speaker: "AGENT",
         text,
-        correlationId: `voiceAgent-${ts}`,
+        correlationId: `voiceAgent-${ts}-${rand}`,
       },
     ]);
   };
