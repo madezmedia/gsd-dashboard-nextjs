@@ -370,6 +370,83 @@ interface ACMIEventPayload {
   correlationId?: string;
 }
 
+// Helper to fetch details of a specific entity in a namespace
+async function getEntityData(config: TenantConfig, namespace: string, id: string) {
+  const profileCmd = ["GET", `acmi:${namespace}:${id}:profile`];
+  const signalsCmd = ["HGETALL", `acmi:${namespace}:${id}:signals`];
+  const timelineCmd = ["ZRANGE", `acmi:${namespace}:${id}:timeline`, "0", "-1", "WITHSCORES"];
+
+  let rawProfile: unknown = null;
+  let rawSignals: unknown = null;
+  let rawTimeline: unknown = null;
+
+  try {
+    const res = await executeUpstashCommand(config, profileCmd, false);
+    rawProfile = res?.result;
+  } catch {}
+
+  try {
+    const res = await executeUpstashCommand(config, signalsCmd, false);
+    rawSignals = res?.result;
+  } catch {}
+
+  try {
+    const res = await executeUpstashCommand(config, timelineCmd, false);
+    rawTimeline = res?.result;
+  } catch {}
+
+  let profileParsed: Record<string, unknown> = {};
+  if (rawProfile) {
+    try {
+      profileParsed = typeof rawProfile === "string" ? JSON.parse(rawProfile) : rawProfile;
+    } catch {
+      profileParsed = { id, name: id, role: "agent", status: "active", capabilities: [] };
+    }
+  } else {
+    profileParsed = { id, name: id, role: "agent", status: "active", capabilities: [] };
+  }
+
+  const parsedSignalsRaw = parseHGetAll(rawSignals);
+  const parsedSignals = parseSignals(parsedSignalsRaw);
+
+  const events: ACMIEventPayload[] = [];
+  if (Array.isArray(rawTimeline)) {
+    for (let i = 0; i < rawTimeline.length; i += 2) {
+      const payloadStr = rawTimeline[i];
+      const score = rawTimeline[i + 1];
+      if (payloadStr === undefined) continue;
+
+      const scoreStr = typeof score === "string" || typeof score === "number" ? String(score) : "";
+      let eventObj: ACMIEventPayload;
+      try {
+        eventObj = JSON.parse(String(payloadStr)) as ACMIEventPayload;
+      } catch {
+        eventObj = {
+          id: "evt-fallback-" + Math.random().toString(36).substring(2, 11),
+          ts: new Date(Number(scoreStr || Date.now())).toISOString(),
+          source: "system",
+          kind: "legacy-event",
+          summary: String(payloadStr),
+        };
+      }
+      events.push(eventObj);
+    }
+  }
+
+  events.sort((a, b) => {
+    const timeA = a.ts ? new Date(a.ts).getTime() : 0;
+    const timeB = b.ts ? new Date(b.ts).getTime() : 0;
+    return timeB - timeA;
+  });
+
+  return {
+    id,
+    profile: profileParsed,
+    signals: parsedSignals,
+    timeline: events,
+  };
+}
+
 export async function POST(req: NextRequest) {
   try {
     // Phase 1: Self-Healing Seed check
@@ -472,7 +549,14 @@ export async function POST(req: NextRequest) {
     const id = params?.id ? String(params.id) : undefined;
 
     // Validate ID requirement for entity-specific tools
-    if (!id && tool !== "acmi_list" && tool !== "acmi_work_list") {
+    if (
+      !id &&
+      tool !== "acmi_list" &&
+      tool !== "acmi_work_list" &&
+      tool !== "acmi_dashboard_bootstrap" &&
+      tool !== "dashboardBootstrap" &&
+      tool !== "saas_get_status"
+    ) {
       return NextResponse.json({ error: "Missing required parameter 'id'" }, { status: 400 });
     }
 
@@ -659,6 +743,106 @@ export async function POST(req: NextRequest) {
 
         await executeUpstashCommand(config, zaddCmd, true);
         return NextResponse.json({ result: "OK", success: true });
+      }
+
+      case "dashboardBootstrap":
+      case "acmi_dashboard_bootstrap": {
+        // Fetch keys for all namespaces
+        const [agentKeysRes, workKeysRes, taskKeysRes, noteKeysRes, eventKeysRes, docKeysRes] = await Promise.all([
+          executeUpstashCommand(config, ["KEYS", "acmi:agent:*:profile"], false).catch(() => ({ result: [] })),
+          executeUpstashCommand(config, ["KEYS", "acmi:work:*:profile"], false).catch(() => ({ result: [] })),
+          executeUpstashCommand(config, ["KEYS", "acmi:task:*:profile"], false).catch(() => ({ result: [] })),
+          executeUpstashCommand(config, ["KEYS", "acmi:note:*:profile"], false).catch(() => ({ result: [] })),
+          executeUpstashCommand(config, ["KEYS", "acmi:event:*:profile"], false).catch(() => ({ result: [] })),
+          executeUpstashCommand(config, ["KEYS", "acmi:doc:*:profile"], false).catch(() => ({ result: [] })),
+        ]);
+
+        const extractIds = (keysList: unknown, prefix: string): string[] => {
+          const list = Array.isArray(keysList) ? (keysList as string[]) : [];
+          return list
+            .map(k => typeof k === "string" && k.startsWith(prefix) && k.endsWith(":profile") ? k.substring(prefix.length, k.length - 8) : null)
+            .filter((val): val is string => val !== null);
+        };
+
+        const agentIds = extractIds(agentKeysRes?.result, "acmi:agent:");
+        const workIds = extractIds(workKeysRes?.result, "acmi:work:");
+        const taskIds = extractIds(taskKeysRes?.result, "acmi:task:");
+        const noteIds = extractIds(noteKeysRes?.result, "acmi:note:");
+        const eventIds = extractIds(eventKeysRes?.result, "acmi:event:");
+        const docIds = extractIds(docKeysRes?.result, "acmi:doc:");
+
+        // Detailed parallel fetching limited to safe batch sizes
+        const agents = await Promise.all(agentIds.slice(0, 10).map(id => getEntityData(config, "agent", id).catch(() => null))).then(r => r.filter(Boolean));
+        const workItems = await Promise.all(workIds.slice(0, 15).map(id => getEntityData(config, "work", id).catch(() => null))).then(r => r.filter(Boolean));
+        const tasks = await Promise.all(taskIds.slice(0, 20).map(id => getEntityData(config, "task", id).catch(() => null))).then(r => r.filter(Boolean));
+        const notes = await Promise.all(noteIds.slice(0, 20).map(id => getEntityData(config, "note", id).catch(() => null))).then(r => r.filter(Boolean));
+        const events = await Promise.all(eventIds.slice(0, 50).map(id => getEntityData(config, "event", id).catch(() => null))).then(r => r.filter(Boolean));
+        const docs = await Promise.all(docIds.slice(0, 20).map(id => getEntityData(config, "doc", id).catch(() => null))).then(r => r.filter(Boolean));
+
+        // Config fetch
+        let dashboardConfig = {};
+        try {
+          const cfgRes = await executeUpstashCommand(config, ["GET", "acmi:config:dashboard:profile"], false);
+          if (cfgRes?.result) {
+            dashboardConfig = JSON.parse(String(cfgRes.result));
+          }
+        } catch {}
+
+        // Timeline fetch (agent coordination central stream)
+        let timeline: ACMIEventPayload[] = [];
+        try {
+          const timelineCmd = ["ZRANGE", "acmi:thread:agent-coordination:timeline", "0", "-1", "WITHSCORES"];
+          const tlRes = await executeUpstashCommand(config, timelineCmd, false);
+          const rawTimeline = tlRes?.result;
+          if (Array.isArray(rawTimeline)) {
+            for (let i = 0; i < rawTimeline.length; i += 2) {
+              const payloadStr = rawTimeline[i];
+              const score = rawTimeline[i + 1];
+              if (payloadStr === undefined) continue;
+
+              const scoreStr = typeof score === "string" || typeof score === "number" ? String(score) : "";
+              let eventObj: ACMIEventPayload;
+              try {
+                eventObj = JSON.parse(String(payloadStr)) as ACMIEventPayload;
+              } catch {
+                eventObj = {
+                  id: "evt-fallback-" + Math.random().toString(36).substring(2, 11),
+                  ts: new Date(Number(scoreStr || Date.now())).toISOString(),
+                  source: "system",
+                  kind: "legacy-event",
+                  summary: String(payloadStr),
+                };
+              }
+              timeline.push(eventObj);
+            }
+          }
+          timeline.sort((a, b) => {
+            const timeA = a.ts ? new Date(a.ts).getTime() : 0;
+            const timeB = b.ts ? new Date(b.ts).getTime() : 0;
+            return timeB - timeA;
+          });
+        } catch {}
+
+        return NextResponse.json({
+          agents,
+          workItems,
+          config: dashboardConfig,
+          timeline: timeline.slice(0, 50),
+          events,
+          docs,
+          notes,
+          tasks,
+          result: {
+            agents,
+            workItems,
+            config: dashboardConfig,
+            timeline: timeline.slice(0, 50),
+            events,
+            docs,
+            notes,
+            tasks,
+          }
+        });
       }
 
       case "saas_get_status": {
