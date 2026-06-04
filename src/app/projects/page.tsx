@@ -16,9 +16,10 @@ import {
   Loader2,
   DollarSign,
   Briefcase,
+  RefreshCw,
 } from "lucide-react";
-import { cn } from "@/lib/utils";
-import { acmiClient } from "@/lib/acmi-client";
+import { cn, formatRelativeTime } from "@/lib/utils";
+import { acmiClient, DEFAULT_MILESTONES, fetchWorkItemTimeline, type ACMIEvent } from "@/lib/acmi-client";
 
 interface ProjectItem {
   id: string;
@@ -111,6 +112,22 @@ export default function ProjectsPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [syncingStatus, setSyncingStatus] = useState<string | null>(null);
 
+  const [projectTimelines, setProjectTimelines] = useState<Record<string, ACMIEvent[]>>({});
+  const [loadingTimelines, setLoadingTimelines] = useState<Record<string, boolean>>({});
+  const [expandedEvents, setExpandedEvents] = useState<Record<string, boolean>>({});
+
+  const loadTimeline = async (projectId: string) => {
+    setLoadingTimelines((prev) => ({ ...prev, [projectId]: true }));
+    try {
+      const timeline = await fetchWorkItemTimeline(projectId);
+      setProjectTimelines((prev) => ({ ...prev, [projectId]: timeline }));
+    } catch (err) {
+      console.error(`Failed to load timeline for ${projectId}:`, err);
+    } finally {
+      setLoadingTimelines((prev) => ({ ...prev, [projectId]: false }));
+    }
+  };
+
   // Load projects from ACMI bootstrap or fallbacks
   const loadData = async () => {
     setLoading(true);
@@ -143,7 +160,7 @@ export default function ProjectsPage() {
             status,
             owner: profile.owner || "@unassigned",
             progress: signals.progress ? parseInt(String(signals.progress)) || 0 : 0,
-            milestones: profile.milestones || ["Kickoff", "Design", "Implementation", "Shipping"],
+            milestones: profile.milestones || DEFAULT_MILESTONES,
             completedMilestones: Array.isArray(completed) ? completed : [],
             pipelineValue: profile.value || "$1.0k",
             description: profile.description || "ACMI synchronized workload project.",
@@ -386,7 +403,13 @@ export default function ProjectsPage() {
                   >
                     {/* Summary Row */}
                     <div
-                      onClick={() => setExpandedProjectId(isExpanded ? null : project.id)}
+                      onClick={() => {
+                        const nextId = isExpanded ? null : project.id;
+                        setExpandedProjectId(nextId);
+                        if (nextId) {
+                          loadTimeline(nextId);
+                        }
+                      }}
                       className={cn(
                         "p-4 cursor-pointer flex flex-col justify-between h-full select-none hover:bg-[#1a1a1a]/2",
                         isExpanded && "border-b border-[#1a1a1a]/10 bg-[#f4f2eb]/50"
@@ -486,6 +509,106 @@ export default function ProjectsPage() {
                               </label>
                             );
                           })}
+                        </div>
+
+                        {/* Live Audit Trail Log Panel */}
+                        <div className="pt-3 border-t border-[#1a1a1a]/10 space-y-3">
+                          <div className="flex items-center justify-between">
+                            <h4 className="font-bold text-2xs uppercase text-[#1a1a1a]/60 flex items-center gap-1">
+                              <Clock className="w-3.5 h-3.5 text-[#2d4a3e]" /> Live Audit Trail
+                            </h4>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                loadTimeline(project.id);
+                              }}
+                              disabled={loadingTimelines[project.id]}
+                              className="text-[9px] font-mono uppercase text-[#2d4a3e] hover:underline flex items-center gap-1 font-bold"
+                            >
+                              <RefreshCw className={cn("w-2.5 h-2.5", loadingTimelines[project.id] && "animate-spin")} />
+                              REFRESH
+                            </button>
+                          </div>
+
+                          {loadingTimelines[project.id] && !projectTimelines[project.id] ? (
+                            <div className="flex items-center justify-center py-6 text-[10px] font-mono uppercase text-[#1a1a1a]/40 gap-2">
+                              <Loader2 className="w-3.5 h-3.5 animate-spin text-[#2d4a3e]" />
+                              Retrieving work logs...
+                            </div>
+                          ) : (
+                            <div className="max-h-48 overflow-y-auto border border-[#1a1a1a]/10 bg-[#f4f2eb]/40 p-2 space-y-2 rounded-none">
+                              {projectTimelines[project.id] && projectTimelines[project.id].length > 0 ? (
+                                projectTimelines[project.id].map((evt, idx) => {
+                                  const eventTs = evt.ts ? (typeof evt.ts === "number" ? evt.ts : new Date(evt.ts).getTime()) : Date.now();
+                                  const formattedTime = formatRelativeTime(eventTs);
+                                  
+                                  const isSystem = evt.source.includes("system") || evt.source.includes("acmi-client");
+                                  const isMilestone = evt.summary.includes("[milestone") || evt.summary.includes("[milestone-completed]") || evt.kind === "work-created";
+                                  const isError = evt.kind?.includes("error") || evt.summary.toLowerCase().includes("fail") || evt.summary.toLowerCase().includes("error");
+
+                                  const borderStyle = isError
+                                    ? "border-[#9c3e3e]/30 bg-[#9c3e3e]/2 text-[#9c3e3e]"
+                                    : isMilestone
+                                    ? "border-[#2d4a3e]/30 bg-[#2d4a3e]/2 text-[#2d4a3e]"
+                                    : isSystem
+                                    ? "border-[#1a1a1a]/15 bg-[#1a1a1a]/2 text-[#1a1a1a]/60"
+                                    : "border-[#c4903a]/30 bg-[#c4903a]/2 text-[#c4903a]";
+
+                                  const dotColor = isError
+                                    ? "bg-[#9c3e3e]"
+                                    : isMilestone
+                                    ? "bg-[#2d4a3e]"
+                                    : isSystem
+                                    ? "bg-[#1a1a1a]/40"
+                                    : "bg-[#c4903a]";
+
+                                  const isEvtExpanded = !!expandedEvents[`${project.id}-${evt.id || idx}`];
+
+                                  return (
+                                    <div key={evt.id || idx} className="border border-[#1a1a1a]/5 bg-[#faf9f5] p-2 space-y-1 rounded-none text-[10px]">
+                                      <div className="flex items-center justify-between text-[8px] gap-2">
+                                        <div className="flex items-center gap-1 flex-wrap">
+                                          <span className={cn("h-1 w-1 rounded-full shrink-0", dotColor)} />
+                                          <span className="font-bold text-[#1a1a1a]/80 uppercase">
+                                            [{evt.source || "agent"}]
+                                          </span>
+                                          <span className={cn("px-1 py-0.2 border text-[6px] font-bold uppercase tracking-wider", borderStyle)}>
+                                            {evt.kind || "event"}
+                                          </span>
+                                        </div>
+                                        <span className="text-[#1a1a1a]/40 uppercase shrink-0">
+                                          {formattedTime}
+                                        </span>
+                                      </div>
+                                      <p className="text-[#1a1a1a]/85 leading-normal break-words font-mono text-[10px]">
+                                        {evt.summary}
+                                      </p>
+                                      
+                                      {evt.payload && (
+                                        <div className="pt-1 border-t border-[#1a1a1a]/5 flex flex-col items-start">
+                                          <button
+                                            onClick={() => setExpandedEvents(prev => ({ ...prev, [`${project.id}-${evt.id || idx}`]: !isEvtExpanded }))}
+                                            className="text-[8px] font-mono uppercase text-[#2d4a3e] hover:text-[#2d4a3e]/80 flex items-center gap-0.5 font-bold"
+                                          >
+                                            {isEvtExpanded ? "[-] Hide Payload" : "[+] Inspect Payload"}
+                                          </button>
+                                          {isEvtExpanded && (
+                                            <pre className="mt-1 w-full bg-[#1a1a1a] text-[#f4f2eb] border border-[#1a1a1a]/10 p-1.5 font-mono text-[9px] overflow-x-auto rounded-none">
+                                              {JSON.stringify(evt.payload, null, 2)}
+                                            </pre>
+                                          )}
+                                        </div>
+                                      )}
+                                    </div>
+                                  );
+                                })
+                              ) : (
+                                <p className="text-[10px] font-mono text-[#1a1a1a]/40 text-center py-4 uppercase">
+                                  No event telemetry cached.
+                                </p>
+                              )}
+                            </div>
+                          )}
                         </div>
 
                         {/* Status override trigger panel */}

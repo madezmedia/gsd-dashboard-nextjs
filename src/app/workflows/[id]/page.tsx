@@ -3,7 +3,7 @@
 import { useEffect, useState, use, Suspense } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { ArrowLeft, CheckCircle2, Circle, AlertTriangle, RefreshCw } from "lucide-react";
+import { ArrowLeft, CheckCircle2, Circle, AlertTriangle, RefreshCw, Clock, ChevronDown, ChevronRight } from "lucide-react";
 import { fetchWorkItem, updateWorkItemStatus, type ACMIWorkItem } from "@/lib/acmi-client";
 import { cn, formatRelativeTime } from "@/lib/utils";
 
@@ -32,6 +32,7 @@ function WorkflowTraceContent({ id }: { id: string }) {
   const [isUpdating, setIsUpdating] = useState(false);
   const [showToast, setShowShowToast] = useState(false);
   const [isPolling, setIsPolling] = useState(false);
+  const [expandedEvents, setExpandedEvents] = useState<Record<string, boolean>>({});
   const searchParams = useSearchParams();
   const token = searchParams.get("token");
 
@@ -230,6 +231,101 @@ function WorkflowTraceContent({ id }: { id: string }) {
           </div>
         </div>
       )}
+
+      {/* Dynamic Trace Timeline */}
+      <div className="border border-[#1a1a1a]/15 bg-[#f4f2eb] p-5 shadow-sm space-y-4">
+        <div className="flex items-center justify-between border-b border-[#1a1a1a]/10 pb-2">
+          <h3 className="font-mono text-xs font-bold uppercase text-[#1a1a1a]/50 tracking-wider flex items-center gap-1.5">
+            <Clock className="h-3.5 w-3.5" /> Workspace Event logs
+          </h3>
+          <span className="font-mono text-[9px] uppercase bg-[#1a1a1a]/5 px-2 py-0.5 border border-[#1a1a1a]/10 text-[#1a1a1a]/60">
+            {item.timeline?.length || 0} Events Logged
+          </span>
+        </div>
+
+        <div className="space-y-3 pt-1">
+          {item.timeline && item.timeline.length > 0 ? (
+            item.timeline.map((evt, i) => {
+              const isExpanded = !!expandedEvents[evt.id];
+              const eventTs = evt.ts ? (typeof evt.ts === "number" ? evt.ts : new Date(evt.ts).getTime()) : Date.now();
+              const formattedTime = formatRelativeTime(eventTs);
+              
+              // Custom colors based on event source or summary content
+              const isSystem = evt.source.includes("system") || evt.source.includes("acmi-client");
+              const isMilestone = evt.summary.includes("[milestone") || evt.summary.includes("[milestone-completed]") || evt.kind === "work-created" || evt.summary.includes("[milestone-completed] ");
+              const isError = evt.kind?.includes("error") || evt.summary.toLowerCase().includes("fail") || evt.summary.toLowerCase().includes("error");
+
+              const borderStyle = isError
+                ? "border-[#9c3e3e]/30 bg-[#9c3e3e]/2 text-[#9c3e3e]"
+                : isMilestone
+                ? "border-[#2d4a3e]/30 bg-[#2d4a3e]/2 text-[#2d4a3e]"
+                : isSystem
+                ? "border-[#1a1a1a]/15 bg-[#1a1a1a]/2 text-[#1a1a1a]/60"
+                : "border-[#c4903a]/30 bg-[#c4903a]/2 text-[#c4903a]";
+
+              const dotColor = isError
+                ? "bg-[#9c3e3e]"
+                : isMilestone
+                ? "bg-[#2d4a3e]"
+                : isSystem
+                ? "bg-[#1a1a1a]/40"
+                : "bg-[#c4903a]";
+
+              return (
+                <div key={evt.id || i} className="border border-[#1a1a1a]/10 bg-[#faf9f5] rounded-none p-3.5 space-y-2">
+                  <div className="flex flex-wrap items-start justify-between gap-2 font-mono text-[10px]">
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <span className={cn("h-1.5 w-1.5 rounded-full shrink-0", dotColor)} />
+                      <span className="font-bold text-[#1a1a1a] uppercase">
+                        [{evt.source || "agent"}]
+                      </span>
+                      <span className={cn("px-1.5 py-0.5 border text-[8px] font-bold uppercase tracking-wider", borderStyle)}>
+                        {evt.kind || "event"}
+                      </span>
+                    </div>
+                    <span className="text-[#1a1a1a]/40 uppercase shrink-0">
+                      {formattedTime}
+                    </span>
+                  </div>
+
+                  <p className="font-mono text-xs text-[#1a1a1a]/85 leading-relaxed break-words">
+                    {evt.summary}
+                  </p>
+
+                  {evt.payload && (
+                    <div className="pt-1.5 border-t border-[#1a1a1a]/5 flex flex-col items-start">
+                      <button
+                        onClick={() => setExpandedEvents(prev => ({ ...prev, [evt.id || i]: !isExpanded }))}
+                        className="text-[9px] font-mono uppercase text-[#2d4a3e] hover:text-[#2d4a3e]/80 flex items-center gap-1 font-bold"
+                      >
+                        {isExpanded ? (
+                          <>
+                            <ChevronDown className="h-3 w-3" /> Hide Payload
+                          </>
+                        ) : (
+                          <>
+                            <ChevronRight className="h-3 w-3" /> Inspect Payload
+                          </>
+                        )}
+                      </button>
+                      
+                      {isExpanded && (
+                        <pre className="mt-2 w-full bg-[#1a1a1a] text-[#f4f2eb] border border-[#1a1a1a]/10 p-2.5 font-mono text-[10px] overflow-x-auto rounded-none">
+                          {JSON.stringify(evt.payload, null, 2)}
+                        </pre>
+                      )}
+                    </div>
+                  )}
+                </div>
+              );
+            })
+          ) : (
+            <p className="font-mono text-xs text-[#1a1a1a]/40 text-center py-6 uppercase">
+              No runtime trace telemetry received for this workspace.
+            </p>
+          )}
+        </div>
+      </div>
     </div>
   );
 }

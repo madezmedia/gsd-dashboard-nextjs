@@ -44,6 +44,7 @@ export interface ACMIEvent {
   kind: string;
   summary: string;
   correlationId?: string;
+  payload?: any;
 }
 
 export interface ACMISignal {
@@ -60,6 +61,8 @@ export interface ACMIBootstrap {
   rollup: Record<string, unknown>;
 }
 
+export const DEFAULT_MILESTONES = ["Kickoff", "Design", "Implementation", "Shipping"];
+
 export interface ACMIWorkItem {
   id: string;
   title: string;
@@ -69,6 +72,7 @@ export interface ACMIWorkItem {
   stages?: { name: string; done: boolean }[];
   createdAt?: string;
   updatedAt?: string;
+  timeline?: ACMIEvent[];
 }
 
 export interface ACMIDashboardRollup {
@@ -653,7 +657,9 @@ export async function fetchWorkItems(): Promise<ACMIWorkItem[]> {
         }
       }
 
-      const milestones: string[] = profile?.milestones || [];
+      const milestones: string[] = profile?.milestones && profile.milestones.length > 0
+        ? profile.milestones
+        : DEFAULT_MILESTONES;
       const stages = milestones.map((m: string) => ({
         name: m,
         done: completedMilestones.includes(m),
@@ -709,8 +715,68 @@ export async function updateWorkItemMilestones(
 }
 
 export async function fetchWorkItem(id: string): Promise<ACMIWorkItem | null> {
-  const items = await fetchWorkItems();
-  return items.find(w => w.id === id) || null;
+  try {
+    const workData = await acmiCall("acmi_get", { namespace: "work", id });
+    const profile = workData?.profile;
+    if (!profile) return null;
+
+    const signals = workData?.signals || {};
+    const timeline = workData?.timeline || [];
+
+    const title = profile?.title || id;
+    const rawStatus = signals?.status || profile?.status || "active";
+    const status = (rawStatus === "active" || rawStatus === "stalled" || rawStatus === "completed" || rawStatus === "pending")
+      ? rawStatus as ACMIWorkItem["status"]
+      : "active";
+
+    let completedMilestones: string[] = [];
+    if (signals?.completed_milestones) {
+      try {
+        completedMilestones = typeof signals.completed_milestones === "string"
+          ? JSON.parse(signals.completed_milestones)
+          : signals.completed_milestones;
+        if (!Array.isArray(completedMilestones)) {
+          completedMilestones = [];
+        }
+      } catch {
+        completedMilestones = [];
+      }
+    }
+
+    const milestones: string[] = profile?.milestones && profile.milestones.length > 0
+      ? profile.milestones
+      : DEFAULT_MILESTONES;
+
+    const stages = milestones.map((m: string) => ({
+      name: m,
+      done: completedMilestones.includes(m),
+    }));
+
+    return {
+      id,
+      title,
+      status,
+      owner: profile?.owner || profile?.team?.lead || "unassigned",
+      progress: signals?.progress ? parseInt(String(signals.progress)) || 0 : 0,
+      stages,
+      createdAt: profile?.timeline?.created,
+      updatedAt: profile?.timeline?.updated || profile?.timeline?.target,
+      timeline,
+    };
+  } catch (err) {
+    console.error(`Error in fetchWorkItem for ${id}:`, err);
+    return null;
+  }
+}
+
+export async function fetchWorkItemTimeline(id: string): Promise<ACMIEvent[]> {
+  try {
+    const workData = await acmiCall("acmi_get", { namespace: "work", id });
+    return workData?.timeline || [];
+  } catch (err) {
+    console.error(`Error in fetchWorkItemTimeline for ${id}:`, err);
+    return [];
+  }
 }
 
 export async function fetchApprovals(): Promise<
