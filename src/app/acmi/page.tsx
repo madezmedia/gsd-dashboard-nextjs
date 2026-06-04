@@ -84,8 +84,14 @@ export default function AcmiDashboardPage() {
             </span>
           </div>
           <h1 className="text-2xl font-bold text-[#0f2a2e] flex items-center gap-2">
-            <Activity className="h-6 w-6 text-[#2d4a3e]" />
-            ACMI Fleet Operations Cockpit
+            <div className="flex items-center gap-2">
+              <Activity className="h-6 w-6 text-[#2d4a3e]" />
+              ACMI Fleet Operations Cockpit
+            </div>
+            <div className="flex items-center gap-2 mt-1">
+              <a href="/acmi/pipeline" className="text-[10px] px-2 py-1 rounded bg-[#2d4a3e]/10 hover:bg-[#2d4a3e]/20 text-[#2d4a3e] transition-colors">Pipeline</a>
+              <a href="/acmi/roundtable" className="text-[10px] px-2 py-1 rounded bg-[#2d4a3e]/10 hover:bg-[#2d4a3e]/20 text-[#2d4a3e] transition-colors">Roundtable</a>
+            </div>
           </h1>
           <p className="text-sm text-[#2d4a3e]/60 mt-1 max-w-2xl">
             Real-time telemetry and state synchronization over the ACMI Super Bus. High-density coordination across autonomous agents.
