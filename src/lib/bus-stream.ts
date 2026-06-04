@@ -14,7 +14,7 @@ export interface BusEvent {
 type BusEventHandler = (event: BusEvent) => void;
 type BusStatusHandler = (status: "connected" | "disconnected" | "error", error?: string) => void;
 
-const BUS_URL = "https://gsd-dashboard-pi.vercel.app/api/bus/stream";
+const BUS_URL = "/api/bus/proxy";
 
 class BusStreamManager {
   private eventSource: EventSource | null = null;
