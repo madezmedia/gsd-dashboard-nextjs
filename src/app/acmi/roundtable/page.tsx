@@ -68,11 +68,9 @@ export default function RoundtablePage() {
             return (
               <AcmiProfileCard
                 key={id}
-                agentId={id}
-                profile={data?.profile || {}}
-                signals={data?.signals || {}}
-                lastActivity={ts ? timeSince(ts) : "never"}
-                statusColor={hrs < 1 ? "emerald" : hrs < 6 ? "amber" : hrs < 24 ? "red" : "gray"}
+                namespace="agent"
+                id={id}
+                data={{ profile: data?.profile || {}, signals: data?.signals || {} }}
               />
             );
           })}
@@ -87,7 +85,7 @@ export default function RoundtablePage() {
               <div key={i} className="flex items-start gap-2 text-xs text-[#2d4a3e]/60 py-1.5 border-b border-[#2d4a3e]/5">
                 <Circle className="w-1.5 h-1.5 mt-1 shrink-0 text-[#5ef2c6]" />
                 <span className="shrink-0 font-mono text-[#2d4a3e]/40">{ev.source?.replace("agent:", "") || "?"}</span>
-                <span className="line-clamp-1">{(ev as Record<string, unknown>).summary as string || "—"}</span>
+                <span className="line-clamp-1">{(ev as unknown as Record<string, unknown>).summary as string || "—"}</span>
               </div>
             ))}
           </div>
