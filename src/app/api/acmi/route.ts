@@ -373,7 +373,7 @@ interface ACMIEventPayload {
 // Helper to fetch details of a specific entity in a namespace
 async function getEntityData(config: TenantConfig, namespace: string, id: string) {
   const profileCmd = ["GET", `acmi:${namespace}:${id}:profile`];
-  const signalsCmd = ["HGETALL", `acmi:${namespace}:${id}:signals`];
+  const signalsCmd = ["GET", `acmi:${namespace}:${id}:signals`];
   const timelineCmd = ["ZRANGE", `acmi:${namespace}:${id}:timeline`, "0", "-1", "WITHSCORES"];
 
   let rawProfile: unknown = null;
@@ -406,8 +406,14 @@ async function getEntityData(config: TenantConfig, namespace: string, id: string
     profileParsed = { id, name: id, role: "agent", status: "active", capabilities: [] };
   }
 
-  const parsedSignalsRaw = parseHGetAll(rawSignals);
-  const parsedSignals = parseSignals(parsedSignalsRaw);
+  let parsedSignals: Record<string, unknown> = {};
+  if (rawSignals) {
+    try {
+      parsedSignals = typeof rawSignals === 'string' ? JSON.parse(rawSignals) : (rawSignals as Record<string, unknown>);
+    } catch {
+      parsedSignals = {};
+    }
+  }
 
   const events: ACMIEventPayload[] = [];
   if (Array.isArray(rawTimeline)) {
