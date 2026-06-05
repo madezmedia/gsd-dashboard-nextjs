@@ -591,7 +591,7 @@ export async function POST(req: NextRequest) {
       case "acmi_get":
       case "acmi_work_get": {
         const profileCmd = ["GET", `acmi:${namespace}:${id}:profile`];
-        const signalsCmd = ["HGETALL", `acmi:${namespace}:${id}:signals`];
+        const signalsCmd = ["GET", `acmi:${namespace}:${id}:signals`];
         const timelineCmd = ["ZRANGE", `acmi:${namespace}:${id}:timeline`, "0", "-1", "WITHSCORES"];
 
         let rawProfile: unknown = null;
@@ -632,9 +632,17 @@ export async function POST(req: NextRequest) {
           profileParsed = { id, name: id, role: "agent", status: "active", capabilities: [] };
         }
 
-        // Signals Parser (HGETALL flat array to object + auto-deserialize strings of JSON)
-        const parsedSignalsRaw = parseHGetAll(rawSignals);
-        const parsedSignals = parseSignals(parsedSignalsRaw);
+        // Signals Parser (GET returns JSON string)
+        let parsedSignals: Record<string, unknown> = {};
+        if (rawSignals && typeof rawSignals === "string") {
+          try {
+            parsedSignals = JSON.parse(rawSignals) as Record<string, unknown>;
+          } catch {
+            parsedSignals = {};
+          }
+        } else if (rawSignals && typeof rawSignals === "object") {
+          parsedSignals = rawSignals as Record<string, unknown>;
+        }
 
         // Timeline WITHSCORES Parser (Try parsing; apply fallback event format if fails)
         const events: ACMIEventPayload[] = [];
