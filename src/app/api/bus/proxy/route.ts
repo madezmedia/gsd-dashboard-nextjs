@@ -33,11 +33,7 @@ async function resolveTenantConfig(token: string | null): Promise<TenantConfig> 
   }
 
   if (!token) {
-    // If no token and we are in dev mode, fallback to central. Otherwise reject.
-    if (process.env.NODE_ENV === "development") {
-      return { url: CENTRAL_URL, token: CENTRAL_TOKEN, isCustom: false };
-    }
-    throw new Error("Missing authentication token");
+    return { url: CENTRAL_URL, token: CENTRAL_TOKEN, isCustom: false };
   }
 
   // If token is "default_token", map to central config
