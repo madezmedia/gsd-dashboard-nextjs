@@ -121,7 +121,7 @@ export default function CalendarPage() {
 
   // Current calendar navigation date
   const [currentDate, setCurrentDate] = useState<Date>(() => {
-    return new Date(2026, 4, 1); // May 2026 (index 4)
+    return new Date(); // Current date dynamically
   });
 
   const [events, setEvents] = useState<CalendarEvent[]>([]);
@@ -349,7 +349,7 @@ export default function CalendarPage() {
   };
 
   const setToday = () => {
-    setCurrentDate(new Date(2026, 4, 1));
+    setCurrentDate(new Date());
   };
 
   const getDaysInMonth = (year: number, month: number) => {
