@@ -378,7 +378,7 @@ async function getEntityData(config: TenantConfig, namespace: string, id: string
 
   let rawProfile: unknown = null;
   let rawSignals: unknown = null;
-  let rawTimeline: unknown = null;
+  let rawTimeline: any = null;
 
   try {
     const res = await executeUpstashCommand(config, profileCmd, false);
@@ -394,6 +394,28 @@ async function getEntityData(config: TenantConfig, namespace: string, id: string
     const res = await executeUpstashCommand(config, timelineCmd, false);
     rawTimeline = res?.result;
   } catch {}
+
+  // Relaxed Read Policy: Fallback to GET if ZRANGE failed or didn't return an array
+  if (!rawTimeline || !Array.isArray(rawTimeline)) {
+    try {
+      const getRes = await executeUpstashCommand(config, ["GET", `acmi:${namespace}:${id}:timeline`], false);
+      const strVal = getRes?.result;
+      if (typeof strVal === "string" && strVal.trim().startsWith("[")) {
+        const parsed = JSON.parse(strVal);
+        if (Array.isArray(parsed)) {
+          rawTimeline = [];
+          for (const ev of parsed) {
+            if (ev && typeof ev === "object") {
+              const ts = ev.ts || Date.now();
+              rawTimeline.push(JSON.stringify(ev), String(ts));
+            }
+          }
+        }
+      }
+    } catch (e) {
+      console.warn(`[acmi-client] getEntityData GET fallback failed for ${namespace}:${id}:`, e);
+    }
+  }
 
   let profileParsed: Record<string, unknown> = {};
   if (rawProfile) {
@@ -596,7 +618,7 @@ export async function POST(req: NextRequest) {
 
         let rawProfile: unknown = null;
         let rawSignals: unknown = null;
-        let rawTimeline: unknown = null;
+        let rawTimeline: any = null;
 
         // Fetch each piece individually with robust error handling for maximum flexibility (relaxed read)
         try {
@@ -618,6 +640,28 @@ export async function POST(req: NextRequest) {
           rawTimeline = res?.result;
         } catch {
           console.error(`Failed to fetch timeline for ${id}`);
+        }
+
+        // Relaxed Read Policy: Fallback to GET if ZRANGE failed or didn't return an array
+        if (!rawTimeline || !Array.isArray(rawTimeline)) {
+          try {
+            const getRes = await executeUpstashCommand(config, ["GET", `acmi:${namespace}:${id}:timeline`], false);
+            const strVal = getRes?.result;
+            if (typeof strVal === "string" && strVal.trim().startsWith("[")) {
+              const parsed = JSON.parse(strVal);
+              if (Array.isArray(parsed)) {
+                rawTimeline = [];
+                for (const ev of parsed) {
+                  if (ev && typeof ev === "object") {
+                    const ts = ev.ts || Date.now();
+                    rawTimeline.push(JSON.stringify(ev), String(ts));
+                  }
+                }
+              }
+            }
+          } catch (e) {
+            console.warn(`[acmi-client] acmi_get GET fallback failed for ${namespace}:${id}:`, e);
+          }
         }
 
         // Profile Parser (Try parsing stringified JSON; construct default if missing/failed)
@@ -807,7 +851,30 @@ export async function POST(req: NextRequest) {
         try {
           const timelineCmd = ["ZRANGE", "acmi:thread:agent-coordination:timeline", "0", "-1", "WITHSCORES"];
           const tlRes = await executeUpstashCommand(config, timelineCmd, false);
-          const rawTimeline = tlRes?.result;
+          let rawTimeline: any = tlRes?.result;
+
+          // Relaxed Read Policy: Fallback to GET if ZRANGE failed or didn't return an array
+          if (!rawTimeline || !Array.isArray(rawTimeline)) {
+            try {
+              const getRes = await executeUpstashCommand(config, ["GET", "acmi:thread:agent-coordination:timeline"], false);
+              const strVal = getRes?.result;
+              if (typeof strVal === "string" && strVal.trim().startsWith("[")) {
+                const parsed = JSON.parse(strVal);
+                if (Array.isArray(parsed)) {
+                  rawTimeline = [];
+                  for (const ev of parsed) {
+                    if (ev && typeof ev === "object") {
+                      const ts = ev.ts || Date.now();
+                      rawTimeline.push(JSON.stringify(ev), String(ts));
+                    }
+                  }
+                }
+              }
+            } catch (e) {
+              console.warn("[bus-proxy] bootstrap timeline GET fallback failed:", e);
+            }
+          }
+
           if (Array.isArray(rawTimeline)) {
             for (let i = 0; i < rawTimeline.length; i += 2) {
               const payloadStr = rawTimeline[i];
