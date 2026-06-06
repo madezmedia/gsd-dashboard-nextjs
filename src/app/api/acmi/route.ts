@@ -798,8 +798,12 @@ export async function POST(req: NextRequest) {
         const payloadStr = JSON.stringify(payload);
         const scoreStr = String(ts);
         const zaddCmd = ["ZADD", `acmi:${namespace}:${id}:timeline`, scoreStr, payloadStr];
+        const zaddBusCmd = ["ZADD", "acmi:bus:relay:events", scoreStr, payloadStr];
 
-        await executeUpstashCommand(config, zaddCmd, true);
+        await Promise.all([
+          executeUpstashCommand(config, zaddCmd, true),
+          executeUpstashCommand(config, zaddBusCmd, true),
+        ]);
         return NextResponse.json({ result: "OK", success: true });
       }
 
