@@ -23,6 +23,8 @@ class BusStreamManager {
   private reconnectTimeout: ReturnType<typeof setTimeout> | null = null;
   private isConnected = false;
 
+  private lastTs = 0;
+
   subscribe(onEvent: BusEventHandler, onStatus?: BusStatusHandler): () => void {
     this.listeners.add(onEvent);
     if (onStatus) this.statusListeners.add(onStatus);
@@ -44,9 +46,7 @@ class BusStreamManager {
   private connect() {
     if (this.eventSource) return;
 
-    const since = typeof window !== "undefined"
-      ? localStorage.getItem("acmi:bus:lastTs") || Date.now().toString()
-      : Date.now().toString();
+    const since = this.lastTs > 0 ? this.lastTs.toString() : "0";
 
     const token = typeof window !== "undefined"
       ? localStorage.getItem("acmi_token") || new URLSearchParams(window.location.search).get("token") || ""
@@ -64,8 +64,8 @@ class BusStreamManager {
       this.eventSource.onmessage = (e: MessageEvent) => {
         try {
           const event: BusEvent = JSON.parse(e.data);
-          if (typeof window !== "undefined") {
-            localStorage.setItem("acmi:bus:lastTs", String(event.ts));
+          if (event.ts && event.ts > this.lastTs) {
+            this.lastTs = event.ts;
           }
           this.listeners.forEach((fn) => fn(event));
         } catch {

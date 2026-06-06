@@ -61,7 +61,7 @@ export default function RoundtablePage() {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
           {AGENT_IDS.map((id) => {
             const data = profiles[id];
-            const lastEvent = data?.timeline_recent?.[data.timeline_recent.length - 1];
+            const lastEvent = data?.timeline_recent?.[0];
             const ts = lastEvent?.ts;
             const hrs = ts ? (Date.now() - ts) / 3600000 : 999;
 

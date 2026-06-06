@@ -17,6 +17,7 @@ import {
   Folders,
   Calendar,
   FileCode,
+  Activity,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -30,6 +31,12 @@ const navItems = [
     label: "Command Center",
     icon: LayoutDashboard,
     badge: "LIVE",
+  },
+  {
+    href: "/acmi",
+    label: "ACMI Fleet Cockpit",
+    icon: Activity,
+    badge: "BUS",
   },
   {
     href: "/agents",

@@ -58,7 +58,7 @@ export default function PipelinePage() {
             const sc = STATUS_COLORS[stage.status as keyof typeof STATUS_COLORS] || STATUS_COLORS.backlog;
             const Icon = sc.icon;
             const workData = workItems[stage.id];
-            const lastActivity = workData?.timeline?.[workData.timeline.length - 1];
+            const lastActivity = workData?.timeline?.[0];
             const lastTime = lastActivity?.ts ? new Date(lastActivity.ts).toLocaleString() : "N/A";
 
             return (
