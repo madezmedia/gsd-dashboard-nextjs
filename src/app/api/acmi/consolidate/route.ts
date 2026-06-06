@@ -22,87 +22,78 @@ interface WorkProgress {
   updated: boolean;
 }
 
-// Use the same ACMI proxy the dashboard uses, not direct Upstash
-const ACMI_PROXY = process.env.NEXT_PUBLIC_APP_URL 
-  ? `${process.env.NEXT_PUBLIC_APP_URL}/api/acmi`
-  : "http://localhost:3000/api/acmi";
+const UPSTASH_URL = process.env.UPSTASH_REDIS_REST_URL || "";
+const UPSTASH_TOKEN = process.env.UPSTASH_REDIS_REST_TOKEN || "";
 
-async function acmiCall(tool: string, params: Record<string, unknown> = {}) {
-  const res = await fetch(ACMI_PROXY, {
+async function exec(args: unknown[]): Promise<unknown> {
+  const res = await fetch(UPSTASH_URL, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ tool, params }),
+    headers: {
+      Authorization: `Bearer ${UPSTASH_TOKEN}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(args),
   });
-  if (!res.ok) {
-    throw new Error(`ACMI proxy error: ${res.status} on ${tool}`);
-  }
-  return res.json();
+  if (!res.ok) throw new Error(`Upstash error ${res.status}`);
+  const d = (await res.json()) as { result?: unknown };
+  return d?.result;
 }
 
-function calculateProgress(events: ACMIEventPayload[]): {
-  progress: number;
-  completed_events: number;
-  routine_events: number;
-  activity_summary: string;
-  last_active_ts: string | null;
-} {
-  if (!events.length) {
-    return { progress: 0, completed_events: 0, routine_events: 0, activity_summary: "no activity", last_active_ts: null };
-  }
+function calcProgress(events: ACMIEventPayload[]) {
+  if (!events.length) return { progress: 0, completed_events: 0, activity_summary: "no activity", last_active_ts: null as string | null };
 
-  const completed_events = events.filter(
-    (e) =>
-      e.kind?.includes("milestone-shipped") ||
-      e.kind?.includes("work-completed") ||
-      e.kind?.includes("task-completed") ||
-      e.kind?.includes("stage-complete") ||
-      e.kind?.includes("handoff-ack") ||
-      e.kind?.includes("post-commit")
+  const completed = events.filter(e =>
+    e.kind?.includes("milestone-shipped") || e.kind?.includes("work-completed") ||
+    e.kind?.includes("task-completed") || e.kind?.includes("stage-complete") ||
+    e.kind?.includes("handoff-ack") || e.kind?.includes("post-commit")
   ).length;
 
-  const routine_events = events.filter(
-    (e) =>
-      e.kind?.includes("coord-note") ||
-      e.kind?.includes("heartbeat") ||
-      e.kind?.includes("fleet-audit")
-  ).length;
-
-  let latestTs: number | null = null;
+  let latest: number | null = null;
   for (const e of events) {
     const t = typeof e.ts === "number" ? e.ts : new Date(e.ts || 0).getTime();
-    if (t > (latestTs || 0)) latestTs = t;
+    if (t > (latest || 0)) latest = t;
   }
 
-  let progress = 0;
-  if (completed_events >= 10) progress = 100;
-  else if (completed_events >= 5) progress = 75;
-  else if (completed_events >= 2) progress = 60;
-  else if (events.length >= 20) progress = 50;
-  else if (events.length >= 10) progress = 35;
-  else if (events.length >= 5) progress = 25;
-  else if (events.length >= 2) progress = 10;
-  else progress = 5;
-
-  const parts: string[] = [];
-  if (completed_events > 0) parts.push(`${completed_events} milestones`);
-  if (routine_events > 0) parts.push(`${routine_events} routine`);
-  parts.push(`${events.length} total events`);
-  const activity_summary = parts.join(", ");
+  let pct = 0;
+  if (completed >= 10) pct = 100;
+  else if (completed >= 5) pct = 75;
+  else if (completed >= 2) pct = 60;
+  else if (events.length >= 20) pct = 50;
+  else if (events.length >= 10) pct = 35;
+  else if (events.length >= 5) pct = 25;
+  else if (events.length >= 2) pct = 10;
+  else pct = 5;
 
   return {
-    progress,
-    completed_events,
-    routine_events,
-    activity_summary,
-    last_active_ts: latestTs ? new Date(latestTs).toISOString() : null,
+    progress: pct,
+    completed_events: completed,
+    activity_summary: completed > 0
+      ? `${completed} milestones / ${events.length} total`
+      : `${events.length} events`,
+    last_active_ts: latest ? new Date(latest).toISOString() : null,
   };
+}
+
+function parseTimeline(raw: unknown): ACMIEventPayload[] {
+  if (!Array.isArray(raw)) return [];
+  // Could be WITHSCORES format: [json, score, json, score, ...]
+  // or flat format: [json, json, json, ...]
+  const events: ACMIEventPayload[] = [];
+  for (const item of raw) {
+    if (typeof item !== "string") continue;
+    if (/^-?\d+(\.\d+)?$/.test(item)) continue; // skip scores
+    try {
+      const parsed = JSON.parse(item) as ACMIEventPayload;
+      if (parsed && parsed.summary) events.push(parsed);
+    } catch { /* skip unparseable */ }
+  }
+  return events;
 }
 
 export async function POST(req: NextRequest) {
   try {
     const { id: singleId, dryRun } = (await req.json()) as {
-      id?: string;
-      dryRun?: boolean;
+      id?: string; dryRun?: boolean;
     } || {};
 
     let workIds: string[];
@@ -110,92 +101,96 @@ export async function POST(req: NextRequest) {
     if (singleId) {
       workIds = [singleId];
     } else {
-      // List all work items via the proxy (same route dashboard uses)
-      const listData = await acmiCall("acmi_work_list");
-      const raw: string[] = listData?.result || listData || [];
-      workIds = raw.map((id: string) => id.replace(/^"+|"+$/g, ""));
+      const keysRaw = await exec(["KEYS", "acmi:work:*:profile"]);
+      const keys = Array.isArray(keysRaw) ? keysRaw as string[] : [];
+      workIds = keys
+        .map(k => k.replace(/^acmi:work:/, "").replace(/:profile$/, ""))
+        .filter(Boolean);
+      workIds = [...new Set(workIds)].slice(0, 200);
     }
 
-    workIds = [...new Set(workIds)].slice(0, 200);
     const results: WorkProgress[] = [];
 
     for (const id of workIds) {
       try {
-        // Get work item via the proxy
-        const workData = await acmiCall("acmi_get", { namespace: "work", id });
-        const profile = workData?.profile || {};
-        const signals = workData?.signals || {};
-        const events: ACMIEventPayload[] = workData?.timeline || workData?.timeline_recent || [];
+        const [profileRaw, signalsRaw, timelineRaw] = await Promise.all([
+          exec(["GET", `acmi:work:${id}:profile`]),
+          exec(["HGETALL", `acmi:work:${id}:signals`]),
+          exec(["ZRANGE", `acmi:work:${id}:timeline`, "0", "-1", "WITHSCORES"]),
+        ]);
 
-        const title = (profile?.title as string) || id;
-        const calc = calculateProgress(events);
-        const status_before = (signals?.status as string) || profile?.status as string || "active";
+        let profile: Record<string, unknown> = {};
+        let signals: Record<string, unknown> = {};
 
-        let status_after = status_before;
-        if (calc.progress >= 100) status_after = "completed";
-        else if (events.length === 0 && status_before === "active") status_after = "stalled";
-        else if (events.length > 0 && status_before === "stalled") status_after = "active";
+        if (typeof profileRaw === "string") {
+          try { profile = JSON.parse(profileRaw); } catch { profile = {}; }
+        }
 
-        let updated = false;
-        if (!dryRun) {
-          const currentProgress = Number(signals?.progress || 0);
-          const currentStatus = signals?.status || "";
-
-          if (currentProgress !== calc.progress || currentStatus !== status_after || !signals?.consolidated_at) {
-            await acmiCall("acmi_work_signal", {
-              id,
-              signals: JSON.stringify({
-                progress: calc.progress,
-                activity_summary: calc.activity_summary,
-                event_count: events.length,
-                completed_events: calc.completed_events,
-                last_active_ts: calc.last_active_ts,
-                consolidated_at: new Date().toISOString(),
-                status: status_after,
-              }),
-            });
-            updated = true;
+        // HGETALL returns flat array [key, val, key, val, ...]
+        if (Array.isArray(signalsRaw)) {
+          for (let i = 0; i < signalsRaw.length; i += 2) {
+            const k = signalsRaw[i];
+            const v = signalsRaw[i + 1];
+            if (typeof k === "string" && v !== undefined) {
+              signals[k] = v;
+            }
           }
         }
 
-        results.push({
-          id,
-          title,
-          progress: calc.progress,
-          event_count: events.length,
-          completed_events: calc.completed_events,
-          last_active_ts: calc.last_active_ts,
-          activity_summary: calc.activity_summary,
-          status_before,
-          status_after,
-          updated,
-        });
+        const events = parseTimeline(timelineRaw);
+        const title = (profile?.title as string) || id;
+        const calc = calcProgress(events);
+        const statusBefore = (signals?.status as string) || "active";
+
+        let statusAfter = statusBefore;
+        if (calc.progress >= 100) statusAfter = "completed";
+        else if (events.length === 0 && statusBefore === "active") statusAfter = "stalled";
+        else if (events.length > 0 && statusBefore === "stalled") statusAfter = "active";
+
+        let updated = false;
+        if (!dryRun) {
+          const curPct = Number(signals?.progress || 0);
+          const curStatus = signals?.status || "";
+          const curConsolidated = signals?.consolidated_at;
+
+          if (curPct !== calc.progress || curStatus !== statusAfter || !curConsolidated) {
+            const flatPairs: string[] = [];
+            const newSignals: Record<string, unknown> = {
+              progress: calc.progress,
+              activity_summary: calc.activity_summary,
+              event_count: events.length,
+              completed_events: calc.completed_events,
+              last_active_ts: calc.last_active_ts,
+              consolidated_at: new Date().toISOString(),
+              status: statusAfter,
+            };
+            for (const [k, v] of Object.entries(newSignals)) {
+              flatPairs.push(k, v === null ? "" : String(v));
+            }
+            if (flatPairs.length > 0) {
+              await exec(["HSET", `acmi:work:${id}:signals`, ...flatPairs]);
+              updated = true;
+            }
+          }
+        }
+
+        results.push({ id, title, progress: calc.progress, event_count: events.length,
+          completed_events: calc.completed_events, last_active_ts: calc.last_active_ts,
+          activity_summary: calc.activity_summary, status_before: statusBefore,
+          status_after: statusAfter, updated });
       } catch (err) {
-        console.error(`Error processing work item ${id}:`, err);
-        results.push({
-          id,
-          title: id,
-          progress: 0,
-          event_count: 0,
-          completed_events: 0,
-          last_active_ts: null,
-          activity_summary: "error",
-          status_before: "error",
-          status_after: "error",
-          updated: false,
-        });
+        results.push({ id, title: id, progress: 0, event_count: 0, completed_events: 0,
+          last_active_ts: null, activity_summary: "error", status_before: "error",
+          status_after: "error", updated: false });
       }
     }
-
-    const updated_count = results.filter((r) => r.updated).length;
-    const total = results.length;
 
     return NextResponse.json({
       ok: true,
       dry_run: !!dryRun,
-      summary: `${updated_count}/${total} work items updated with progress data`,
-      total_scanned: total,
-      updated_count,
+      summary: `${results.filter(r => r.updated).length}/${results.length} updated`,
+      total_scanned: results.length,
+      updated_count: results.filter(r => r.updated).length,
       results,
     });
   } catch (error) {
@@ -209,7 +204,7 @@ export async function POST(req: NextRequest) {
 
 export async function GET() {
   return NextResponse.json({
-    message: "POST to /api/acmi/consolidate with optional {id: 'work-item-id'} or {dryRun: true}",
-    usage: "Consolidates ACMI work item timeline events into progress signals for the GSD dashboard",
+    message: "POST /api/acmi/consolidate with {id?: string, dryRun?: boolean}",
+    usage: "Scans ACMI work items, analyzes timeline events, writes progress signals back to Redis",
   });
 }
