@@ -3,8 +3,8 @@ import { NextRequest, NextResponse } from "next/server";
 // Keep in-memory flag for self-healing seed optimization
 let isSeeded = false;
 
-const CENTRAL_URL = "https://loved-platypus-102968.upstash.io";
-const CENTRAL_TOKEN = "gQAAAAAAAZI4AAIgcDJhNDFlNmUwMjQ5ZWI0ZDNmYWUzNDU2NDc4ZWUxMmQwOA";
+const CENTRAL_URL = process.env.UPSTASH_REDIS_REST_URL || "";
+const CENTRAL_TOKEN = process.env.UPSTASH_REDIS_REST_TOKEN || "";
 
 interface TenantConfig {
   url: string;

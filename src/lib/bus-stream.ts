@@ -48,8 +48,12 @@ class BusStreamManager {
       ? localStorage.getItem("acmi:bus:lastTs") || Date.now().toString()
       : Date.now().toString();
 
+    const token = typeof window !== "undefined"
+      ? localStorage.getItem("acmi_token") || new URLSearchParams(window.location.search).get("token") || ""
+      : "";
+
     try {
-      const url = `${BUS_URL}?since=${since}`;
+      const url = `${BUS_URL}?since=${since}${token ? `&token=${token}` : ""}`;
       this.eventSource = new EventSource(url);
 
       this.eventSource.onopen = () => {

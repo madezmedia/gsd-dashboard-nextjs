@@ -1,11 +1,146 @@
 import { NextRequest } from "next/server";
 
-const CENTRAL_URL = process.env.UPSTASH_REDIS_REST_URL || "https://loved-platypus-102968.upstash.io";
-const CENTRAL_TOKEN = process.env.UPSTASH_REDIS_REST_TOKEN || "gQAAAAAAAZI4AAIgcDJhNDFlNmUwMjQ5ZWI0ZDNmYWUzNDU2NDc4ZWUxMmQwOA";
+const CENTRAL_URL = process.env.UPSTASH_REDIS_REST_URL || "";
+const CENTRAL_TOKEN = process.env.UPSTASH_REDIS_REST_TOKEN || "";
+
+interface TenantConfig {
+  url: string;
+  token: string;
+  isCustom: boolean;
+}
+
+// Global helper to parse HGETALL flat array into a key-value object
+function parseHGetAll(res: unknown): Record<string, string> {
+  if (!res) return {};
+  if (Array.isArray(res)) {
+    const obj: Record<string, string> = {};
+    for (let i = 0; i < res.length; i += 2) {
+      if (res[i] !== undefined && res[i + 1] !== undefined) {
+        obj[res[i]] = String(res[i + 1]);
+      }
+    }
+    return obj;
+  }
+  if (typeof res === "object") {
+    return res as Record<string, string>;
+  }
+  return {};
+}
+
+async function resolveTenantConfig(token: string | null): Promise<TenantConfig> {
+  if (!CENTRAL_URL || !CENTRAL_TOKEN) {
+    console.warn("[bus-proxy] Central Upstash Redis configuration variables are missing!");
+  }
+
+  if (!token) {
+    // If no token and we are in dev mode, fallback to central. Otherwise reject.
+    if (process.env.NODE_ENV === "development") {
+      return { url: CENTRAL_URL, token: CENTRAL_TOKEN, isCustom: false };
+    }
+    throw new Error("Missing authentication token");
+  }
+
+  // If token is "default_token", map to central config
+  if (token === "default_token") {
+    return { url: CENTRAL_URL, token: CENTRAL_TOKEN, isCustom: false };
+  }
+
+  try {
+    // 1. Get user_or_agent_id
+    const tokenRes = await fetch(CENTRAL_URL, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${CENTRAL_TOKEN}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(["GET", `saas:token:${token}`]),
+    });
+
+    if (!tokenRes.ok) {
+      throw new Error(`Token look up failed with status ${tokenRes.status}`);
+    }
+
+    const tokenData = (await tokenRes.json()) as { result?: string };
+    const userOrAgentId = tokenData.result;
+    if (!userOrAgentId) {
+      throw new Error("Invalid token");
+    }
+
+    // 2. Query user_agent details
+    const userRes = await fetch(CENTRAL_URL, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${CENTRAL_TOKEN}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(["HGETALL", `saas:user_agent:${userOrAgentId}`]),
+    });
+
+    if (!userRes.ok) {
+      throw new Error("User details query failed");
+    }
+
+    const userDataRaw = (await userRes.json()) as { result?: unknown };
+    const userData = parseHGetAll(userDataRaw.result);
+    const tenantId = userData.tenant_id;
+    if (!tenantId) {
+      throw new Error("Tenant ID not found for user/agent");
+    }
+
+    // 3. Query tenant details
+    const tenantRes = await fetch(CENTRAL_URL, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${CENTRAL_TOKEN}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(["HGETALL", `saas:tenant:${tenantId}`]),
+    });
+
+    if (!tenantRes.ok) {
+      throw new Error("Tenant details query failed");
+    }
+
+    const tenantDataRaw = (await tenantRes.json()) as { result?: unknown };
+    const tenantData = parseHGetAll(tenantDataRaw.result);
+
+    if (
+      tenantData.status === "active" &&
+      tenantData.redis_url &&
+      tenantData.redis_token
+    ) {
+      return {
+        url: tenantData.redis_url,
+        token: tenantData.redis_token,
+        isCustom: true,
+      };
+    }
+  } catch (error: any) {
+    console.error(`[bus-proxy] Failed to resolve tenant config for token: ${error.message}`);
+    throw error;
+  }
+
+  return { url: CENTRAL_URL, token: CENTRAL_TOKEN, isCustom: false };
+}
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const sinceParam = searchParams.get("since");
+  const tokenParam = searchParams.get("token");
+  
+  // Resolve tenant config for this request
+  let config: TenantConfig;
+  try {
+    config = await resolveTenantConfig(tokenParam);
+  } catch (err: any) {
+    return new Response(
+      JSON.stringify({ error: err.message || "Unauthorized" }),
+      {
+        status: 401,
+        headers: { "Content-Type": "application/json" },
+      }
+    );
+  }
   
   // Parse 'since' parameter, default to 5 minutes ago if not provided
   let lastTs = sinceParam ? parseInt(sinceParam, 10) : Date.now() - 5 * 60 * 1000;
@@ -40,10 +175,10 @@ export async function GET(req: NextRequest) {
       const poll = async () => {
         if (isClosed) return;
         try {
-          const res = await fetch(CENTRAL_URL, {
+          const res = await fetch(config.url, {
             method: "POST",
             headers: {
-              Authorization: `Bearer ${CENTRAL_TOKEN}`,
+              Authorization: `Bearer ${config.token}`,
               "Content-Type": "application/json",
             },
             body: JSON.stringify([
