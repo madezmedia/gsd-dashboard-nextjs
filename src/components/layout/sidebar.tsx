@@ -18,6 +18,7 @@ import {
   Calendar,
   FileCode,
   Activity,
+  Cpu,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -37,6 +38,12 @@ const navItems = [
     label: "ACMI Fleet Cockpit",
     icon: Activity,
     badge: "BUS",
+  },
+  {
+    href: "/mikey",
+    label: "Mikey's Crons",
+    icon: Cpu,
+    badge: "CRON",
   },
   {
     href: "/agents",
