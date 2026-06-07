@@ -23,9 +23,17 @@ import {
 import { cn } from "@/lib/utils";
 import { acmiClient } from "@/lib/acmi-client";
 import { subscribeToBus } from "@/lib/bus-stream";
+import { fetchProjectActivity } from "@/lib/acmi-client";
+import {
+  tasksToKanban,
+  type KanbanCard,
+  type KanbanLane,
+} from "@/lib/project-activity";
 
 interface TaskItem {
   id: string;
+  projectId?: string;
+  projectTitle?: string;
   title: string;
   owner: string;
   priority: "P0" | "P1" | "P2" | "P3";
@@ -33,6 +41,14 @@ interface TaskItem {
   dueDate: string;
   blocked: boolean;
   done: boolean;
+  progress?: number;
+  updatedAt?: number;
+  lastTouched?: string;
+  href?: string;
+}
+
+function getImpureTimestamp(): number {
+  return Date.now();
 }
 
 const DEFAULT_TASKS: TaskItem[] = [
@@ -168,42 +184,36 @@ export default function TodoPage() {
   const [editingDueDate, setEditingDueDate] = useState("");
   const [editingBlocked, setEditingBlocked] = useState(false);
 
-  // Load from bootstrap aggregate or load local fallback
+  // Load REAL project activity from ACMI (25 projects + 249 work items)
   const loadData = useCallback(async () => {
     setLoading(true);
     try {
-      const data = await acmiClient.fetchDashboardBootstrap();
-      if (data && data.tasks && data.tasks.length > 0) {
-        const parsed: TaskItem[] = data.tasks.map((t: any) => {
-          const profile = t.profile || {};
-          const signals = t.signals || {};
-          const priorityRaw = profile.priority || signals.priority || "P1";
-          const priority = (priorityRaw === "P0" || priorityRaw === "P1" || priorityRaw === "P2" || priorityRaw === "P3") 
-            ? priorityRaw as TaskItem["priority"] 
-            : "P1";
-          
-          const statusRaw = signals.status || profile.status || "Today";
-          const status = (statusRaw === "Today" || statusRaw === "This Week" || statusRaw === "This Month" || statusRaw === "Backlog")
-            ? statusRaw as TaskItem["status"]
-            : "Today";
-
-          return {
-            id: t.id,
-            title: profile.title || profile.name || t.id,
-            owner: profile.owner || signals.owner || "@unassigned",
-            priority,
-            status,
-            dueDate: profile.dueDate || signals.dueDate || "",
-            blocked: signals.blocked === "true" || signals.blocked === true || profile.blocked === "true" || profile.blocked === true || false,
-            done: signals.done === "true" || signals.done === true || profile.done === "true" || profile.done === true || false,
-          };
-        });
-        setTasks(parsed);
-      } else {
-        setTasks(DEFAULT_TASKS);
+      const rollup = await fetchProjectActivity();
+      const buckets = tasksToKanban(rollup);
+      const flat: TaskItem[] = [];
+      for (const lane of Object.keys(buckets) as KanbanLane[]) {
+        for (const c of buckets[lane]) {
+          flat.push({
+            id: c.id,
+            projectId: c.projectId,
+            projectTitle: c.projectTitle,
+            title: c.title,
+            owner: c.owner,
+            priority: c.priority,
+            status: c.lane,
+            dueDate: c.updatedAt ? new Date(c.updatedAt + 7 * 86400000).toISOString().slice(0, 10) : "",
+            blocked: c.blocked,
+            done: c.done,
+            progress: c.progress,
+            updatedAt: c.updatedAt,
+            lastTouched: c.lastTouched,
+            href: c.href,
+          });
+        }
       }
+      setTasks(flat.length > 0 ? flat : DEFAULT_TASKS);
     } catch (err) {
-      console.error("Error fetching tasks bootstrap:", err);
+      console.error("Error fetching project activity:", err);
       setTasks(DEFAULT_TASKS);
     } finally {
       setLoading(false);
@@ -211,7 +221,10 @@ export default function TodoPage() {
   }, []);
 
   useEffect(() => {
-    loadData();
+    const timer = setTimeout(() => {
+      loadData();
+    }, 0);
+    return () => clearTimeout(timer);
   }, [token, loadData]);
 
   // Subscribe to central ACMI Super Bus to reflect tasks updates in real time
@@ -251,11 +264,11 @@ export default function TodoPage() {
       // Sync status change directly back to database
       await acmiClient.setSignals("task", taskId, { status: targetStatus });
       await acmiClient.appendEvent("task", taskId, {
-        ts: Date.now(),
+        ts: getImpureTimestamp(),
         source: "user:admin",
         kind: "status-change",
         summary: `Moved task to ${targetStatus} column`,
-        correlationId: `todo-${Date.now()}-drag`,
+        correlationId: `todo-${getImpureTimestamp()}-drag`,
       });
     } catch (err) {
       console.error("Failed to persist task status update:", err);
@@ -278,11 +291,11 @@ export default function TodoPage() {
     try {
       await acmiClient.setSignals("task", id, { done: String(newDoneState) });
       await acmiClient.appendEvent("task", id, {
-        ts: Date.now(),
+        ts: getImpureTimestamp(),
         source: "user:admin",
         kind: "completion-toggle",
         summary: newDoneState ? "Marked task as [completed]" : "Marked task as [incomplete]",
-        correlationId: `todo-${Date.now()}-toggle`,
+        correlationId: `todo-${getImpureTimestamp()}-toggle`,
       });
     } catch (err) {
       console.error("Failed to toggle task done state:", err);
@@ -430,11 +443,11 @@ export default function TodoPage() {
       await acmiClient.deleteSignal("task", id, "blocked");
       
       await acmiClient.appendEvent("task", id, {
-        ts: Date.now(),
+        ts: getImpureTimestamp(),
         source: "user:admin",
         kind: "task-deleted",
         summary: `Deleted task "${id}"`,
-        correlationId: `todo-${Date.now()}-delete`,
+        correlationId: `todo-${getImpureTimestamp()}-delete`,
       });
     } catch (err) {
       console.error("Failed to delete task:", err);

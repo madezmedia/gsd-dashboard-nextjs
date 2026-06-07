@@ -247,7 +247,7 @@ function WorkflowTraceContent({ id }: { id: string }) {
           {item.timeline && item.timeline.length > 0 ? (
             item.timeline.map((evt, i) => {
               const isExpanded = !!expandedEvents[evt.id];
-              const eventTs = evt.ts ? (typeof evt.ts === "number" ? evt.ts : new Date(evt.ts).getTime()) : Date.now();
+              const eventTs = evt.ts ? (typeof evt.ts === "number" ? evt.ts : new Date(evt.ts).getTime()) : (item.createdAt ? new Date(item.createdAt).getTime() : 0);
               const formattedTime = formatRelativeTime(eventTs);
               
               // Custom colors based on event source or summary content
@@ -292,7 +292,7 @@ function WorkflowTraceContent({ id }: { id: string }) {
                     {evt.summary}
                   </p>
 
-                  {evt.payload && (
+                  {!!evt.payload && (
                     <div className="pt-1.5 border-t border-[#1a1a1a]/5 flex flex-col items-start">
                       <button
                         onClick={() => setExpandedEvents(prev => ({ ...prev, [evt.id || i]: !isExpanded }))}

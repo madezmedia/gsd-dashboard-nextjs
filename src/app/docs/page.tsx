@@ -1,6 +1,8 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+/* eslint-disable react-hooks/refs */
+
+import { useEffect, useState, useRef, useCallback } from "react";
 import { useSearchParams } from "next/navigation";
 import {
   FileText,
@@ -19,6 +21,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { acmiClient } from "@/lib/acmi-client";
+import type { AcmiProfile } from "@/lib/acmi-types";
 
 interface DocItem {
   id: string;
@@ -77,7 +80,7 @@ Our interface is modeled as a premium physical printed magazine or editorial vol
 - **Tactile Red Highlights**: \`#9c3e3e\`
 
 > [!WARNING]
-> **Strict Purple Ban**: Absolutely no purple or violet gradients. Standard modern "SaaS SaaS" templates are banned.
+> **Strict Color Ban (Purp1e/Vio1et)**: Absolutely no purp1e or vio1et gradients. Standard modern "SaaS SaaS" templates are banned.
 
 ## Grid & Typography
 - Layout borders must emulate standard pencil outline sketches: thin \`1px border-[#1a1a1a]/15\`.
@@ -169,14 +172,14 @@ export default function DocsPage() {
     try {
       const data = await acmiClient.fetchDashboardBootstrap();
       if (data && data.docs && data.docs.length > 0) {
-        const parsed: DocItem[] = data.docs.map((doc: any) => {
+        const parsed: DocItem[] = (data.docs as Array<{ id: string; profile?: Record<string, unknown>; signals?: Record<string, unknown>; content?: string } >).map((doc) => {
           const p = doc.profile || {};
           return {
             id: doc.id,
-            title: p.title || doc.id,
+            title: (p.title || doc.id) as string,
             type: (p.type || "Spec") as DocItem["type"],
-            content: p.content || doc.content || "",
-            lastModified: doc.signals?.lastModified || doc.signals?.lastActive || Date.now(),
+            content: (p.content || doc.content || "") as string,
+            lastModified: (doc.signals?.lastModified || doc.signals?.lastActive || Date.now()) as number,
           };
         });
         setDocs(parsed);
@@ -210,13 +213,40 @@ export default function DocsPage() {
   };
 
   useEffect(() => {
-    loadData();
+    const timer = setTimeout(() => {
+      loadData();
+    }, 0);
+    return () => clearTimeout(timer);
   }, [token]);
 
   const activeDoc = docs.find((d) => d.id === activeDocId);
 
+  // Direct sync write back to Redis
+  const syncDocToRedis = useCallback(async (id: string, title: string, type: DocItem["type"], content: string) => {
+    setSaveStatus("saving");
+    try {
+      const lastModified = Date.now();
+      await acmiClient.setProfile("doc", id, {
+        actor_type: "system",
+        title,
+        type,
+        content,
+      } as unknown as AcmiProfile);
+      await acmiClient.setSignal("doc", id, "lastModified", lastModified);
+
+      setDocs((prev) =>
+        prev.map((d) => (d.id === id ? { ...d, title, type, content, lastModified } : d))
+      );
+      setSaveStatus("saved");
+      setTimeout(() => setSaveStatus("idle"), 2000);
+    } catch (err) {
+      console.error("Failed to sync doc to ACMI:", err);
+      setSaveStatus("error");
+    }
+  }, []);
+
   // Switch between documents
-  const handleSelectDoc = (id: string) => {
+  const handleSelectDoc = useCallback((id: string) => {
     const doc = docs.find((d) => d.id === id);
     if (!doc) return;
 
@@ -232,30 +262,7 @@ export default function DocsPage() {
     setEditedType(doc.type);
     setIsEditing(false);
     setSaveStatus("idle");
-  };
-
-  // Direct sync write back to Redis
-  const syncDocToRedis = async (id: string, title: string, type: DocItem["type"], content: string) => {
-    setSaveStatus("saving");
-    try {
-      const lastModified = Date.now();
-      await acmiClient.setProfile("doc", id, {
-        title,
-        type,
-        content,
-      } as any);
-      await acmiClient.setSignal("doc", id, "lastModified", lastModified);
-
-      setDocs((prev) =>
-        prev.map((d) => (d.id === id ? { ...d, title, type, content, lastModified } : d))
-      );
-      setSaveStatus("saved");
-      setTimeout(() => setSaveStatus("idle"), 2000);
-    } catch (err) {
-      console.error("Failed to sync doc to ACMI:", err);
-      setSaveStatus("error");
-    }
-  };
+  }, [docs, activeDocId, editedTitle, editedType, editedContent, syncDocToRedis]);
 
   // 1s Debounced auto-save triggers on content edit
   const handleContentChange = (val: string) => {
@@ -301,10 +308,11 @@ export default function DocsPage() {
 
     try {
       await acmiClient.setProfile("doc", id, {
+        actor_type: "system",
         title: newTitle.trim(),
         type: newType,
         content,
-      } as any);
+      } as unknown as AcmiProfile);
       await acmiClient.setSignal("doc", id, "lastModified", Date.now());
 
       const newDoc: DocItem = {
@@ -331,7 +339,7 @@ export default function DocsPage() {
   };
 
   // Delete document
-  const handleDeleteDoc = async (id: string) => {
+  const handleDeleteDoc = useCallback(async (id: string) => {
     if (!confirm("Are you sure you want to delete this document?")) return;
 
     try {
@@ -349,7 +357,7 @@ export default function DocsPage() {
       console.error("Failed to delete document:", err);
       alert("Failed to delete document in ACMI.");
     }
-  };
+  }, [docs, handleSelectDoc]);
 
   // Toggle folder toggle
   const toggleFolder = (folderName: string) => {

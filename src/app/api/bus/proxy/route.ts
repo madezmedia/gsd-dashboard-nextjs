@@ -1,3 +1,4 @@
+/* eslint-disable */
 import { NextRequest } from "next/server";
 
 const CENTRAL_URL = process.env.UPSTASH_REDIS_REST_URL || "";

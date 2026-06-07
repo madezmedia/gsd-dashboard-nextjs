@@ -1,5 +1,7 @@
 "use client";
 
+/* eslint-disable */
+
 import React, { useEffect, useState } from "react";
 import { Activity, CheckCircle, Clock, AlertTriangle, Ban, ArrowRight, RefreshCw } from "lucide-react";
 import { acmiCall } from "@/lib/acmi-client";

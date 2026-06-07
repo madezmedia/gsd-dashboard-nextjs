@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import {
   Folders,
@@ -17,110 +17,58 @@ import {
   DollarSign,
   Briefcase,
   RefreshCw,
+  ExternalLink,
 } from "lucide-react";
 import { cn, formatRelativeTime } from "@/lib/utils";
-import { acmiClient, DEFAULT_MILESTONES, fetchWorkItemTimeline, type ACMIEvent } from "@/lib/acmi-client";
+import { acmiClient, type ACMIEvent } from "@/lib/acmi-client";
+import { fetchProjectActivity } from "@/lib/acmi-client";
+import {
+  projectsToRows,
+  toActivityFeed,
+  type ProjectRow,
+  type ActivityFeedEntry,
+} from "@/lib/project-activity";
 
-interface ProjectItem {
-  id: string;
-  title: string;
-  status: "active" | "stalled" | "completed" | "pending";
-  owner: string;
-  progress: number;
-  milestones: string[];
-  completedMilestones: string[];
-  pipelineValue: string;
-  description: string;
-}
-
-const DEFAULT_PROJECTS: ProjectItem[] = [
-  {
-    id: "acmi-fleet-ops",
-    title: "ACMI Fleet Ops",
-    status: "active",
-    owner: "@fleet-orch",
-    progress: 70,
-    milestones: ["Edge compute config", "ZSet relay setup", "E2E stream validation", "Fleet rollout"],
-    completedMilestones: ["Edge compute config", "ZSet relay setup", "E2E stream validation"],
-    pipelineValue: "$12.4k",
-    description: "Edge compute coordination and real-time fleet synchronization.",
-  },
-  {
-    id: "ownerscout",
-    title: "OwnerScout",
-    status: "stalled",
-    owner: "@claude-engineer",
-    progress: 65,
-    milestones: ["Webhook routing setup", "VAPI setup", "Testing pipeline", "Launch"],
-    completedMilestones: ["Webhook routing setup", "VAPI setup"],
-    pipelineValue: "$8,752",
-    description: "Pipeline lead extraction blocked on API credential rotation.",
-  },
-  {
-    id: "cowork-kanban",
-    title: "cowork-kanban Redesign",
-    status: "completed",
-    owner: "@design-agency",
-    progress: 100,
-    milestones: ["UX audit", "Responsive pass", "Aesthetic alignment", "Sign-off"],
-    completedMilestones: ["UX audit", "Responsive pass", "Aesthetic alignment", "Sign-off"],
-    pipelineValue: "$5.2k",
-    description: "Full editorial brutalist UI makeover and mobile-responsive hardening.",
-  },
-  {
-    id: "secret-manager",
-    title: "Secret Manager",
-    status: "active",
-    owner: "@gemini-cli",
-    progress: 50,
-    milestones: ["AES key framework", "Keychain storage", "Command tool", "Documentation"],
-    completedMilestones: ["AES key framework", "Keychain storage"],
-    pipelineValue: "$3.5k",
-    description: "AES-256 secure secret storage for project environment configs.",
-  },
-  {
-    id: "whop-launch",
-    title: "Whop Launch",
-    status: "active",
-    owner: "@growth-hacker",
-    progress: 40,
-    milestones: ["Scaffolding", "Payment gateway integration", "Whop API sync", "Launch product"],
-    completedMilestones: ["Scaffolding", "Payment gateway integration"],
-    pipelineValue: "TBD",
-    description: "Launch of specialized digital coaching and workflow courses.",
-  },
-  {
-    id: "postiz-calendar",
-    title: "Postiz Content Calendar",
-    status: "pending",
-    owner: "@content-writer",
-    progress: 15,
-    milestones: ["Market research", "Content brief", "Scheduling automation", "Social seed"],
-    completedMilestones: ["Market research"],
-    pipelineValue: "$1.8k",
-    description: "Multi-channel Q3 planning phase scheduling templates.",
-  },
-];
+type ProjectItem = ProjectRow;
 
 export default function ProjectsPage() {
   const searchParams = useSearchParams();
   const token = searchParams.get("token");
 
   const [projects, setProjects] = useState<ProjectItem[]>([]);
+  const [feed, setFeed] = useState<ActivityFeedEntry[]>([]);
+  const [sourceMeta, setSourceMeta] = useState<{
+    projectCount: number;
+    workItemCount: number;
+    timelineEventsScanned: number;
+  } | null>(null);
   const [loading, setLoading] = useState(true);
   const [expandedProjectId, setExpandedProjectId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [syncingStatus, setSyncingStatus] = useState<string | null>(null);
+  const [now, setNow] = useState<number>(() => Date.now());
 
   const [projectTimelines, setProjectTimelines] = useState<Record<string, ACMIEvent[]>>({});
   const [loadingTimelines, setLoadingTimelines] = useState<Record<string, boolean>>({});
   const [expandedEvents, setExpandedEvents] = useState<Record<string, boolean>>({});
 
+  // Re-derive project-scoped event array from real ACMI timeline
   const loadTimeline = async (projectId: string) => {
     setLoadingTimelines((prev) => ({ ...prev, [projectId]: true }));
     try {
-      const timeline = await fetchWorkItemTimeline(projectId);
-      setProjectTimelines((prev) => ({ ...prev, [projectId]: timeline }));
+      const project = projects.find((p) => p.id === projectId);
+      if (!project) return;
+      const events: ACMIEvent[] = project.recentEvents.map((e, i) => ({
+        id: e.id,
+        ts: new Date(e.ts).toISOString(),
+        source: e.source,
+        kind: e.kind,
+        summary: e.summary,
+        correlationId: e.correlationId,
+        payload: undefined,
+        origin: "work" as const,
+      }));
+      setProjectTimelines((prev) => ({ ...prev, [projectId]: events }));
     } catch (err) {
       console.error(`Failed to load timeline for ${projectId}:`, err);
     } finally {
@@ -128,58 +76,33 @@ export default function ProjectsPage() {
     }
   };
 
-  // Load projects from ACMI bootstrap or fallbacks
+  // Load REAL project activity from ACMI (25 projects + 249 work items + thread timeline)
   const loadData = async () => {
     setLoading(true);
     try {
-      const data = await acmiClient.fetchDashboardBootstrap();
-      if (data && data.workItems && data.workItems.length > 0) {
-        const parsed: ProjectItem[] = data.workItems.map((w: any) => {
-          const profile = w.profile || {};
-          const signals = w.signals || {};
-
-          let completed: string[] = [];
-          if (signals.completed_milestones) {
-            try {
-              completed = typeof signals.completed_milestones === "string"
-                ? JSON.parse(signals.completed_milestones)
-                : signals.completed_milestones;
-            } catch {
-              completed = [];
-            }
-          }
-
-          const statusRaw = signals.status || profile.status || "active";
-          const status = (statusRaw === "active" || statusRaw === "stalled" || statusRaw === "completed" || statusRaw === "pending")
-            ? statusRaw as ProjectItem["status"]
-            : "active";
-
-          return {
-            id: w.id,
-            title: profile.title || w.id,
-            status,
-            owner: profile.owner || "@unassigned",
-            progress: signals.progress ? parseInt(String(signals.progress)) || 0 : 0,
-            milestones: profile.milestones || DEFAULT_MILESTONES,
-            completedMilestones: Array.isArray(completed) ? completed : [],
-            pipelineValue: profile.value || "$1.0k",
-            description: profile.description || "ACMI synchronized workload project.",
-          };
-        });
-        setProjects(parsed);
-      } else {
-        setProjects(DEFAULT_PROJECTS);
-      }
+      const rollup = await fetchProjectActivity();
+      const rows = projectsToRows(rollup);
+      setProjects(rows);
+      setFeed(toActivityFeed(rollup, 50));
+      setSourceMeta(rollup.source);
+      setNow(Date.now());
+      // Honor ?focus=<id> deep link from kanban / calendar
+      const focus = searchParams?.get("focus");
+      if (focus) setExpandedProjectId(focus);
     } catch (err) {
-      console.error("Error loading projects bootstrap:", err);
-      setProjects(DEFAULT_PROJECTS);
+      console.error("Error loading project activity:", err);
+      setProjects([]);
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    loadData();
+    const timer = setTimeout(() => {
+      loadData();
+    }, 0);
+    return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token]);
 
   // Handle milestone checking toggle
@@ -190,14 +113,17 @@ export default function ProjectsPage() {
       : [...project.completedMilestones, milestone];
 
     // Calculate progress fraction
-    const progress = Math.round((updatedCompleted.length / project.milestones.length) * 100);
-    const status = progress === 100 ? "completed" : project.status === "completed" ? "active" : project.status;
+    const progress = project.milestones.length === 0
+      ? 0
+      : Math.round((updatedCompleted.length / project.milestones.length) * 100);
+    const viewStatus: ProjectItem["status"] =
+      progress === 100 ? "completed" : project.status === "completed" ? "active" : project.status;
 
     // Optimistically update locally
     setProjects((prev) =>
       prev.map((p) =>
         p.id === project.id
-          ? { ...p, completedMilestones: updatedCompleted, progress, status }
+          ? { ...p, completedMilestones: updatedCompleted, progress, status: viewStatus }
           : p
       )
     );
@@ -206,7 +132,13 @@ export default function ProjectsPage() {
 
     try {
       // Direct integration mapping writes back to Upstash Redis
-      await acmiClient.updateWorkItemMilestones(project.id, updatedCompleted, progress, status);
+      // Map view status to ACMI work status ladder
+      const acmiStatus = (viewStatus === "completed" ? "completed" : viewStatus) as
+        | "active"
+        | "stalled"
+        | "completed"
+        | "pending";
+      await acmiClient.updateWorkItemMilestones(project.id, updatedCompleted, progress, acmiStatus);
       setSyncingStatus(null);
     } catch (err) {
       console.error("Failed to sync milestone state update:", err);
@@ -247,6 +179,19 @@ export default function ProjectsPage() {
     stageCounts.deployed,
     1
   );
+
+  const totalTaskCount = useMemo(
+    () => projects.reduce((sum, p) => sum + p.tasks.length, 0),
+    [projects]
+  );
+  const avgDaysIdle = useMemo(() => {
+    const ages = projects
+      .map((p) => (p.lastActivityTs ? (now - p.lastActivityTs) / (1000 * 60 * 60 * 24) : null))
+      .filter((v): v is number => v !== null);
+    if (ages.length === 0) return "—";
+    const avg = ages.reduce((s, v) => s + v, 0) / ages.length;
+    return `${avg.toFixed(1)}d`;
+  }, [projects, now]);
 
   const filteredProjects = projects.filter((p) =>
     p.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -370,23 +315,57 @@ export default function ProjectsPage() {
             <div className="border border-[#1a1a1a]/15 bg-[#faf9f5] p-4 rounded-none shadow-[2px_2px_0px_0px_rgba(26,26,26,0.1)]">
               <span className="text-[10px] font-mono text-[#1a1a1a]/50 uppercase block">Avg Days Idle</span>
               <span className="text-2xl font-serif font-bold text-[#1a1a1a] block mt-1">
-                1.2d
+                {avgDaysIdle}
               </span>
             </div>
 
             <div className="border border-[#1a1a1a]/15 bg-[#faf9f5] p-4 rounded-none shadow-[2px_2px_0px_0px_rgba(26,26,26,0.1)]">
-              <span className="text-[10px] font-mono text-[#1a1a1a]/50 uppercase block">Total Est. Pipeline</span>
+              <span className="text-[10px] font-mono text-[#1a1a1a]/50 uppercase block">Tasks (Work Items)</span>
               <span className="text-2xl font-serif font-bold text-[#2d4a3e] block mt-1">
-                $31.6k
+                {totalTaskCount}
+              </span>
+              <span className="text-[9px] font-mono text-[#1a1a1a]/40 uppercase">
+                of {sourceMeta?.workItemCount ?? 0} ACMI work items
               </span>
             </div>
           </div>
 
           {/* Project List / Grid */}
           <div className="space-y-3">
-            <h2 className="text-xs font-bold font-mono uppercase tracking-wider text-[#1a1a1a]">
-              Active Workload Portfolio
-            </h2>
+            <div className="flex items-end justify-between">
+              <h2 className="text-xs font-bold font-mono uppercase tracking-wider text-[#1a1a1a]">
+                Active Workload Portfolio
+              </h2>
+              <div className="text-[10px] font-mono text-[#1a1a1a]/40 uppercase">
+                {sourceMeta ? (
+                  <>
+                    sourced from {sourceMeta.projectCount} ACMI projects · {sourceMeta.workItemCount} work items · {sourceMeta.timelineEventsScanned} timeline events
+                  </>
+                ) : null}
+              </div>
+            </div>
+
+            {feed.length > 0 && (
+              <details className="border border-[#1a1a1a]/15 bg-[#f4f2eb] rounded-none shadow-[2px_2px_0px_0px_rgba(26,26,26,0.1)]">
+                <summary className="cursor-pointer select-none p-3 text-xs font-mono uppercase tracking-wider text-[#2d4a3e] flex items-center gap-2">
+                  <Clock className="w-3.5 h-3.5" /> Live Fleet Activity ({feed.length} events)
+                </summary>
+                <ul className="max-h-64 overflow-y-auto border-t border-[#1a1a1a]/10 bg-[#faf9f5] divide-y divide-[#1a1a1a]/5">
+                  {feed.map((ev) => (
+                    <li
+                      key={ev.id}
+                      id={`evt-${ev.id}`}
+                      className="p-2.5 text-[11px] font-mono flex items-start gap-2 hover:bg-[#f4f2eb]/60"
+                    >
+                      <span className="text-[9px] text-[#1a1a1a]/40 uppercase shrink-0 w-12">{ev.rel}</span>
+                      <span className="text-[#1a1a1a]/80 font-bold shrink-0 w-44 truncate">@{ev.projectTitle}</span>
+                      <span className="text-[#2d4a3e] shrink-0 text-[9px] uppercase">[{ev.kind}]</span>
+                      <span className="text-[#1a1a1a]/70 line-clamp-1">{ev.summary}</span>
+                    </li>
+                  ))}
+                </ul>
+              </details>
+            )}
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {filteredProjects.map((project) => {
@@ -416,12 +395,16 @@ export default function ProjectsPage() {
                       )}
                     >
                       <div className="flex items-start justify-between gap-4 mb-2">
-                        <div>
-                          <h3 className="font-mono text-sm font-bold text-[#1a1a1a] uppercase">
+                        <div className="min-w-0">
+                          <h3 className="font-mono text-sm font-bold text-[#1a1a1a] uppercase truncate">
                             {project.title}
                           </h3>
-                          <span className="text-[10px] font-mono text-[#1a1a1a]/40">
+                          <span className="text-[10px] font-mono text-[#1a1a1a]/40 block">
                             LEAD: {project.owner}
+                          </span>
+                          <span className="text-[9px] font-mono text-[#1a1a1a]/30 uppercase block">
+                            {project.lastActivityLabel} · {project.tasks.length} task{project.tasks.length === 1 ? "" : "s"}
+                            {project.section ? ` · ${project.section}` : ""}
                           </span>
                         </div>
                         <span
@@ -485,10 +468,11 @@ export default function ProjectsPage() {
 
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                           {project.milestones.map((m) => {
-                            const isDone = project.completedMilestones.includes(m);
+                            const milestoneName = typeof m === "string" ? m : m.name;
+                            const isDone = project.completedMilestones.includes(milestoneName);
                             return (
                               <label
-                                key={m}
+                                key={milestoneName}
                                 className={cn(
                                   "flex items-center gap-2 px-3 py-2 border cursor-pointer select-none rounded-none transition-all",
                                   isDone
@@ -500,11 +484,11 @@ export default function ProjectsPage() {
                                   type="checkbox"
                                   checked={isDone}
                                   disabled={isSyncing}
-                                  onChange={() => toggleMilestone(project, m)}
+                                  onChange={() => toggleMilestone(project, milestoneName)}
                                   className="w-3.5 h-3.5 accent-[#2d4a3e] border-[#1a1a1a]/20 text-[#2d4a3e] focus:ring-0 shrink-0"
                                 />
                                 <span className={cn(isDone && "line-through text-[#1a1a1a]/40")}>
-                                  {m}
+                                  {milestoneName}
                                 </span>
                               </label>
                             );
@@ -584,7 +568,7 @@ export default function ProjectsPage() {
                                         {evt.summary}
                                       </p>
                                       
-                                      {evt.payload && (
+                                      {!!evt.payload && (
                                         <div className="pt-1 border-t border-[#1a1a1a]/5 flex flex-col items-start">
                                           <button
                                             onClick={() => setExpandedEvents(prev => ({ ...prev, [`${project.id}-${evt.id || idx}`]: !isEvtExpanded }))}

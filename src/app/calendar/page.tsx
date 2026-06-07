@@ -30,7 +30,20 @@ import {
   Trash2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { acmiClient } from "@/lib/acmi-client";
+import { acmiClient, fetchProjectActivity } from "@/lib/acmi-client";
+import type { AcmiProfile } from "@/lib/acmi-types";
+import { toCalendar, toActivityFeed, relTime, type CalendarItem } from "@/lib/project-activity";
+
+const formatTimeAgo = (ts: number) => {
+  const diff = Date.now() - ts;
+  if (diff < 60000) return "just now";
+  const minutes = Math.floor(diff / 60000);
+  if (minutes < 60) return `${minutes}m ago`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours}h ago`;
+  const days = Math.floor(hours / 24);
+  return `${days}d ago`;
+};
 
 interface CalendarEvent {
   id: string;
@@ -277,9 +290,6 @@ export default function CalendarPage() {
   const loadData = async () => {
     setLoading(true);
     try {
-      // Fetch general bootstrap (events + timeline)
-      const data = await acmiClient.fetchDashboardBootstrap();
-      
       // Fetch live cron roster
       const cronConfig = await acmiClient.getProfile("config", "cron-roster");
       if (cronConfig && Array.isArray(cronConfig.roster)) {
@@ -288,43 +298,27 @@ export default function CalendarPage() {
         setCronRoster(FALLBACK_ROSTER);
       }
 
-      if (data) {
-        // Parse calendar events
-        let parsedEvents: CalendarEvent[] = [];
-        if (data.events && data.events.length > 0) {
-          parsedEvents = data.events.map((evt: any) => {
-            const p = evt.profile || {};
-            return {
-              id: evt.id,
-              title: p.title || evt.id,
-              date: p.start || p.date || "",
-              kind: (p.kind || "task") as CalendarEvent["kind"],
-            };
-          });
-        } else {
-          parsedEvents = DEFAULT_EVENTS;
-        }
+      // Pull REAL ACMI project activity and shape it for calendar/timeline
+      const rollup = await fetchProjectActivity();
+      const cal = toCalendar(rollup, { windowDays: 90 });
+      const feed = toActivityFeed(rollup, 60);
 
-        // Parse timeline events
-        let parsedTimeline: TimelineItem[] = [];
-        if (data.timeline && data.timeline.length > 0) {
-          parsedTimeline = data.timeline.map((evt: any) => ({
-            id: evt.id,
-            ts: typeof evt.ts === "number" ? evt.ts : new Date(evt.ts).getTime(),
-            source: evt.source || "system",
-            kind: evt.kind || "event",
-            summary: evt.summary || "",
-          }));
-        } else {
-          parsedTimeline = DEFAULT_TIMELINE;
-        }
+      const parsedEvents: CalendarEvent[] = cal.map((c: CalendarItem) => ({
+        id: c.id,
+        title: c.title,
+        date: c.date,
+        kind: (c.kind === "activity" ? "task" : c.kind) as CalendarEvent["kind"],
+      }));
+      const parsedTimeline: TimelineItem[] = feed.map((f) => ({
+        id: f.id,
+        ts: f.ts,
+        source: f.source,
+        kind: f.kind,
+        summary: `${f.projectTitle} — ${f.summary}`,
+      }));
 
-        setEvents(parsedEvents);
-        setTimeline(parsedTimeline);
-      } else {
-        setEvents(DEFAULT_EVENTS);
-        setTimeline(DEFAULT_TIMELINE);
-      }
+      setEvents(parsedEvents.length > 0 ? parsedEvents : DEFAULT_EVENTS);
+      setTimeline(parsedTimeline.length > 0 ? parsedTimeline : DEFAULT_TIMELINE);
     } catch (err) {
       console.error("Failed to load bootstrap for calendar:", err);
       setEvents(DEFAULT_EVENTS);
@@ -336,7 +330,10 @@ export default function CalendarPage() {
   };
 
   useEffect(() => {
-    loadData();
+    const timer = setTimeout(() => {
+      loadData();
+    }, 0);
+    return () => clearTimeout(timer);
   }, [token]);
 
   // Navigate month
@@ -414,12 +411,13 @@ export default function CalendarPage() {
 
     try {
       await acmiClient.setProfile("event", uuid, {
+        actor_type: "system",
         title: newTitle.trim(),
         start: selectedDayStr,
         end: selectedDayStr,
         kind: newKind,
         allDay: true,
-      } as any);
+      } as unknown as AcmiProfile);
 
       await acmiClient.appendEvent("event", uuid, {
         ts: Date.now(),
@@ -556,16 +554,6 @@ export default function CalendarPage() {
     return combined.sort((a, b) => parseTime(a.timeLabel) - parseTime(b.timeLabel));
   }, [events, cronRoster, timeline]);
 
-  const formatTimeAgo = (ts: number) => {
-    const diff = Date.now() - ts;
-    if (diff < 60000) return "just now";
-    const minutes = Math.floor(diff / 60000);
-    if (minutes < 60) return `${minutes}m ago`;
-    const hours = Math.floor(minutes / 60);
-    if (hours < 24) return `${hours}h ago`;
-    const days = Math.floor(hours / 24);
-    return `${days}d ago`;
-  };
 
   const getTimelineIcon = (source: string) => {
     if (source.includes("claude")) return <Workflow className="w-4 h-4 text-[#2d4a3e]" />;

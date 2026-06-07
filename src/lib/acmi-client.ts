@@ -44,7 +44,8 @@ export interface ACMIEvent {
   kind: string;
   summary: string;
   correlationId?: string;
-  payload?: any;
+  payload?: unknown;
+  origin?: "direct" | "coordination" | "work";
 }
 
 export interface ACMISignal {
@@ -181,7 +182,7 @@ export async function acmiCall(tool: string, params: Record<string, unknown> = {
     try {
       // eslint-disable-next-line @typescript-eslint/no-require-imports
       const { headers: nextHeaders } = require("next/headers");
-      const host = nextHeaders().get("host");
+      const host = (await nextHeaders()).get("host");
       const protocol = host?.includes("localhost") || host?.includes("127.0.0.1") ? "http" : "https";
       if (host) {
         serverBaseUrl = `${protocol}://${host}`;
@@ -898,7 +899,7 @@ export async function fetchAgentBootstrap(id: string): Promise<ACMIBootstrap | n
       });
     }
     
-    const rawEvents: Array<{ ts: number; source: string; kind: string; summary: string; correlationId?: string }> = [];
+    const rawEvents: Array<{ ts: number; source: string; kind: string; summary: string; correlationId?: string; origin: "direct" | "coordination" | "work" }> = [];
     
     directTimeline.forEach(e => {
       rawEvents.push({
@@ -907,6 +908,7 @@ export async function fetchAgentBootstrap(id: string): Promise<ACMIBootstrap | n
         kind: String(e.kind || "event"),
         summary: String(e.summary || ""),
         correlationId: String(e.correlationId || ""),
+        origin: "direct",
       });
     });
     
@@ -920,6 +922,7 @@ export async function fetchAgentBootstrap(id: string): Promise<ACMIBootstrap | n
           kind: String(e.kind || "event"),
           summary: String(e.summary || ""),
           correlationId: String(e.correlationId || ""),
+          origin: "coordination",
         });
       }
     });
@@ -938,6 +941,7 @@ export async function fetchAgentBootstrap(id: string): Promise<ACMIBootstrap | n
             kind: String(e.kind || "event"),
             summary: workItem ? `[${workItem.title}] ${e.summary}` : String(e.summary || ""),
             correlationId: String(e.correlationId || ""),
+            origin: "work",
           });
         }
       });
@@ -979,6 +983,7 @@ export async function fetchAgentBootstrap(id: string): Promise<ACMIBootstrap | n
           kind: e.kind,
           summary: e.summary,
           correlationId: e.correlationId,
+          origin: e.origin,
         });
       }
     });
@@ -1053,14 +1058,14 @@ export async function updateWorkItemStatus(
 }
 
 export interface ACMIDashboardBootstrapPayload {
-  agents: any[];
-  workItems: any[];
-  config: Record<string, any>;
-  timeline: any[];
-  events: any[];
-  docs: any[];
-  notes: any[];
-  tasks: any[];
+  agents: unknown[];
+  workItems: unknown[];
+  config: Record<string, unknown>;
+  timeline: unknown[];
+  events: unknown[];
+  docs: unknown[];
+  notes: unknown[];
+  tasks: unknown[];
 }
 
 export async function fetchDashboardBootstrap(): Promise<ACMIDashboardBootstrapPayload | null> {
@@ -1132,6 +1137,360 @@ function generateMockTimeline(): AcmiEvent[] {
 // Factory / singleton
 // ---------------------------------------------------------------------------
 
+// ---------------------------------------------------------------------------
+// Project Activity Consolidation
+//
+// Real-data-driven roll-up that powers Projects / Todo / Calendar / Workflows.
+// Pulls from `acmi:project:*` (25 repos), `acmi:work:*` (249 items), and the
+// `agent-coordination` thread timeline, then joins them into a single
+// `ProjectActivity` shape so the four pages stay consistent.
+// ---------------------------------------------------------------------------
+
+export type ProjectActivityStatus =
+  | "active"
+  | "stalled"
+  | "completed"
+  | "pending"
+  | "low-activity"
+  | "post-close"
+  | "stale";
+
+export interface ProjectActivityTask {
+  id: string;
+  title: string;
+  status: "active" | "stalled" | "completed" | "pending";
+  owner?: string;
+  priority?: "P0" | "P1" | "P2" | "P3";
+  progress: number;
+  updatedAt?: number;
+  /** True when no timeline event for 72h+ */
+  silent?: boolean;
+}
+
+export interface ProjectActivityEvent {
+  id: string;
+  ts: number;
+  source: string;
+  kind: string;
+  summary: string;
+  correlationId?: string;
+  /** Which work item (if any) this event was attached to */
+  workItemId?: string;
+}
+
+export interface ProjectActivityMilestone {
+  name: string;
+  done: boolean;
+}
+
+export interface ProjectActivity {
+  id: string;
+  title: string;
+  description: string;
+  status: ProjectActivityStatus;
+  owner: string;
+  section: string;
+  domain?: string;
+  githubUrl?: string;
+  externalUrl?: string;
+  primaryLanguage?: string;
+  priority: number;
+  /** Aggregated from work items */
+  progress: number;
+  milestones: ProjectActivityMilestone[];
+  tasks: ProjectActivityTask[];
+  recentEvents: ProjectActivityEvent[];
+  lastActivityTs: number;
+  lastActivityLabel: string;
+  /** Days since last push to the repo, if known */
+  daysSincePush?: number;
+  /** Pipeline / business value (free-form, e.g. "$12.4k") */
+  pipelineValue?: string;
+  /** Aggregated counts for filters */
+  counts: {
+    active: number;
+    stalled: number;
+    completed: number;
+    pending: number;
+  };
+  /** True when this project is from the auto-discovered batch (no real human owner yet) */
+  needsTriage: boolean;
+}
+
+export interface ProjectActivityRollup {
+  projects: ProjectActivity[];
+  totalProjects: number;
+  totalTasks: number;
+  totalEvents: number;
+  generatedAt: number;
+  source: {
+    projectCount: number;
+    workItemCount: number;
+    timelineEventsScanned: number;
+  };
+}
+
+const STALL_THRESHOLD_MS = 72 * 60 * 60 * 1000;
+
+function projectIdMatchesWork(projectSlug: string, workId: string, workProfile: Record<string, unknown>): boolean {
+  if (!projectSlug) return false;
+  const slug = projectSlug.toLowerCase();
+  const wid = workId.toLowerCase();
+  if (wid.includes(slug) || slug.includes(wid)) return true;
+  // Check explicit project_id or parent fields
+  const explicit =
+    (workProfile.project_id as string) ||
+    (workProfile.parent as string) ||
+    ((workProfile.related_work as Record<string, unknown>)?.project as string);
+  if (typeof explicit === "string" && explicit.toLowerCase().includes(slug)) return true;
+  return false;
+}
+
+function eventMentionsProject(projectSlug: string, ev: { source?: string; summary?: string; correlationId?: string }): boolean {
+  if (!projectSlug) return false;
+  const s = projectSlug.toLowerCase();
+  const text = `${ev.summary ?? ""} ${ev.correlationId ?? ""} ${ev.source ?? ""}`.toLowerCase();
+  return text.includes(s);
+}
+
+function formatRelative(ts: number, now: number = Date.now()): string {
+  const diff = now - ts;
+  if (diff < 0) return "just now";
+  const m = Math.floor(diff / 60000);
+  if (m < 1) return "just now";
+  if (m < 60) return `${m}m ago`;
+  const h = Math.floor(m / 60);
+  if (h < 24) return `${h}h ago`;
+  const d = Math.floor(h / 24);
+  if (d < 30) return `${d}d ago`;
+  const mo = Math.floor(d / 30);
+  return `${mo}mo ago`;
+}
+
+function normalizeStatus(
+  raw: unknown,
+  fallback: ProjectActivityStatus = "active"
+): ProjectActivityStatus {
+  const s = String(raw ?? "").toLowerCase();
+  if (s === "active" || s === "stalled" || s === "completed" || s === "pending") return s as ProjectActivityStatus;
+  if (s === "low-activity") return "low-activity";
+  if (s === "post-close") return "post-close";
+  if (s === "stale") return "stale";
+  if (s.includes("complete") || s.includes("shipped")) return "completed";
+  if (s.includes("stall")) return "stalled";
+  if (s.includes("draft") || s.includes("pending") || s.includes("await")) return "pending";
+  return fallback;
+}
+
+export async function fetchProjectActivity(
+  options: { maxProjects?: number; maxWorkItems?: number; timelineLimit?: number } = {}
+): Promise<ProjectActivityRollup> {
+  const { maxProjects = 50, maxWorkItems = 250, timelineLimit = 250 } = options;
+  const now = Date.now();
+
+  // 1. Pull all projects in parallel
+  const projectIds = (await listIds("project")) || [];
+  const projectIdSample = projectIds.slice(0, maxProjects);
+
+  const projectRecords = await Promise.allSettled(
+    projectIdSample.map((id) => acmiCall("acmi_get", { namespace: "project", id }))
+  );
+
+  // 2. Pull all work items in parallel
+  const workItemIds = (await listIds("work")) || [];
+  const workIdSample = workItemIds.slice(0, maxWorkItems);
+
+  const workRecords = await Promise.allSettled(
+    workIdSample.map((id) => acmiCall("acmi_get", { namespace: "work", id }))
+  );
+
+  // 3. Pull recent agent-coordination timeline once (not per project)
+  let timelineEvents: ProjectActivityEvent[] = [];
+  try {
+    const threadData = await acmiCall("acmi_get", { namespace: "thread", id: "agent-coordination" });
+    const rawTimeline: Array<Record<string, unknown>> = threadData?.timeline || [];
+    timelineEvents = rawTimeline.slice(0, timelineLimit).map((e, i) => ({
+      id: `tl-${i}`,
+      ts: typeof e.ts === "number" ? (e.ts as number) : new Date(String(e.ts || "")).getTime() || now,
+      source: String(e.source || "system"),
+      kind: String(e.kind || "event"),
+      summary: String(e.summary || "").slice(0, 240),
+      correlationId: e.correlationId as string | undefined,
+    }));
+  } catch (err) {
+    console.warn("[acmi-client] could not read agent-coordination timeline", err);
+  }
+
+  // 4. Build work item index (id → record)
+  const workIndex: Array<{ id: string; profile: Record<string, unknown>; signals: Record<string, unknown>; timeline: ProjectActivityEvent[] }> = [];
+  for (let i = 0; i < workIdSample.length; i++) {
+    const r = workRecords[i];
+    if (r.status !== "fulfilled" || !r.value) continue;
+    const wid = workIdSample[i];
+    const profile = (r.value.profile || {}) as Record<string, unknown>;
+    const signals = (r.value.signals || {}) as Record<string, unknown>;
+    const timeline = Array.isArray(r.value.timeline)
+      ? (r.value.timeline as Array<Record<string, unknown>>).slice(0, 10).map((e, j) => ({
+          id: `${wid}-${j}`,
+          ts: typeof e.ts === "number" ? (e.ts as number) : new Date(String(e.ts || "")).getTime() || 0,
+          source: String(e.source || "system"),
+          kind: String(e.kind || "event"),
+          summary: String(e.summary || "").slice(0, 240),
+          correlationId: e.correlationId as string | undefined,
+        }))
+      : [];
+    workIndex.push({ id: wid, profile, signals, timeline });
+  }
+
+  // 5. Build project → work item + event index
+  const projects: ProjectActivity[] = [];
+  for (let i = 0; i < projectIdSample.length; i++) {
+    const r = projectRecords[i];
+    if (r.status !== "fulfilled" || !r.value) continue;
+    const pid = projectIdSample[i];
+    const profile = (r.value.profile || {}) as Record<string, unknown>;
+    const signals = (r.value.signals || {}) as Record<string, unknown>;
+    const slug = String(profile.slug || pid);
+
+    // 5a. Tasks: work items that match this project
+    const tasks: ProjectActivityTask[] = workIndex
+      .filter((w) => projectIdMatchesWork(slug, w.id, w.profile))
+      .map((w) => {
+        const updatedAt = w.signals.updated_at ? Number(w.signals.updated_at) : undefined;
+        const silent = updatedAt ? now - updatedAt > STALL_THRESHOLD_MS : true;
+        const status = normalizeStatus(w.signals.status || w.profile.status, "active");
+        const priority = (w.profile.priority || w.signals.priority) as string | undefined;
+        return {
+          id: w.id,
+          title: String(w.profile.title || w.id),
+          status: status as ProjectActivityTask["status"],
+          owner: w.profile.owner as string | undefined,
+          priority: (["P0", "P1", "P2", "P3"].includes(String(priority)) ? priority : undefined) as ProjectActivityTask["priority"],
+          progress: Number(w.signals.progress || 0),
+          updatedAt,
+          silent,
+        };
+      });
+
+    // 5b. Project-level events from thread (mentions of project slug)
+    const projectEvents = timelineEvents.filter((e) => eventMentionsProject(slug, e)).slice(0, 12);
+    // Add per-work-item timeline tail
+    const workItemEvents: ProjectActivityEvent[] = [];
+    for (const t of tasks) {
+      const w = workIndex.find((x) => x.id === t.id);
+      if (!w) continue;
+      for (const ev of w.timeline) {
+        workItemEvents.push({ ...ev, workItemId: t.id });
+      }
+    }
+    const merged = [...projectEvents, ...workItemEvents]
+      .sort((a, b) => b.ts - a.ts)
+      .slice(0, 15);
+    const lastActivityTs = merged[0]?.ts || 0;
+
+    // 5c. Milestones from work items
+    const milestoneMap = new Map<string, boolean>();
+    for (const t of tasks) {
+      const m = wmilestonesForTask(workIndex, t.id);
+      for (const [name, done] of m) {
+        milestoneMap.set(name, (milestoneMap.get(name) || false) || done);
+      }
+    }
+    const milestones: ProjectActivityMilestone[] = Array.from(milestoneMap.entries()).map(([name, done]) => ({
+      name,
+      done,
+    }));
+    if (milestones.length === 0 && tasks.length > 0) {
+      // Synthesize from task progress distribution
+      milestones.push(
+        { name: "Kickoff", done: tasks.length > 0 },
+        { name: "Design", done: tasks.some((t) => t.progress >= 25) },
+        { name: "Implementation", done: tasks.some((t) => t.progress >= 50) },
+        { name: "Shipping", done: tasks.every((t) => t.status === "completed") }
+      );
+    }
+
+    // 5d. Aggregate metrics
+    const counts = { active: 0, stalled: 0, completed: 0, pending: 0 };
+    for (const t of tasks) counts[t.status] += 1;
+    const progress =
+      tasks.length === 0
+        ? Number(profile.progress || 0)
+        : Math.round(tasks.reduce((sum, t) => sum + t.progress, 0) / tasks.length);
+
+    const status = normalizeStatus(
+      signals.status || profile.status,
+      tasks.length === 0 ? "low-activity" : "active"
+    );
+
+    projects.push({
+      id: pid,
+      title: String(profile.name || profile.title || pid),
+      description: String(profile.description || "").slice(0, 280),
+      status,
+      owner: String(profile.owner || signals.owner_agent || profile.provisioned_by || "unassigned"),
+      section: String(profile.section || "general"),
+      domain: profile.domain as string | undefined,
+      githubUrl: profile.github_url as string | undefined,
+      externalUrl: (profile.external_url as string) || (profile.domain ? `https://${profile.domain}` : undefined),
+      primaryLanguage: profile.primary_language as string | undefined,
+      priority: Number(profile.priority || 2),
+      progress,
+      milestones,
+      tasks,
+      recentEvents: merged,
+      lastActivityTs,
+      lastActivityLabel: lastActivityTs ? formatRelative(lastActivityTs, now) : "no recent activity",
+      daysSincePush: typeof signals.days_since_push === "number" ? (signals.days_since_push as number) : undefined,
+      pipelineValue: profile.pipeline_value as string | undefined,
+      counts,
+      needsTriage: Boolean(signals.needs_triage) || tasks.length === 0,
+    });
+  }
+
+  // 6. Sort by recency, then priority
+  projects.sort((a, b) => {
+    if (a.lastActivityTs !== b.lastActivityTs) return b.lastActivityTs - a.lastActivityTs;
+    return a.priority - b.priority;
+  });
+
+  const totalTasks = projects.reduce((sum, p) => sum + p.tasks.length, 0);
+
+  return {
+    projects,
+    totalProjects: projects.length,
+    totalTasks,
+    totalEvents: timelineEvents.length,
+    generatedAt: now,
+    source: {
+      projectCount: projectIds.length,
+      workItemCount: workItemIds.length,
+      timelineEventsScanned: timelineEvents.length,
+    },
+  };
+}
+
+function wmilestonesForTask(
+  workIndex: Array<{ id: string; signals: Record<string, unknown>; profile: Record<string, unknown> }>,
+  workId: string
+): Array<[string, boolean]> {
+  const w = workIndex.find((x) => x.id === workId);
+  if (!w) return [];
+  const milestones = (w.profile.milestones as string[] | undefined) || DEFAULT_MILESTONES;
+  let completed: string[] = [];
+  if (w.signals.completed_milestones) {
+    try {
+      completed = typeof w.signals.completed_milestones === "string"
+        ? JSON.parse(w.signals.completed_milestones as string)
+        : (w.signals.completed_milestones as string[]);
+      if (!Array.isArray(completed)) completed = [];
+    } catch {
+      completed = [];
+    }
+  }
+  return milestones.map((m) => [m, completed.includes(m)]);
+}
+
 export const acmiClient = {
   hasCredentials: hasRedisCredentials,
   getProfile, setProfile, mergeProfile, deleteProfile,
@@ -1140,6 +1499,7 @@ export const acmiClient = {
   getEntity, listIds,
   createWorkItem, getWorkItem, listWorkItems, updateWorkItemStatus, updateWorkItemMilestones,
   fetchDashboardBootstrap,
+  fetchProjectActivity,
   rawCommand,
   getMockBootstrap,
 };

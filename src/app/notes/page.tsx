@@ -22,6 +22,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { acmiClient } from "@/lib/acmi-client";
+import type { AcmiProfile } from "@/lib/acmi-types";
 
 interface NoteItem {
   id: string;
@@ -125,16 +126,16 @@ export default function NotesPage() {
     try {
       const data = await acmiClient.fetchDashboardBootstrap();
       if (data && data.notes && data.notes.length > 0) {
-        const parsed: NoteItem[] = data.notes.map((n: any) => {
+        const parsed: NoteItem[] = (data.notes as Array<{ id: string; profile?: Record<string, unknown>; signals?: Record<string, unknown> }>).map((n) => {
           const profile = n.profile || {};
           const signals = n.signals || {};
           return {
             id: n.id,
-            title: profile.title || n.id,
-            content: profile.content || "",
-            preview: profile.preview || (profile.content || "").substring(0, 100),
-            tags: profile.tags || [],
-            modified: signals.lastModified || profile.modified || new Date().toISOString(),
+            title: (profile.title || n.id) as string,
+            content: (profile.content || "") as string,
+            preview: (profile.preview || String(profile.content || "").substring(0, 100)) as string,
+            tags: (profile.tags as string[]) || [],
+            modified: (signals.lastModified || profile.modified || new Date().toISOString()) as string,
           };
         });
         setNotes(parsed);
@@ -162,7 +163,10 @@ export default function NotesPage() {
   };
 
   useEffect(() => {
-    loadData();
+    const timer = setTimeout(() => {
+      loadData();
+    }, 0);
+    return () => clearTimeout(timer);
   }, [token]);
 
   const activeNote = notes.find((n) => n.id === activeNoteId) || null;
@@ -199,12 +203,13 @@ export default function NotesPage() {
       try {
         const timestamp = new Date().toISOString();
         await acmiClient.setProfile("note", activeNoteId, {
+          actor_type: "system",
           title,
           content: text,
           preview,
           tags,
           modified: timestamp,
-        } as any);
+        } as unknown as AcmiProfile);
         await acmiClient.setSignal("note", activeNoteId, "lastModified", timestamp);
         setSaveStatus("synced");
       } catch (err) {
@@ -277,12 +282,13 @@ export default function NotesPage() {
 
     try {
       await acmiClient.setProfile("note", newId, {
+        actor_type: "system",
         title: newNote.title,
         content: newNote.content,
         preview: newNote.preview,
         tags: newNote.tags,
         modified: newNote.modified,
-      } as any);
+      } as unknown as AcmiProfile);
       await acmiClient.setSignal("note", newId, "lastModified", newNote.modified);
       setSaveStatus("synced");
     } catch (err) {

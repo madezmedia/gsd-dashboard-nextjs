@@ -49,9 +49,9 @@ export default function MikeyDashboard() {
       if (!res.ok) throw new Error("Failed to query cron telemetry API");
       const data = await res.json();
       setCrons(data);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Cron load failed:", err);
-      setError(err.message || "Unknown retrieval error");
+      setError(err instanceof Error ? err.message : "Unknown retrieval error");
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -59,7 +59,10 @@ export default function MikeyDashboard() {
   }, []);
 
   useEffect(() => {
-    fetchCrons();
+    const timer = setTimeout(() => {
+      fetchCrons();
+    }, 0);
+    return () => clearTimeout(timer);
   }, [fetchCrons]);
 
   const toggleLogs = (id: string) => {
@@ -89,7 +92,7 @@ export default function MikeyDashboard() {
           </div>
           <h1 className="text-2xl font-bold text-[#1a1a1a] flex items-center gap-2.5 font-mono uppercase tracking-tight">
             <Cpu className="h-6 w-6 text-[#2d4a3e]" />
-            <span>Mikey's Cron Command Center</span>
+            <span>Mikey&apos;s Cron Command Center</span>
           </h1>
           <p className="text-xs font-mono text-[#1a1a1a]/60 mt-1 uppercase tracking-wide">
             Real-time status check and logs for local daily crons, lead syncs, and vector db runners.

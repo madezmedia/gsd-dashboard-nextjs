@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { fetchAgentBootstrap, type ACMIBootstrap } from "@/lib/acmi-client";
+import type { AcmiEventPayload } from "@/lib/acmi-types";
 import { formatRelativeTime } from "@/lib/utils";
 import { AcmiProfileCard, AcmiSignalGauge, AcmiTimelineStream } from "@/components/acmi";
 
@@ -14,6 +15,7 @@ export default function AgentDetail({ params }: { params: Promise<{ id: string }
   const { id } = use(params);
   const [data, setData] = useState<ACMIBootstrap | null>(null);
   const [syncStatus, setSyncStatus] = useState<"idle" | "syncing" | "stalled">("idle");
+  const [activeFilter, setActiveFilter] = useState<"all" | "direct" | "coordination" | "work">("all");
 
   const loadData = useCallback(() => {
     setSyncStatus("syncing");
@@ -63,9 +65,15 @@ export default function AgentDetail({ params }: { params: Promise<{ id: string }
       source: e.source,
       summary: e.summary,
       correlationId: e.correlationId || "",
-      payload: e.payload
+      payload: e.payload as AcmiEventPayload | undefined,
+      origin: (e.origin as "direct" | "coordination" | "work") || "direct"
     }));
   }, [data]);
+
+  const filteredEvents = useMemo(() => {
+    if (activeFilter === "all") return formattedEvents;
+    return formattedEvents.filter(e => e.origin === activeFilter);
+  }, [formattedEvents, activeFilter]);
 
   // Convert profile data to fit AcmiProfileCard props
   const profileData = useMemo(() => {
@@ -230,8 +238,33 @@ export default function AgentDetail({ params }: { params: Promise<{ id: string }
 
         {/* Timeline Tab */}
         <TabsContent value="timeline" className="focus-visible:outline-none">
-          <div className="max-w-4xl">
-            <AcmiTimelineStream namespace="agent" id={id} events={formattedEvents} maxEvents={50} />
+          <div className="max-w-4xl space-y-4">
+            {/* Filter Badges */}
+            <div className="flex flex-wrap gap-2 font-mono text-[10px]">
+              {(
+                [
+                  { id: "all", label: "ALL LOGS" },
+                  { id: "direct", label: "DIRECT" },
+                  { id: "coordination", label: "COORDINATION" },
+                  { id: "work", label: "WORK PROGRESS" },
+                ] as const
+              ).map((filter) => (
+                <button
+                  key={filter.id}
+                  onClick={() => setActiveFilter(filter.id)}
+                  aria-label={`Filter logs by ${filter.label}`}
+                  className={`px-3 py-1 border transition-all duration-150 rounded-none ${
+                    activeFilter === filter.id
+                      ? "bg-[#2d4a3e] text-[#faf9f5] border-[#2d4a3e] font-bold"
+                      : "bg-[#faf9f5] text-[#1a1a1a]/70 border-[#1a1a1a]/15 hover:bg-[#1a1a1a]/5"
+                  }`}
+                >
+                  [{filter.label}]
+                </button>
+              ))}
+            </div>
+
+            <AcmiTimelineStream namespace="agent" id={id} events={filteredEvents} maxEvents={50} />
           </div>
         </TabsContent>
       </Tabs>

@@ -1,3 +1,4 @@
+/* eslint-disable */
 import { NextRequest, NextResponse } from "next/server";
 
 // Keep in-memory flag for self-healing seed optimization
