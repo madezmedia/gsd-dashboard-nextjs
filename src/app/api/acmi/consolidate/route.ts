@@ -17,6 +17,90 @@ async function upstash(args: unknown[]): Promise<unknown> {
   const d = (await res.json()) as { result?: unknown };
   return d?.result;
 }
+function parseHGetAll(res: unknown): Record<string, string> {
+  if (!res) return {};
+  if (Array.isArray(res)) {
+    const obj: Record<string, string> = {};
+    for (let i = 0; i < res.length; i += 2) {
+      const key = res[i];
+      const val = res[i + 1];
+      if (typeof key === "string" && val !== undefined) obj[key] = String(val);
+    }
+    return obj;
+  }
+  if (typeof res === "object") {
+    const record: Record<string, string> = {};
+    for (const [key, val] of Object.entries(res as Record<string, unknown>)) {
+      if (val !== undefined) record[key] = String(val);
+    }
+    return record;
+  }
+  return {};
+}
+
+function parseSignals(rawSignals: Record<string, string>): Record<string, unknown> {
+  const parsed: Record<string, unknown> = {};
+  for (const [key, val] of Object.entries(rawSignals)) {
+    if (typeof val === "string" && (val.startsWith("{") || val.startsWith("["))) {
+      try {
+        parsed[key] = JSON.parse(val);
+      } catch {
+        parsed[key] = val;
+      }
+    } else {
+      parsed[key] = val;
+    }
+  }
+  return parsed;
+}
+
+async function fetchSignalsResilient(key: string): Promise<Record<string, unknown>> {
+  try {
+    const type = await upstash(["TYPE", key]);
+    if (type === "hash") {
+      const hgetAllRes = await upstash(["HGETALL", key]);
+      const parsed = parseHGetAll(hgetAllRes);
+      return parseSignals(parsed);
+    } else if (type === "string") {
+      const getRes = await upstash(["GET", key]);
+      if (typeof getRes === "string") {
+        try {
+          return JSON.parse(getRes) as Record<string, unknown>;
+        } catch {
+          return {};
+        }
+      }
+    }
+  } catch (err) {
+    console.error(`Resilient signals fetch failed for key ${key}:`, err);
+  }
+  return {};
+}
+
+async function writeSignalsResilient(key: string, newSignals: Record<string, unknown>): Promise<void> {
+  const type = await upstash(["TYPE", key]);
+  if (type === "string") {
+    let currentSignals: Record<string, unknown> = {};
+    const getRes = await upstash(["GET", key]);
+    if (typeof getRes === "string") {
+      try {
+        currentSignals = JSON.parse(getRes);
+      } catch {}
+    }
+    const merged = { ...currentSignals, ...newSignals };
+    await upstash(["SET", key, JSON.stringify(merged)]);
+  } else {
+    const flatPairs: string[] = [];
+    for (const [k, v] of Object.entries(newSignals)) {
+      if (v !== undefined && v !== null) {
+        flatPairs.push(k, typeof v === "object" ? JSON.stringify(v) : String(v));
+      }
+    }
+    if (flatPairs.length > 0) {
+      await upstash(["HSET", key, ...flatPairs]);
+    }
+  }
+}
 
 function calc(events: ACMIEventPayload[]) {
   if (!events.length) return { pct: 0, done: 0, summary: "no activity", lastActive: null as string | null };
@@ -53,9 +137,9 @@ export async function POST(req: NextRequest) {
     const results: WorkProgress[] = [];
     for (const id of workIds) {
       try {
-        const [profRaw, sigRaw, tlRaw] = await Promise.all([
+        const [profRaw, signals, tlRaw] = await Promise.all([
           upstash(["GET", `acmi:work:${id}:profile`]),
-          upstash(["GET", `acmi:work:${id}:signals`]),
+          fetchSignalsResilient(`acmi:work:${id}:signals`),
           upstash(["ZRANGE", `acmi:work:${id}:timeline`, "0", "-1", "WITHSCORES"]),
         ]);
 
@@ -63,10 +147,6 @@ export async function POST(req: NextRequest) {
         let profile: Record<string, unknown> = {};
         if (typeof profRaw === "string") try { profile = JSON.parse(profRaw); } catch {}
         const title = (profile?.title as string) || id;
-
-        // Parse signals
-        let signals: Record<string, unknown> = {};
-        if (typeof sigRaw === "string") try { signals = JSON.parse(sigRaw); } catch {}
 
         // Parse timeline (WITHSCORES flat array)
         const events: ACMIEventPayload[] = [];
@@ -90,11 +170,16 @@ export async function POST(req: NextRequest) {
           const curPct = Number(signals?.progress || 0);
           const curStatus = signals?.status || "";
           if (curPct !== c.pct || curStatus !== statusAfter || !signals?.consolidated_at) {
-            // Signals are JSON strings stored via SET, use HSET matching the proxy
-            const data = JSON.stringify({ ...signals, progress: c.pct, activity_summary: c.summary,
-              event_count: events.length, completed_events: c.done, last_active_ts: c.lastActive,
-              consolidated_at: new Date().toISOString(), status: statusAfter });
-            await upstash(["SET", `acmi:work:${id}:signals`, data]);
+            const updatedSignals = {
+              progress: c.pct,
+              activity_summary: c.summary,
+              event_count: events.length,
+              completed_events: c.done,
+              last_active_ts: c.lastActive,
+              consolidated_at: new Date().toISOString(),
+              status: statusAfter
+            };
+            await writeSignalsResilient(`acmi:work:${id}:signals`, updatedSignals);
             updated = true;
           }
         }

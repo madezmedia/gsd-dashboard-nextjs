@@ -371,14 +371,68 @@ interface ACMIEventPayload {
   correlationId?: string;
 }
 
+// Helper to fetch signals in a type-aware, resilient way supporting both Hash and String
+async function fetchSignalsResilient(config: TenantConfig, key: string): Promise<Record<string, unknown>> {
+  try {
+    const typeRes = await executeUpstashCommand(config, ["TYPE", key], false);
+    const type = typeof typeRes?.result === "string" ? typeRes.result : "none";
+    if (type === "hash") {
+      const hgetAllRes = await executeUpstashCommand(config, ["HGETALL", key], false);
+      const parsed = parseHGetAll(hgetAllRes?.result);
+      return parseSignals(parsed);
+    } else if (type === "string") {
+      const getRes = await executeUpstashCommand(config, ["GET", key], false);
+      if (typeof getRes?.result === "string") {
+        try {
+          return JSON.parse(getRes.result) as Record<string, unknown>;
+        } catch {
+          return {};
+        }
+      }
+    }
+  } catch (err) {
+    console.error(`Resilient signals fetch failed for key ${key}:`, err);
+  }
+  return {};
+}
+
+// Helper to write signals in a type-aware way to avoid WRONGTYPE errors
+async function writeSignalsResilient(config: TenantConfig, key: string, newSignals: Record<string, unknown>): Promise<void> {
+  const typeRes = await executeUpstashCommand(config, ["TYPE", key], false);
+  const type = typeof typeRes?.result === "string" ? typeRes.result : "none";
+
+  if (type === "string") {
+    // Read string, merge, write string
+    let currentSignals: Record<string, unknown> = {};
+    const getRes = await executeUpstashCommand(config, ["GET", key], false);
+    if (typeof getRes?.result === "string") {
+      try {
+        currentSignals = JSON.parse(getRes.result) as Record<string, unknown>;
+      } catch {}
+    }
+    const merged = { ...currentSignals, ...newSignals };
+    await executeUpstashCommand(config, ["SET", key, JSON.stringify(merged)], true);
+  } else {
+    // If it's a hash, or none (doesn't exist), write as hash
+    const flatPairs: string[] = [];
+    for (const [k, v] of Object.entries(newSignals)) {
+      if (v !== undefined && v !== null) {
+        flatPairs.push(k, typeof v === "object" ? JSON.stringify(v) : String(v));
+      }
+    }
+    if (flatPairs.length > 0) {
+      await executeUpstashCommand(config, ["HSET", key, ...flatPairs], true);
+    }
+  }
+}
+
 // Helper to fetch details of a specific entity in a namespace
 async function getEntityData(config: TenantConfig, namespace: string, id: string) {
   const profileCmd = ["GET", `acmi:${namespace}:${id}:profile`];
-  const signalsCmd = ["GET", `acmi:${namespace}:${id}:signals`];
   const timelineCmd = ["ZRANGE", `acmi:${namespace}:${id}:timeline`, "0", "-1", "WITHSCORES"];
 
   let rawProfile: unknown = null;
-  let rawSignals: unknown = null;
+  let parsedSignals: Record<string, unknown> = {};
   let rawTimeline: any = null;
 
   try {
@@ -387,8 +441,7 @@ async function getEntityData(config: TenantConfig, namespace: string, id: string
   } catch {}
 
   try {
-    const res = await executeUpstashCommand(config, signalsCmd, false);
-    rawSignals = res?.result;
+    parsedSignals = await fetchSignalsResilient(config, `acmi:${namespace}:${id}:signals`);
   } catch {}
 
   try {
@@ -427,15 +480,6 @@ async function getEntityData(config: TenantConfig, namespace: string, id: string
     }
   } else {
     profileParsed = { id, name: id, role: "agent", status: "active", capabilities: [] };
-  }
-
-  let parsedSignals: Record<string, unknown> = {};
-  if (rawSignals) {
-    try {
-      parsedSignals = typeof rawSignals === 'string' ? JSON.parse(rawSignals) : (rawSignals as Record<string, unknown>);
-    } catch {
-      parsedSignals = {};
-    }
   }
 
   const events: ACMIEventPayload[] = [];
@@ -614,11 +658,10 @@ export async function POST(req: NextRequest) {
       case "acmi_get":
       case "acmi_work_get": {
         const profileCmd = ["GET", `acmi:${namespace}:${id}:profile`];
-        const signalsCmd = ["GET", `acmi:${namespace}:${id}:signals`];
         const timelineCmd = ["ZRANGE", `acmi:${namespace}:${id}:timeline`, "0", "-1", "WITHSCORES"];
 
         let rawProfile: unknown = null;
-        let rawSignals: unknown = null;
+        let parsedSignals: Record<string, unknown> = {};
         let rawTimeline: any = null;
 
         // Fetch each piece individually with robust error handling for maximum flexibility (relaxed read)
@@ -630,8 +673,7 @@ export async function POST(req: NextRequest) {
         }
 
         try {
-          const res = await executeUpstashCommand(config, signalsCmd, false);
-          rawSignals = res?.result;
+          parsedSignals = await fetchSignalsResilient(config, `acmi:${namespace}:${id}:signals`);
         } catch {
           console.error(`Failed to fetch signals for ${id}`);
         }
@@ -677,17 +719,7 @@ export async function POST(req: NextRequest) {
           profileParsed = { id, name: id, role: "agent", status: "active", capabilities: [] };
         }
 
-        // Signals Parser (GET returns JSON string)
-        let parsedSignals: Record<string, unknown> = {};
-        if (rawSignals && typeof rawSignals === "string") {
-          try {
-            parsedSignals = JSON.parse(rawSignals) as Record<string, unknown>;
-          } catch {
-            parsedSignals = {};
-          }
-        } else if (rawSignals && typeof rawSignals === "object") {
-          parsedSignals = rawSignals as Record<string, unknown>;
-        }
+
 
         // Timeline WITHSCORES Parser (Try parsing; apply fallback event format if fails)
         const events: ACMIEventPayload[] = [];
@@ -763,24 +795,11 @@ export async function POST(req: NextRequest) {
           signalsObj = incomingSignals as Record<string, unknown>;
         }
 
-        // Strict Write Formatting: Flatten signals object to array of field-value pairs
-        const flatPairs: string[] = [];
-        for (const [key, val] of Object.entries(signalsObj)) {
-          if (val !== undefined && val !== null) {
-            if (typeof val === "object") {
-              flatPairs.push(key, JSON.stringify(val));
-            } else {
-              flatPairs.push(key, String(val));
-            }
-          }
-        }
-
-        if (flatPairs.length === 0) {
+        if (Object.keys(signalsObj).length === 0) {
           return NextResponse.json({ result: "OK", success: true });
         }
 
-        const hsetCmd = ["HSET", `acmi:${namespace}:${id}:signals`, ...flatPairs];
-        await executeUpstashCommand(config, hsetCmd, true);
+        await writeSignalsResilient(config, `acmi:${namespace}:${id}:signals`, signalsObj);
         return NextResponse.json({ result: "OK", success: true });
       }
 
