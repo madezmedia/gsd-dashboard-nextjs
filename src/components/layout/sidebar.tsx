@@ -64,6 +64,18 @@ const navItems = [
     badge: "KBN",
   },
   {
+    href: "/hitl",
+    label: "HITL Approvals",
+    icon: CheckCircle2,
+    badge: "HITL",
+  },
+  {
+    href: "/services",
+    label: "System Status",
+    icon: Activity,
+    badge: "SYS",
+  },
+  {
     href: "/notes",
     label: "Notes Editor",
     icon: Notebook,
@@ -123,20 +135,20 @@ export function Sidebar() {
   return (
     <aside
       className={cn(
-        "flex flex-col border-r border-[#1a1a1a]/10 bg-[#f4f2eb] text-[#1a1a1a] transition-all duration-300 rounded-none",
+        "flex flex-col border-r border-sidebar-border bg-sidebar text-sidebar-foreground transition-all duration-300 rounded-none",
         collapsed ? "w-16" : "w-60"
       )}
     >
       {/* Header */}
-      <div className="flex items-center gap-2 border-b border-[#1a1a1a]/10 px-4 h-14 shrink-0">
+      <div className="flex items-center gap-2 border-b border-sidebar-border px-4 h-14 shrink-0">
         <div className="flex items-center gap-2 overflow-hidden">
-          <div className="flex items-center justify-center w-8 h-8 rounded-none bg-[#2d4a3e] text-[#faf9f5] shrink-0 font-mono text-sm border border-[#1a1a1a]/20">
+          <div className="flex items-center justify-center w-8 h-8 rounded-none bg-primary text-primary-foreground shrink-0 font-mono text-sm border border-sidebar-border">
             [A]
           </div>
           {!collapsed && (
             <div className="flex flex-col">
-              <span className="text-xs font-bold leading-tight uppercase font-mono tracking-wider text-[#2d4a3e]">ACMI Fleet</span>
-              <span className="text-[9px] text-[#1a1a1a]/60 leading-tight uppercase font-mono">Dashboard v3</span>
+              <span className="text-xs font-bold leading-tight uppercase font-mono tracking-wider text-primary">ACMI Fleet</span>
+              <span className="text-[9px] text-muted-foreground leading-tight uppercase font-mono">Dashboard v3</span>
             </div>
           )}
         </div>
@@ -160,8 +172,8 @@ export function Sidebar() {
                 className={cn(
                   "flex items-center gap-3 rounded-none px-3 py-2 text-xs font-mono transition-all border border-transparent",
                   isActive
-                    ? "bg-[#2d4a3e]/10 text-[#2d4a3e] font-semibold border-[#2d4a3e]/20"
-                    : "hover:bg-[#1a1a1a]/5 text-[#1a1a1a]/70 hover:text-[#1a1a1a]"
+                    ? "bg-sidebar-accent text-sidebar-accent-foreground font-semibold border-sidebar-border"
+                    : "hover:bg-sidebar-accent/50 text-sidebar-foreground/70 hover:text-sidebar-foreground"
                 )}
               >
                 <item.icon className="h-4 w-4 shrink-0" />
@@ -173,8 +185,8 @@ export function Sidebar() {
                         className={cn(
                           "ml-auto text-[9px] font-mono px-1 py-0.5 border leading-none tracking-tight",
                           item.badge === "LIVE"
-                            ? "bg-[#2d4a3e] text-[#faf9f5] border-[#2d4a3e]"
-                            : "bg-[#1a1a1a]/5 text-[#1a1a1a]/60 border-[#1a1a1a]/10"
+                            ? "bg-primary text-primary-foreground border-primary"
+                            : "bg-sidebar-accent/40 text-muted-foreground border-sidebar-border"
                         )}
                       >
                         [{item.badge}]
@@ -189,16 +201,16 @@ export function Sidebar() {
       </ScrollArea>
 
       {/* Footer */}
-      <div className="border-t border-[#1a1a1a]/10 p-2 flex items-center justify-between bg-[#faf9f5]/50">
+      <div className="border-t border-sidebar-border p-2 flex items-center justify-between bg-sidebar/50">
         {!collapsed && (
-          <span className="text-[9px] font-mono text-[#1a1a1a]/50 px-2 uppercase">ACMI v1.3</span>
+          <span className="text-[9px] font-mono text-sidebar-foreground/50 px-2 uppercase">ACMI v1.3</span>
         )}
         <div className="flex items-center gap-1">
           {!collapsed && <ThemeToggle />}
           <Button
             variant="ghost"
             size="icon"
-            className="h-8 w-8 hover:bg-[#1a1a1a]/5 rounded-none"
+            className="h-8 w-8 hover:bg-sidebar-accent rounded-none"
             onClick={() => setCollapsed(!collapsed)}
           >
             {collapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
