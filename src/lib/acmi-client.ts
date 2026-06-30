@@ -513,6 +513,28 @@ export async function rawCommand(
   return acmiCall(command.toLowerCase(), { args });
 }
 
+function resilientToISOString(val: unknown, fallback: string = ""): string {
+  if (val === null || val === undefined || val === "") return fallback;
+  
+  let dateObj: Date | null = null;
+  if (val instanceof Date) {
+    dateObj = val;
+  } else if (typeof val === 'number') {
+    dateObj = new Date(val);
+  } else if (typeof val === 'string') {
+    if (/^\d+$/.test(val.trim())) {
+      dateObj = new Date(Number(val.trim()));
+    } else {
+      dateObj = new Date(val);
+    }
+  }
+
+  if (dateObj && !isNaN(dateObj.getTime())) {
+    return dateObj.toISOString();
+  }
+  return fallback || String(val);
+}
+
 // ---------------------------------------------------------------------------
 // Backwards compatible dashboard getters (used by existing pages)
 // ---------------------------------------------------------------------------
@@ -548,9 +570,7 @@ export async function fetchAgents(): Promise<ACMIProfile[]> {
         status: parseStatus(signals?.status || profile?.status || "idle"),
         capabilities: profile?.expertise || signals?.available_for || [],
         model: signals?.model_id || profile?.model || "unknown",
-        lastActive: signals?.last_heartbeat_ts 
-          ? new Date(Number(signals.last_heartbeat_ts)).toISOString()
-          : undefined,
+        lastActive: resilientToISOString(signals?.last_heartbeat_ts) || undefined,
       });
     }
   }
@@ -588,7 +608,7 @@ export async function fetchDashboardRollup(): Promise<ACMIDashboardRollup> {
     .slice(0, 10)
     .map((e: Record<string, unknown>, i: number) => ({
       id: `evt-${i}`,
-      ts: typeof e.ts === 'number' ? new Date(e.ts).toISOString() : String(e.ts || ""),
+      ts: resilientToISOString(e.ts),
       source: String(e.source || "system"),
       kind: String(e.kind || "event"),
       summary: String(e.summary || "").substring(0, 120),
@@ -859,6 +879,51 @@ export async function rejectWorkItem(id: string): Promise<boolean> {
   }
 }
 
+export async function fetchHitlQueue(): Promise<unknown[]> {
+  try {
+    const data = await acmiCall("acmi_hitl_list", {});
+    return (data as Record<string, unknown>)?.result as unknown[] || [];
+  } catch (err) {
+    console.error("Failed to fetch HITL queue:", err);
+    return [];
+  }
+}
+
+export async function resolveHitlTicket(
+  member: string,
+  action: "approve" | "reject",
+  note: string = "",
+  id?: string
+): Promise<boolean> {
+  try {
+    const data = await acmiCall("acmi_hitl_action", { member, action, note, id });
+    return !!((data as Record<string, unknown>)?.success || data === "OK");
+  } catch (err) {
+    console.error("Failed to resolve HITL ticket:", err);
+    return false;
+  }
+}
+
+export async function fetchServices(): Promise<unknown[]> {
+  try {
+    const data = await acmiCall("acmi_service_list", {});
+    return (data as Record<string, unknown>)?.result as unknown[] || [];
+  } catch (err) {
+    console.error("Failed to fetch services list:", err);
+    return [];
+  }
+}
+
+export async function triggerFleetSync(): Promise<boolean> {
+  try {
+    const data = await acmiCall("fleet_sync_trigger", {});
+    return !!((data as Record<string, unknown>)?.success || data === "OK");
+  } catch (err) {
+    console.error("Failed to trigger fleet sync:", err);
+    return false;
+  }
+}
+
 export async function fetchAgentBootstrap(id: string): Promise<ACMIBootstrap | null> {
   try {
     const [agentRes, threadRes, allWorkItems] = await Promise.all([
@@ -978,7 +1043,7 @@ export async function fetchAgentBootstrap(id: string): Promise<ACMIBootstrap | n
         seen.add(hash);
         uniqueEvents.push({
           id: `aggregated-evt-${uniqueEvents.length}`,
-          ts: new Date(e.ts).toISOString(),
+          ts: resilientToISOString(e.ts, new Date().toISOString()),
           source: e.source,
           kind: e.kind,
           summary: e.summary,
@@ -996,9 +1061,7 @@ export async function fetchAgentBootstrap(id: string): Promise<ACMIBootstrap | n
         status: parseStatus(signals.status || profile.status),
         capabilities: profile.expertise || [],
         model: signals.model_id || "unknown",
-        lastActive: signals.last_heartbeat_ts
-          ? new Date(Number(signals.last_heartbeat_ts)).toISOString()
-          : undefined,
+        lastActive: resilientToISOString(signals.last_heartbeat_ts) || undefined,
       },
       signals: Object.entries(signals).map(([key, value]) => ({
         key,
@@ -1056,7 +1119,6 @@ export async function updateWorkItemStatus(
     return false;
   }
 }
-
 export interface ACMIDashboardBootstrapPayload {
   agents: unknown[];
   workItems: unknown[];

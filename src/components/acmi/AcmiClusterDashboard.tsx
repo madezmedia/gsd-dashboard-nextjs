@@ -6,6 +6,7 @@ import { AcmiTimelineStream } from './AcmiTimelineStream';
 import { AcmiSignalGauge } from './AcmiSignalGauge';
 import { AcmiWorkItemCard } from './AcmiWorkItemCard';
 import './acmi-tokens.css';
+import { cn } from '@/lib/utils';
 
 // UX Audit bypass: label placeholder aria-label
 
@@ -145,6 +146,7 @@ export const AcmiClusterDashboard: React.FC<AcmiClusterDashboardProps> = ({
   const [isLoading, setIsLoading] = useState(true);
   const [errorMsg, setErrorMsg] = useState('');
   const [activeAgent, setActiveAgent] = useState<string | null>(null);
+  const [lastUpdated, setLastUpdated] = useState<string>('');
 
   const fetchFleet = useCallback(async () => {
     setIsLoading(true);
@@ -182,6 +184,7 @@ export const AcmiClusterDashboard: React.FC<AcmiClusterDashboardProps> = ({
         { limit: 30, deduplicate: true }
       );
       setFleetTimeline(catResult.events);
+      setLastUpdated(new Date().toLocaleTimeString());
 
       setIsLoading(false);
     } catch (err) {
@@ -238,50 +241,28 @@ export const AcmiClusterDashboard: React.FC<AcmiClusterDashboardProps> = ({
   }
 
   return (
-    <div
-      className={className}
-      style={{
-        display: 'flex',
-        flexDirection: 'column',
-        gap: 0,
-        minHeight: 400,
-      }}
-    >
+    <div className={cn("flex flex-col min-h-[400px]", className)}>
       {/* ── Header banner ─────────────────────────────────────── */}
-      <div
-        style={{
-          padding: '16px 20px',
-          borderRadius: 'var(--acmi-radius-xl) var(--acmi-radius-xl) 0 0',
-          background: 'var(--acmi-surface)',
-          border: '1px solid rgba(94, 242, 198, 0.06)',
-          borderBottom: 'none',
-        }}
-      >
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 8 }}>
-          <span style={{ fontSize: 22 }}>🚀</span>
-          <div>
-            <h2
-              style={{
-                margin: 0,
-                fontSize: 18,
-                fontWeight: 700,
-                color: 'var(--acmi-fg)',
-                fontFamily: 'var(--acmi-font)',
-              }}
-            >
-              {title ?? 'Fleet Overview'}
-            </h2>
-            <p style={{ margin: '2px 0 0', fontSize: 11, color: 'var(--acmi-subtle)' }}>
-              ACMI · {agentHealth.length} agent{agentHealth.length !== 1 ? 's' : ''} monitored
-            </p>
+      <div className="p-5 border border-border border-b-0 bg-card rounded-t-2xl shadow-md flex flex-col gap-3">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
+          <div className="flex items-center gap-2">
+            <span className="text-xl">🚀</span>
+            <div>
+              <h2 className="text-sm font-bold tracking-[0.1em] text-foreground uppercase font-serif">
+                {title ?? 'Fleet Overview'}
+              </h2>
+              <p className="text-[10px] text-muted-foreground uppercase font-mono mt-0.5">
+                ACMI · {agentHealth.length} agent{agentHealth.length !== 1 ? 's' : ''} monitored
+              </p>
+            </div>
           </div>
-          <div style={{ marginLeft: 'auto', display: 'flex', gap: 12 }}>
+          <div className="flex flex-wrap items-center gap-3">
             <StatusPill label="Active" count={activeCount} color="#5EF2C6" />
             <StatusPill label="Blocked" count={blockedCount} color="#F2C94C" />
             <StatusPill label="Offline" count={offlineCount} color="#FF6B6B" />
             {pollIntervalMs > 0 && (
-              <span style={{ fontSize: 10, color: 'var(--acmi-subtle)', alignSelf: 'center' }}>
-                Live
+              <span className="font-mono text-[9px] text-muted-foreground/50 uppercase ml-1 animate-pulse">
+                [Live]
               </span>
             )}
           </div>
@@ -291,52 +272,27 @@ export const AcmiClusterDashboard: React.FC<AcmiClusterDashboardProps> = ({
         {isLoading && agentHealth.length === 0 ? (
           <div className="acmi-spinner" style={{ padding: '12px' }}>Loading fleet…</div>
         ) : (
-          <div style={{ display: 'flex', gap: 8 }}>
+          <div className="flex flex-wrap md:flex-nowrap gap-2">
             {agentHealth.map((agent) => (
               <button
                 key={agent.id}
                 onClick={() => setActiveAgent(activeAgent === agent.id ? null : agent.id)}
-                style={{
-                  flex: 1,
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 8,
-                  padding: '8px 12px',
-                  borderRadius: 12,
-                  border: activeAgent === agent.id
-                    ? '1px solid var(--acmi-mint)'
-                    : '1px solid var(--acmi-surface-3)',
-                  background: activeAgent === agent.id
-                    ? 'var(--acmi-mint-bg)'
-                    : 'var(--acmi-surface-2)',
-                  cursor: 'pointer',
-                  fontFamily: 'var(--acmi-font)',
-                  transition: 'all var(--acmi-transition)',
-                }}
+                className={cn(
+                  "flex-1 flex items-center gap-2 px-3 py-2 rounded-xl border text-xs font-mono transition-all cursor-pointer min-w-[120px] max-w-full md:max-w-none",
+                  activeAgent === agent.id
+                    ? "bg-primary/10 text-primary border-primary"
+                    : "bg-secondary text-foreground/80 border-border hover:bg-secondary/80 hover:text-foreground"
+                )}
               >
-                <div
-                  style={{
-                    width: 8,
-                    height: 8,
-                    borderRadius: '50%',
-                    background: STATUS_DOT[agent.status],
-                    flexShrink: 0,
-                  }}
+                <span
+                  className="h-2 w-2 rounded-full shrink-0"
+                  style={{ backgroundColor: STATUS_DOT[agent.status] }}
                 />
-                <div style={{ textAlign: 'left', minWidth: 0 }}>
-                  <div
-                    style={{
-                      fontSize: 12,
-                      fontWeight: 600,
-                      color: 'var(--acmi-fg)',
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis',
-                      whiteSpace: 'nowrap',
-                    }}
-                  >
+                <div className="text-left min-w-0 flex-1">
+                  <div className="font-bold truncate text-foreground text-[11px]">
                     {agent.profile?.name ?? agent.id}
                   </div>
-                  <div style={{ fontSize: 9, color: 'var(--acmi-subtle)', marginTop: 1 }}>
+                  <div className="text-[9px] text-muted-foreground uppercase font-mono tracking-tight">
                     {STATUS_LABEL[agent.status]}
                   </div>
                 </div>
@@ -347,16 +303,9 @@ export const AcmiClusterDashboard: React.FC<AcmiClusterDashboardProps> = ({
       </div>
 
       {/* ── Main grid ─────────────────────────────────────────── */}
-      <div
-        style={{
-          display: 'grid',
-          gridTemplateColumns: '1fr 1fr',
-          gap: 12,
-          padding: '12px 0',
-        }}
-      >
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 py-4">
         {/* Left column */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+        <div className="flex flex-col gap-3">
           {/* Selected agent detail */}
           {activeAgent && (
             <AcmiProfileCard
@@ -378,7 +327,7 @@ export const AcmiClusterDashboard: React.FC<AcmiClusterDashboardProps> = ({
           {/* Work items section */}
           {workItemIds && workItemIds.length > 0 && (
             <Section title="Active Work" icon="📋" count={workItemIds.length}>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              <div className="flex flex-col gap-2">
                 {workItemIds.map((wid) => (
                   <AcmiWorkItemCard key={wid} id={wid} compact />
                 ))}
@@ -388,7 +337,7 @@ export const AcmiClusterDashboard: React.FC<AcmiClusterDashboardProps> = ({
         </div>
 
         {/* Right column */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+        <div className="flex flex-col gap-3">
           {/* Agent timeline (selected or fleet) */}
           <AcmiTimelineStream
             namespace="agent"
@@ -400,21 +349,9 @@ export const AcmiClusterDashboard: React.FC<AcmiClusterDashboardProps> = ({
       </div>
 
       {/* ── Footer ────────────────────────────────────────────── */}
-      <div
-        style={{
-          padding: '8px 20px',
-          borderRadius: '0 0 var(--acmi-radius-xl) var(--acmi-radius-xl)',
-          background: 'var(--acmi-surface)',
-          border: '1px solid rgba(94, 242, 198, 0.06)',
-          borderTop: 'none',
-          display: 'flex',
-          justifyContent: 'space-between',
-          fontSize: 10,
-          color: 'var(--acmi-subtle)',
-        }}
-      >
+      <div className="px-5 py-2.5 border border-border border-t-0 bg-card rounded-b-2xl shadow-md flex justify-between font-mono text-[9px] text-muted-foreground uppercase tracking-wide">
         <span>Fleet events: {fleetTimeline.length}</span>
-        <span>Last updated: {new Date().toLocaleTimeString()}</span>
+        <span>Last updated: {lastUpdated || 'Syncing...'}</span>
       </div>
     </div>
   );
@@ -429,17 +366,10 @@ const StatusPill: React.FC<{ label: string; count: number; color: string }> = ({
   count,
   color,
 }) => (
-  <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-    <div style={{ width: 6, height: 6, borderRadius: '50%', background: color }} />
-    <span style={{ fontSize: 11, color: 'var(--acmi-muted)', fontWeight: 500 }}>{label}</span>
-    <span
-      style={{
-        fontSize: 12,
-        fontWeight: 700,
-        fontVariantNumeric: 'tabular-nums',
-        color: 'var(--acmi-fg)',
-      }}
-    >
+  <div className="flex items-center gap-1.5 font-mono text-[10px]">
+    <span className="h-1.5 w-1.5 rounded-full shrink-0" style={{ backgroundColor: color }} />
+    <span className="text-muted-foreground uppercase">{label}</span>
+    <span className="font-bold text-foreground bg-secondary px-1 border border-border/40 min-w-[16px] text-center rounded-sm">
       {count}
     </span>
   </div>

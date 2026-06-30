@@ -628,7 +628,10 @@ export async function POST(req: NextRequest) {
       tool !== "acmi_work_list" &&
       tool !== "acmi_dashboard_bootstrap" &&
       tool !== "dashboardBootstrap" &&
-      tool !== "saas_get_status"
+      tool !== "saas_get_status" &&
+      tool !== "acmi_service_list" &&
+      tool !== "acmi_hitl_list" &&
+      tool !== "fleet_sync_trigger"
     ) {
       return NextResponse.json({ error: "Missing required parameter 'id'" }, { status: 400 });
     }
@@ -827,6 +830,49 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ result: "OK", success: true });
       }
 
+      case "acmi_work_create": {
+        const title = params?.title ? String(params.title) : "Untitled Work Item";
+        const description = params?.description ? String(params.description) : "";
+        const owner = params?.owner ? String(params.owner) : "unassigned";
+        const priority = params?.priority ? String(params.priority) : "P2";
+        const status = params?.status ? String(params.status) : "pending";
+        const deliverables = Array.isArray(params?.deliverables) ? params.deliverables.map(String) : [];
+
+        const profileData = {
+          id,
+          title,
+          description,
+          owner,
+          priority,
+          status,
+          deliverables,
+        };
+
+        const signalsData = {
+          progress_pct: 0,
+          last_activity_ts: Date.now(),
+          blockers: [],
+        };
+
+        const initialEvent = {
+          id: `evt-creation-${Date.now()}`,
+          ts: Date.now(),
+          source: owner !== "unassigned" ? owner : "system",
+          kind: "spawn",
+          summary: `[work-created] Seeded new project: ${title}`,
+          correlationId: `cid-creation-${id}`,
+        };
+
+        await Promise.all([
+          executeUpstashCommand(config, ["SET", `acmi:work:${id}:profile`, JSON.stringify(profileData)], true),
+          executeUpstashCommand(config, ["SET", `acmi:work:${id}:signals`, JSON.stringify(signalsData)], true),
+          executeUpstashCommand(config, ["ZADD", `acmi:work:${id}:timeline`, String(Date.now()), JSON.stringify(initialEvent)], true),
+          executeUpstashCommand(config, ["ZADD", "acmi:bus:relay:events", String(Date.now()), JSON.stringify(initialEvent)], true)
+        ]);
+
+        return NextResponse.json({ result: "OK", success: true });
+      }
+
       case "dashboardBootstrap":
       case "acmi_dashboard_bootstrap": {
         // Fetch keys for all namespaces
@@ -948,6 +994,129 @@ export async function POST(req: NextRequest) {
             tasks,
           }
         });
+      }
+
+      case "acmi_hitl_list": {
+        const hitlZsetKey = `acmi:user:mikey:hitl-queue`;
+        const zrangeRes = await executeUpstashCommand(config, ["ZRANGE", hitlZsetKey, "0", "-1", "WITHSCORES"], false).catch(() => ({ result: [] }));
+        const rawList = Array.isArray(zrangeRes?.result) ? zrangeRes.result : [];
+        
+        const list: Record<string, unknown>[] = [];
+        for (let i = 0; i < rawList.length; i += 2) {
+          const memberStr = rawList[i];
+          const score = rawList[i + 1];
+          if (memberStr === undefined) continue;
+
+          let parsedMember: Record<string, unknown> = {};
+          try {
+            parsedMember = JSON.parse(String(memberStr));
+          } catch {
+            parsedMember = { summary: String(memberStr) };
+          }
+          list.push({
+            member: memberStr,
+            ts: Number(score || Date.now()),
+            ...parsedMember
+          });
+        }
+        // Sort descending (newest first)
+        list.sort((a, b) => Number(b.ts) - Number(a.ts));
+        return NextResponse.json({ result: list });
+      }
+
+      case "acmi_hitl_action": {
+        const { member, action, note, id } = params || {};
+        if (!member) {
+          return NextResponse.json({ error: "Missing required parameter 'member'" }, { status: 400 });
+        }
+        
+        const hitlZsetKey = `acmi:user:mikey:hitl-queue`;
+        
+        // 1. Remove from HITL ZSET
+        await executeUpstashCommand(config, ["ZREM", hitlZsetKey, String(member)], true);
+        
+        // 2. Post resolved event to user timeline
+        const scoreStr = String(Date.now());
+        const resolvedPayload = {
+          id: `hitl-resolved-${Date.now()}`,
+          ts: Date.now(),
+          source: "user:mikey",
+          kind: "hitl-resolved",
+          summary: `[hitl-resolved] Intervened on ticket: "${action.toUpperCase()}". Note: ${note || "None"}`,
+          payload: { action, note, memberParsed: JSON.parse(String(member)) }
+        };
+        await executeUpstashCommand(config, ["ZADD", `acmi:user:mikey:timeline`, scoreStr, JSON.stringify(resolvedPayload)], true);
+
+        // 3. Post to coordination timeline
+        await executeUpstashCommand(config, ["ZADD", `acmi:thread:agent-coordination:timeline`, scoreStr, JSON.stringify({
+          ...resolvedPayload,
+          summary: `[hitl-resolution] Human Mikey resolved ticket: ${action.toUpperCase()}. Note: ${note || "None"}`
+        })], true);
+
+        // 4. Optionally update work item status if id is provided
+        if (id) {
+          const nextStatus = action === "approve" ? "active" : "pending";
+          await writeSignalsResilient(config, `acmi:work:${id}:signals`, { status: nextStatus });
+          await executeUpstashCommand(config, ["ZADD", `acmi:work:${id}:timeline`, scoreStr, JSON.stringify({
+            id: `hitl-work-update-${Date.now()}`,
+            ts: Date.now(),
+            source: "user:mikey",
+            kind: "hitl-resolution",
+            summary: `[hitl-resolution] Work item status updated to ${nextStatus}`
+          })], true);
+        }
+
+        return NextResponse.json({ result: "OK", success: true });
+      }
+
+      case "fleet_sync_trigger": {
+        await executeUpstashCommand(config, ["PUBLISH", "fleet:sync", "trigger"], false);
+        return NextResponse.json({ result: "OK", success: true });
+      }
+
+      case "acmi_service_list": {
+        const keysCmd = ["KEYS", `acmi:registry:service:*`];
+        const keysRes = await executeUpstashCommand(config, keysCmd, false).catch(() => ({ result: [] }));
+        const keysList = Array.isArray(keysRes?.result) ? (keysRes.result as string[]) : [];
+
+        const tenantKeysCmd = ["KEYS", `acmi:${namespace}:registry:service:*`];
+        const tenantKeysRes = await executeUpstashCommand(config, tenantKeysCmd, false).catch(() => ({ result: [] }));
+        const tenantKeysList = Array.isArray(tenantKeysRes?.result) ? (tenantKeysRes.result as string[]) : [];
+
+        const allKeys = Array.from(new Set([...keysList, ...tenantKeysList]));
+        const services: Record<string, unknown>[] = [];
+
+        if (allKeys.length > 0) {
+          const results = await Promise.allSettled(
+            allKeys.map(key => executeUpstashCommand(config, ["GET", key], false))
+          );
+          
+          for (let i = 0; i < allKeys.length; i++) {
+            const key = allKeys[i];
+            const res = results[i];
+            if (res.status !== "fulfilled" || !res.value) continue;
+
+            const rawVal = (res.value as Record<string, unknown>)?.result;
+            if (!rawVal) continue;
+
+            const name = key.replace(/acmi:(?:[a-zA-Z0-9_-]+:)?registry:service:/, "");
+            let parsedVal: Record<string, unknown> = {};
+            try {
+              parsedVal = JSON.parse(String(rawVal));
+            } catch {
+              parsedVal = { description: String(rawVal) };
+            }
+
+            services.push({
+              key,
+              name: name.charAt(0).toUpperCase() + name.slice(1).replace(/-/g, " "),
+              slug: name,
+              ...parsedVal,
+            });
+          }
+        }
+
+        return NextResponse.json({ result: services });
       }
 
       case "saas_get_status": {

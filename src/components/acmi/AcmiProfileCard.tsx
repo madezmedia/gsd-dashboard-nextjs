@@ -1,93 +1,89 @@
-import React, { useEffect, useState, useCallback } from 'react';
-import type { AcmiProfile, AcmiSignals } from '@/lib/acmi-types';
-import { getProfile, getSignals, getEntity } from '@/lib/acmi-client';
-import type { AcmiNamespace } from '@/lib/acmi-types';
-import './acmi-tokens.css';
+"use client";
 
-// UX Audit bypass: label placeholder aria-label
-
-// ---------------------------------------------------------------------------
-// Types
-// ---------------------------------------------------------------------------
+import React, { useEffect, useState, useCallback } from "react";
+import type { AcmiProfile, AcmiSignals, AcmiNamespace } from "@/lib/acmi-types";
+import { getEntity } from "@/lib/acmi-client";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 export interface AcmiProfileCardProps {
-  /** Entity namespace (default: 'agent') */
   namespace?: AcmiNamespace;
-  /** Entity ID to fetch profile + signals for */
   id: string;
-  /** Optional pre-loaded data (skips fetch) */
   data?: {
     profile: AcmiProfile | null;
     signals: AcmiSignals | null;
   };
-  /** Optional className override */
   className?: string;
-  /** Callback when entity is clicked */
   onSelect?: (id: string) => void;
 }
 
-type LoadState = 'idle' | 'loading' | 'loaded' | 'error';
-
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
+type LoadState = "idle" | "loading" | "loaded" | "error";
 
 const ACTOR_TYPE_LABELS: Record<string, { label: string; icon: string }> = {
-  agent:   { label: 'Agent',    icon: '🤖' },
-  human:   { label: 'Human',    icon: '👤' },
-  system:  { label: 'System',   icon: '⚙️' },
-  external:{ label: 'External', icon: '🔗' },
+  agent: { label: "Agent Swarm", icon: "🤖" },
+  human: { label: "Operator", icon: "👤" },
+  system: { label: "System Host", icon: "⚙️" },
+  external: { label: "External Integrator", icon: "🔗" }
 };
 
-const STATUS_COLORS: Record<string, string> = {
-  active:   'acmi-badge--success',
-  idle:     'acmi-badge--info',
-  working:  'acmi-badge--mint',
-  blocked:  'acmi-badge--warning',
-  error:    'acmi-badge--danger',
-  offline:  'acmi-badge--danger',
+const DEFAULT_AGENTS_METADATA: Record<string, { name: string; role: string; desc: string; skills: string[] }> = {
+  "claude-engineer": {
+    name: "Claude Engineer",
+    role: "Deep Coding Specialist",
+    desc: "Autonomous implementation and codebase-wide code review specialist.",
+    skills: ["typescript", "next.js", "turbopack", "rest-apis", "upstash"]
+  },
+  "antigravity": {
+    name: "Antigravity",
+    role: "Swarm Orchestrator",
+    desc: "Primary agentic pilot directing coordinate swarms and UI aesthetics.",
+    skills: ["swarm-piloting", "v3-design", "context-mapping", "auto-healing"]
+  },
+  "design-ui-designer": {
+    name: "UI Specialist",
+    role: "Aesthetics Designer",
+    desc: "Generates high-fidelity user interface specifications and Tailwind styles.",
+    skills: ["ui-ux-design", "glassmorphic-grids", "tailwind-v4", "design-tokens"]
+  },
+  "design-brand-guardian": {
+    name: "Brand Guardian",
+    role: "Color & Typography Auditor",
+    desc: "Enforces design restraint, contrast validation, and logo guidelines.",
+    skills: ["contrast-compliance", "web-accessibility", "aesthetic-audit"]
+  },
+  "design-whimsy-injector": {
+    name: "Whimsy Injector",
+    role: "Motion & Micro-interactions",
+    desc: "Injects anime.js transitions, physics-based springs, and hover animations.",
+    skills: ["anime.js", "spring-physics", "micro-interactions", "transitions"]
+  }
 };
-
-function getStatusClass(status: unknown): string {
-  const s = String(status ?? '').toLowerCase();
-  return STATUS_COLORS[s] ?? 'acmi-badge--info';
-}
-
-function formatRole(role: string | undefined): string {
-  if (!role) return '';
-  return role
-    .replace(/[-_]/g, ' ')
-    .replace(/\b\w/g, (c) => c.toUpperCase());
-}
-
-// ---------------------------------------------------------------------------
-// Component
-// ---------------------------------------------------------------------------
 
 export const AcmiProfileCard: React.FC<AcmiProfileCardProps> = ({
-  namespace = 'agent',
+  namespace = "agent",
   id,
   data,
-  className = '',
-  onSelect,
+  className = "",
+  onSelect
 }) => {
   const [profile, setProfile] = useState<AcmiProfile | null>(data?.profile ?? null);
   const [signals, setSignals] = useState<AcmiSignals | null>(data?.signals ?? null);
-  const [loadState, setLoadState] = useState<LoadState>(data ? 'loaded' : 'idle');
-  const [errorMsg, setErrorMsg] = useState<string>('');
+  const [loadState, setLoadState] = useState<LoadState>(data ? "loaded" : "idle");
+  const [errorMsg, setErrorMsg] = useState("");
 
   const fetchData = useCallback(async () => {
     if (data) return;
-    setLoadState('loading');
-    setErrorMsg('');
+    setLoadState("loading");
+    setErrorMsg("");
     try {
       const entity = await getEntity(namespace, id);
       setProfile(entity.profile);
       setSignals(entity.signals);
-      setLoadState('loaded');
+      setLoadState("loaded");
     } catch (err) {
-      setErrorMsg(err instanceof Error ? err.message : 'Failed to load profile');
-      setLoadState('error');
+      setErrorMsg(err instanceof Error ? err.message : "Failed to load profile");
+      setLoadState("error");
     }
   }, [namespace, id, data]);
 
@@ -96,7 +92,7 @@ export const AcmiProfileCard: React.FC<AcmiProfileCardProps> = ({
       const timer = setTimeout(() => {
         setProfile(data.profile);
         setSignals(data.signals);
-        setLoadState('loaded');
+        setLoadState("loaded");
       }, 0);
       return () => clearTimeout(timer);
     } else {
@@ -107,143 +103,107 @@ export const AcmiProfileCard: React.FC<AcmiProfileCardProps> = ({
     }
   }, [fetchData, data]);
 
-  // ── Loading state ───────────────────────────────────────────────
-  if (loadState === 'loading') {
+  if (loadState === "loading") {
     return (
-      <div className={`acmi-card ${className}`} style={{ minHeight: 180 }}>
-        <div className="acmi-spinner">Loading profile…</div>
+      <div className={cn("border border-border bg-card rounded-2xl p-5 shadow-md flex items-center justify-center min-h-[160px]", className)}>
+        <p className="font-mono text-[10px] text-muted-foreground uppercase animate-pulse">Loading profile...</p>
       </div>
     );
   }
 
-  // ── Error state ─────────────────────────────────────────────────
-  if (loadState === 'error') {
+  if (loadState === "error") {
     return (
-      <div className={`acmi-card ${className}`} style={{ minHeight: 180 }}>
-        <div className="acmi-error">
-          <span className="acmi-error-icon">⚠️</span>
+      <div className={cn("border border-red-500/20 bg-card rounded-2xl p-5 shadow-md space-y-3 min-h-[160px]", className)}>
+        <div className="flex items-center gap-2 text-red-400 font-mono text-xs">
+          <span>⚠️</span>
           <span>Failed to load profile: {errorMsg}</span>
         </div>
-        <button
+        <Button
+          size="sm"
+          variant="outline"
+          className="border-border text-foreground hover:bg-secondary text-[10px] uppercase font-mono h-7 cursor-pointer"
           onClick={fetchData}
-          style={{
-            marginTop: 12,
-            padding: '6px 16px',
-            borderRadius: 8,
-            border: '1px solid var(--acmi-mint)',
-            background: 'transparent',
-            color: 'var(--acmi-mint)',
-            cursor: 'pointer',
-            fontFamily: 'var(--acmi-font)',
-            fontSize: 12,
-          }}
         >
-          Retry
-        </button>
+          Retry Connection
+        </Button>
       </div>
     );
   }
 
-  // ── Empty state ─────────────────────────────────────────────────
-  if (!profile && !signals) {
-    return (
-      <div className={`acmi-card ${className}`} style={{ minHeight: 180 }}>
-        <div className="acmi-empty">
-          <div className="acmi-empty-icon">📋</div>
-          <div>No profile data for <strong>{id}</strong></div>
-          <div style={{ fontSize: 11 }}>Entity exists but has no profile or signals yet</div>
-        </div>
-      </div>
-    );
-  }
+  // Resolve metadata (database first, then default fallback meta)
+  const agentMeta = DEFAULT_AGENTS_METADATA[id] || {
+    name: id,
+    role: "Autonomous Agent",
+    desc: "Active fleet member processing background directives.",
+    skills: ["automation", "acmi-protocol"]
+  };
 
-  const at = profile?.actor_type ?? 'agent';
+  const name = profile?.name || agentMeta.name;
+  const role = profile?.fleet_role || profile?.role || agentMeta.role;
+  const desc = profile?.description || agentMeta.desc;
+  const skills = (profile?.expertise || profile?.skills || agentMeta.skills) as string[];
+
+  const at = profile?.actor_type ?? "agent";
   const actorInfo = ACTOR_TYPE_LABELS[at] ?? ACTOR_TYPE_LABELS.agent;
-  const status = signals?.status ?? profile?.fleet_role ?? 'active';
+  const status = signals?.status ?? profile?.status ?? "active";
 
   return (
     <div
-      className={`acmi-card ${className}`}
+      className={cn(
+        "border border-border bg-card rounded-2xl p-5 shadow-md space-y-4 hover:border-primary/40 transition-all",
+        onSelect && "cursor-pointer",
+        className
+      )}
       onClick={() => onSelect?.(id)}
-      style={{ cursor: onSelect ? 'pointer' : 'default' }}
     >
-      {/* ── Header row ────────────────────────────────────────── */}
-      <div className="acmi-card-header">
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <div
-            style={{
-              width: 40,
-              height: 40,
-              borderRadius: 12,
-              background: 'var(--acmi-surface-2)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontSize: 20,
-            }}
-          >
-            {profile?.avatar ?? actorInfo.icon}
+      {/* Header Row */}
+      <div className="flex items-center justify-between gap-3 border-b border-border/40 pb-3">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-secondary flex items-center justify-center text-lg border border-border">
+            {profile?.avatar || actorInfo.icon}
           </div>
           <div>
-            <div style={{ fontWeight: 600, fontSize: 15, color: 'var(--acmi-fg)' }}>
-              {profile?.name ?? id}
-            </div>
-            <div style={{ fontSize: 11, color: 'var(--acmi-subtle)', marginTop: 1 }}>
-              {actorInfo.label} · {profile?.primary_id ?? id}
-            </div>
+            <h3 className="font-bold text-foreground text-sm tracking-wide font-serif">
+              {name}
+            </h3>
+            <p className="text-[10px] text-muted-foreground uppercase font-mono tracking-tight mt-0.5">
+              {actorInfo.label} · {profile?.primary_id || id}
+            </p>
           </div>
         </div>
-        <span className={`acmi-badge ${getStatusClass(status)}`}>
-          {String(status).toLowerCase()}
-        </span>
+        <Badge
+          className={cn(
+            "rounded-none font-mono text-[9px] uppercase px-2 py-0.5",
+            status === "active" || status === "live" || status === "working"
+              ? "bg-primary/10 text-primary border border-primary/20"
+              : "bg-[#7DB8FF]/10 text-[#7DB8FF] border border-[#7DB8FF]/20"
+          )}
+        >
+          {status}
+        </Badge>
       </div>
 
-      {/* ── Role ──────────────────────────────────────────────── */}
-      {(profile?.role || profile?.fleet_role) && (
-        <div
-          style={{
-            fontSize: 12,
-            color: 'var(--acmi-muted)',
-            marginBottom: 12,
-            padding: '4px 10px',
-            borderRadius: 6,
-            background: 'var(--acmi-surface-2)',
-            display: 'inline-block',
-          }}
-        >
-          {formatRole(profile?.fleet_role ?? profile?.role)}
+      {/* Role */}
+      {role && (
+        <div className="inline-flex font-mono text-[10px] font-bold text-primary bg-primary/10 border border-primary/20 px-2 py-0.5 uppercase">
+          {role}
         </div>
       )}
 
-      {/* ── Description ───────────────────────────────────────── */}
-      {profile?.description && (
-        <p
-          style={{
-            fontSize: 12,
-            lineHeight: 1.5,
-            color: 'var(--acmi-muted)',
-            margin: '0 0 12px 0',
-          }}
-        >
-          {profile.description}
+      {/* Description */}
+      {desc && (
+        <p className="text-xs text-muted-foreground leading-relaxed font-sans">
+          {desc}
         </p>
       )}
 
-      {/* ── Skills / Expertise ────────────────────────────────── */}
-      {(profile?.expertise?.length ?? 0) > 0 && (
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, marginBottom: 8 }}>
-          {(profile?.expertise ?? profile?.skills ?? []).slice(0, 6).map((skill) => (
+      {/* Skills */}
+      {skills.length > 0 && (
+        <div className="flex flex-wrap gap-1.5 pt-1">
+          {skills.slice(0, 5).map((skill) => (
             <span
               key={skill}
-              style={{
-                padding: '2px 8px',
-                borderRadius: 100,
-                fontSize: 10,
-                fontWeight: 500,
-                background: 'var(--acmi-mint-bg)',
-                color: 'var(--acmi-mint)',
-                border: '1px solid rgba(94, 242, 198, 0.12)',
-              }}
+              className="text-[9px] font-mono text-muted-foreground uppercase px-2 py-0.5 bg-secondary border border-border/60"
             >
               {skill}
             </span>
@@ -251,29 +211,16 @@ export const AcmiProfileCard: React.FC<AcmiProfileCardProps> = ({
         </div>
       )}
 
-      {/* ── Signals bar ───────────────────────────────────────── */}
-      {signals && (
-        <div
-          style={{
-            marginTop: 8,
-            paddingTop: 10,
-            borderTop: '1px solid var(--acmi-surface-3)',
-            display: 'flex',
-            gap: 16,
-            flexWrap: 'wrap',
-          }}
-        >
+      {/* Signals Metrics */}
+      {signals && Object.keys(signals).length > 0 && (
+        <div className="pt-3 border-t border-border/40 flex flex-wrap gap-x-4 gap-y-2 font-mono text-[9px]">
           {Object.entries(signals)
-            .filter(([k]) => !['status', 'bloopers'].includes(k))
+            .filter(([k]) => !["status", "bloopers"].includes(k))
             .slice(0, 4)
             .map(([key, val]) => (
-              <div key={key} style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
-                <span style={{ fontSize: 10, color: 'var(--acmi-subtle)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                  {key.replace(/[_-]/g, ' ')}
-                </span>
-                <span style={{ fontSize: 11, color: 'var(--acmi-mint)', fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>
-                  {String(val ?? '—')}
-                </span>
+              <div key={key} className="flex items-center gap-1.5">
+                <span className="text-muted-foreground/60 uppercase">{key.replace(/[_-]/g, " ")}:</span>
+                <span className="text-primary font-bold">{String(val ?? "—")}</span>
               </div>
             ))}
         </div>
