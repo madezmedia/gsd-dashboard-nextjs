@@ -145,7 +145,7 @@ export const AcmiProfileCard: React.FC<AcmiProfileCardProps> = ({
 
   const at = profile?.actor_type ?? "agent";
   const actorInfo = ACTOR_TYPE_LABELS[at] ?? ACTOR_TYPE_LABELS.agent;
-  const status = signals?.status ?? profile?.status ?? "active";
+  const status = String(signals?.status ?? profile?.status ?? "active");
 
   return (
     <div

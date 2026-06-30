@@ -40,6 +40,8 @@ const PRIORITY_CONFIG: Record<AcmiWorkPriority, string> = {
 const getMockWorkItems = (id: string, anchor: number): AcmiWorkItem => {
   const DEFAULT_WORK_ITEMS: Record<string, AcmiWorkItem> = {
     "task-v3-tokens": {
+      id: "task-v3-tokens",
+      timeline: [],
       profile: {
         id: "task-v3-tokens",
         title: "Align application layouts with Mad EZ v3 specs theme",
@@ -57,6 +59,8 @@ const getMockWorkItems = (id: string, anchor: number): AcmiWorkItem => {
       }
     },
     "task-saas-billing": {
+      id: "task-saas-billing",
+      timeline: [],
       profile: {
         id: "task-saas-billing",
         title: "Design unified workspace subscription pipeline",
@@ -76,6 +80,8 @@ const getMockWorkItems = (id: string, anchor: number): AcmiWorkItem => {
   };
 
   return DEFAULT_WORK_ITEMS[id] || {
+    id,
+    timeline: [],
     profile: {
       id,
       title: id,

@@ -1025,7 +1025,10 @@ export async function POST(req: NextRequest) {
       }
 
       case "acmi_hitl_action": {
-        const { member, action, note, id } = params || {};
+        const member = params?.member ? String(params.member) : "";
+        const action = params?.action ? String(params.action) : "";
+        const note = params?.note ? String(params.note) : "";
+        const id = params?.id ? String(params.id) : undefined;
         if (!member) {
           return NextResponse.json({ error: "Missing required parameter 'member'" }, { status: 400 });
         }

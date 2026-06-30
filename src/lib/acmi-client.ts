@@ -1559,6 +1559,7 @@ export const acmiClient = {
   getSignals, getSignal, setSignal, setSignals, deleteSignal,
   appendEvent, getTimeline, catTimeline,
   getEntity, listIds,
+  acmiCall,
   createWorkItem, getWorkItem, listWorkItems, updateWorkItemStatus, updateWorkItemMilestones,
   fetchDashboardBootstrap,
   fetchProjectActivity,

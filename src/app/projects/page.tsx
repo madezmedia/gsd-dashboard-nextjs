@@ -252,7 +252,7 @@ function ProjectsPageContent() {
     const text = newMilestoneText[project.id]?.trim();
     if (!text) return;
 
-    const updatedMilestones = [...project.milestones, text];
+    const updatedMilestones = [...project.milestones, { name: text, done: false }];
     const progress = Math.round((project.completedMilestones.length / updatedMilestones.length) * 100);
 
     setProjects((prev) =>
@@ -363,7 +363,7 @@ function ProjectsPageContent() {
         description: newProjectDesc.trim(),
         owner,
         priority: newProjectPriority as "P0" | "P1" | "P2" | "P3",
-        status: "pending",
+        status: "pending" as any,
         deliverables
       });
 
@@ -1166,11 +1166,11 @@ function KanbanColumn({
                     <span className="font-mono text-[9px] text-muted-foreground/60 uppercase block">Milestones Verification:</span>
                     <div className="space-y-1.5">
                       {project.milestones.map((m, idx) => {
-                        const isDone = project.completedMilestones.includes(m);
+                        const isDone = project.completedMilestones.includes(m.name);
                         return (
                           <div
                             key={idx}
-                            onClick={() => !isSyncing && onMilestoneToggle(project, m)}
+                            onClick={() => !isSyncing && onMilestoneToggle(project, m.name)}
                             className="flex items-center gap-2 cursor-pointer select-none group font-sans text-xs"
                           >
                             <div className={cn(
@@ -1183,7 +1183,7 @@ function KanbanColumn({
                               "text-[11px] leading-tight transition-colors",
                               isDone ? "line-through text-muted-foreground/50" : "text-foreground/80"
                             )}>
-                              {m}
+                              {m.name}
                             </span>
                           </div>
                         );
