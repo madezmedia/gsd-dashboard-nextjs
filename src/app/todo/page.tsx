@@ -7,7 +7,8 @@ import {
   Plus, 
   Search, 
   Calendar, 
-  CheckSquare, 
+  CheckCircle2, 
+  Circle,
   Loader2, 
   AlertCircle, 
   User, 
@@ -526,28 +527,29 @@ export default function TodoPage() {
   const monthDone = monthTasks.filter(t => t.done).length;
 
   return (
-    <div className="flex-1 flex flex-col bg-[#faf9f5] overflow-y-auto">
-      {/* Page Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between border-b border-[#1a1a1a]/10 px-6 py-4 bg-[#f4f2eb]/50 shrink-0 gap-4">
+    <div className="flex-1 flex flex-col bg-transparent overflow-y-auto space-y-6">
+      {/* Page Header Banner */}
+      <header className="relative border border-border bg-card p-5 rounded-2xl flex flex-col md:flex-row md:items-center md:justify-between gap-4 shadow-md shrink-0">
+        <div className="absolute left-0 top-0 bottom-0 w-[4px] bg-primary rounded-l-2xl" />
         <div>
-          <div className="text-xl font-bold font-mono tracking-tight text-[#2d4a3e] flex items-center gap-2">
-            <ClipboardList className="h-5 w-5 stroke-[2.5]" />
-            <span>TODO KANBAN</span>
-          </div>
-          <p className="text-[11px] font-mono text-[#1a1a1a]/60 uppercase tracking-wide mt-1">
-            {tasks.length} tasks · {tasks.filter(t => t.priority === "P0").length} P0 · {tasks.filter(t => t.priority === "P1").length} P1 · {tasks.filter(t => t.done).length} completed
+          <h1 className="text-sm font-bold tracking-[0.2em] text-foreground uppercase font-serif flex items-center gap-2">
+            <ClipboardList className="h-4 w-4 text-primary" />
+            TODO <span className="text-primary italic font-light font-sans">Kanban Workspace</span>
+          </h1>
+          <p className="text-[10px] text-muted-foreground uppercase tracking-wider mt-1 font-mono">
+            {tasks.length} tasks · {tasks.filter(t => t.priority === "P0").length} P0 · {tasks.filter(t => t.done).length} completed
           </p>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
           {/* Google Tasks Panel Toggle */}
           <button
             onClick={() => setShowGoogleTasksPanel(!showGoogleTasksPanel)}
             className={cn(
-              "px-3 py-1.5 font-mono text-xs uppercase font-bold border transition-all flex items-center gap-1.5",
+              "px-3 py-1.5 font-mono text-[10px] uppercase font-bold border transition-all flex items-center gap-1.5 cursor-pointer rounded-xl h-8",
               showGoogleTasksPanel
-                ? "bg-[#2d4a3e] text-[#faf9f5] border-[#2d4a3e]"
-                : "border-[#1a1a1a]/15 bg-[#faf9f5] hover:bg-[#1a1a1a]/5 text-[#2d4a3e]"
+                ? "bg-primary text-[#0F2A2E] border-primary"
+                : "border-border bg-card hover:bg-secondary text-primary"
             )}
           >
             <Database className="h-3.5 w-3.5" />
@@ -556,23 +558,23 @@ export default function TodoPage() {
 
           {/* Search */}
           <div className="relative">
-            <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-[#1a1a1a]/40" />
+            <Search className="absolute left-2.5 top-2 h-3.5 w-3.5 text-muted-foreground/40" />
             <input
               type="text"
               placeholder="Filter tasks..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-8 pr-3 py-1.5 text-xs font-mono bg-[#faf9f5] border border-[#1a1a1a]/15 text-[#1a1a1a] rounded-none focus:outline-none focus:border-[#2d4a3e] w-48 transition-all"
+              className="pl-8 pr-3 py-1.5 text-xs font-mono bg-card border border-border text-foreground rounded-xl focus:outline-none focus:border-primary/50 w-44 transition-all h-8"
             />
           </div>
 
           {/* Toggle View */}
-          <div className="flex border border-[#1a1a1a]/15 font-mono p-0.5 bg-[#faf9f5] shrink-0">
+          <div className="flex border border-border font-mono p-0.5 bg-card shrink-0 rounded-xl overflow-hidden h-8">
             <button
               onClick={() => setViewMode("kanban")}
               className={cn(
-                "px-3 py-1 text-[10px] uppercase font-bold transition-all rounded-none",
-                viewMode === "kanban" ? "bg-[#2d4a3e] text-[#faf9f5]" : "text-[#1a1a1a]/70 hover:bg-[#1a1a1a]/5"
+                "px-3 py-0.5 text-[9px] uppercase font-bold transition-all rounded-lg cursor-pointer",
+                viewMode === "kanban" ? "bg-primary text-[#0F2A2E]" : "text-muted-foreground hover:bg-secondary hover:text-foreground"
               )}
             >
               Kanban
@@ -580,29 +582,29 @@ export default function TodoPage() {
             <button
               onClick={() => setViewMode("gantt")}
               className={cn(
-                "px-3 py-1 text-[10px] uppercase font-bold transition-all rounded-none",
-                viewMode === "gantt" ? "bg-[#2d4a3e] text-[#faf9f5]" : "text-[#1a1a1a]/70 hover:bg-[#1a1a1a]/5"
+                "px-3 py-0.5 text-[9px] uppercase font-bold transition-all rounded-lg cursor-pointer",
+                viewMode === "gantt" ? "bg-primary text-[#0F2A2E]" : "text-muted-foreground hover:bg-secondary hover:text-foreground"
               )}
             >
               Gantt
             </button>
           </div>
         </div>
-      </div>
+      </header>
 
       {/* Google Tasks Panel Overlay */}
       {showGoogleTasksPanel && (
-        <div className="mx-6 my-4 p-4 border border-[#1a1a1a]/15 bg-[#faf9f5] flex flex-col gap-4 animate-in fade-in slide-in-from-top duration-200">
-          <div className="flex items-center justify-between border-b border-[#1a1a1a]/10 pb-3">
+        <div className="p-5 border border-border bg-card flex flex-col gap-4 animate-in fade-in slide-in-from-top duration-200 rounded-2xl shadow-md">
+          <div className="flex items-center justify-between border-b border-border pb-3">
             <div className="flex items-center gap-2">
-              <Database className="h-4 w-4 text-[#2d4a3e]" />
-              <span className="font-mono text-xs font-bold uppercase tracking-wider text-[#2d4a3e]">
+              <Database className="h-4 w-4 text-primary" />
+              <span className="font-mono text-xs font-bold uppercase tracking-wider text-primary">
                 Google Tasks Integration Core
               </span>
             </div>
             <button 
               onClick={() => setShowGoogleTasksPanel(false)}
-              className="text-[#1a1a1a]/60 hover:text-[#1a1a1a] font-mono text-[10px] uppercase border border-[#1a1a1a]/15 px-1.5 py-0.5"
+              className="text-muted-foreground hover:text-foreground font-mono text-[9px] uppercase border border-border px-2 py-0.5 rounded-lg cursor-pointer hover:bg-secondary"
             >
               Close
             </button>
@@ -610,21 +612,21 @@ export default function TodoPage() {
           
           {isSyncing ? (
             <div className="flex flex-col gap-3 py-4">
-              <div className="flex justify-between font-mono text-[10px] text-[#2d4a3e] font-bold">
+              <div className="flex justify-between font-mono text-[10px] text-primary font-bold">
                 <span>{syncStatusText}</span>
                 <span>{syncProgress}%</span>
               </div>
-              <div className="w-full h-2.5 bg-[#1a1a1a]/10 border border-[#1a1a1a]/15 overflow-hidden">
-                <div className="h-full bg-[#2d4a3e] transition-all duration-300" style={{ width: `${syncProgress}%` }} />
+              <div className="w-full h-2 bg-secondary border border-border overflow-hidden rounded-full">
+                <div className="h-full bg-primary transition-all duration-300" style={{ width: `${syncProgress}%` }} />
               </div>
             </div>
           ) : (
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
               <div className="lg:col-span-2 flex flex-col gap-2">
-                <span className="font-mono text-[10px] text-[#1a1a1a]/55 uppercase tracking-wider font-semibold">
+                <span className="font-mono text-[10px] text-muted-foreground uppercase tracking-wider font-semibold">
                   Pending Tasks from Google Calendar API
                 </span>
-                <div className="flex flex-col gap-2 border border-[#1a1a1a]/10 max-h-48 overflow-y-auto bg-[#f4f2eb]/30 p-2">
+                <div className="flex flex-col gap-2 border border-border max-h-48 overflow-y-auto bg-black/10 p-2 rounded-xl">
                   {MOCK_GOOGLE_TASKS.map(task => {
                     const isSelected = selectedGoogleTasks.includes(task.id);
                     const alreadySynced = tasks.some(t => t.title === task.title);
@@ -633,8 +635,8 @@ export default function TodoPage() {
                       <label 
                         key={task.id}
                         className={cn(
-                          "flex items-start gap-3 p-2 border border-[#1a1a1a]/5 bg-[#faf9f5] cursor-pointer hover:bg-[#f4f2eb] select-none text-xs transition-colors",
-                          alreadySynced && "opacity-60 pointer-events-none bg-[#faf9f5]/30"
+                          "flex items-start gap-3 p-2.5 border border-border bg-card cursor-pointer hover:bg-secondary select-none text-xs transition-colors rounded-lg",
+                          alreadySynced && "opacity-60 pointer-events-none bg-card/30"
                         )}
                       >
                         <input
@@ -648,21 +650,21 @@ export default function TodoPage() {
                               setSelectedGoogleTasks(prev => prev.filter(id => id !== task.id));
                             }
                           }}
-                          className="mt-0.5 h-3.5 w-3.5 accent-[#2d4a3e]"
+                          className="mt-0.5 h-3.5 w-3.5 accent-primary cursor-pointer shrink-0"
                         />
                         <div className="flex-1 min-w-0">
-                          <div className="font-semibold text-[#1a1a1a] flex items-center gap-2 flex-wrap">
+                          <div className="font-semibold text-foreground flex items-center gap-2 flex-wrap">
                             <span>{task.title}</span>
-                            <span className="font-mono text-[9px] uppercase px-1 border border-[#2d4a3e]/20 bg-[#2d4a3e]/5 text-[#2d4a3e]">
+                            <span className="font-mono text-[9px] uppercase px-1.5 py-0.5 border border-primary/20 bg-primary/5 text-primary rounded">
                               {task.list}
                             </span>
                             {alreadySynced && (
-                              <span className="font-mono text-[8px] uppercase px-1 bg-[#5ef2c6]/20 text-[#2d4a3e] border border-[#2d4a3e]/10">
+                              <span className="font-mono text-[8px] uppercase px-1.5 py-0.5 bg-primary/10 text-primary border border-primary/20 rounded">
                                 Synced
                               </span>
                             )}
                           </div>
-                          {task.notes && <p className="text-[10px] text-[#1a1a1a]/60 mt-0.5 font-mono">{task.notes}</p>}
+                          {task.notes && <p className="text-[10px] text-muted-foreground mt-1 font-mono">{task.notes}</p>}
                         </div>
                       </label>
                     );
@@ -670,12 +672,12 @@ export default function TodoPage() {
                 </div>
               </div>
               
-              <div className="border border-[#1a1a1a]/10 p-4 bg-[#f4f2eb]/50 flex flex-col justify-between gap-4">
+              <div className="border border-border p-4 bg-secondary/30 flex flex-col justify-between gap-4 rounded-xl">
                 <div className="space-y-2">
-                  <span className="font-mono text-[10px] text-[#2d4a3e] font-extrabold uppercase tracking-widest block">
+                  <span className="font-mono text-[10px] text-primary font-extrabold uppercase tracking-widest block">
                     Sync Control
                   </span>
-                  <p className="text-[11px] text-[#1a1a1a]/60 font-sans leading-relaxed">
+                  <p className="text-[11px] text-muted-foreground font-sans leading-relaxed">
                     Synchronizes selected items with the ACMI `task` database namespace. Updates will propagate instantly across the Super Bus.
                   </p>
                 </div>
@@ -683,7 +685,7 @@ export default function TodoPage() {
                 <button
                   onClick={handleSyncGoogleTasks}
                   disabled={selectedGoogleTasks.length === 0}
-                  className="w-full py-2 bg-[#2d4a3e] text-[#faf9f5] font-mono text-[11px] font-bold uppercase tracking-wider border border-[#2d4a3e] hover:bg-[#faf9f5] hover:text-[#2d4a3e] transition-all disabled:opacity-50 disabled:pointer-events-none rounded-none flex items-center justify-center gap-2"
+                  className="w-full py-2 bg-primary text-[#0F2A2E] font-mono text-[11px] font-bold uppercase tracking-wider border border-primary hover:bg-transparent hover:text-primary transition-all disabled:opacity-50 disabled:pointer-events-none rounded-xl flex items-center justify-center gap-2 cursor-pointer h-9"
                 >
                   <RefreshCw className="h-3.5 w-3.5" />
                   <span>Sync {selectedGoogleTasks.length} Task(s)</span>
@@ -693,7 +695,7 @@ export default function TodoPage() {
           )}
           
           {syncStatusText && !isSyncing && (
-            <div className="font-mono text-[10px] text-[#2d4a3e] bg-[#5ef2c6]/10 border border-[#2d4a3e]/15 p-2 text-center font-bold">
+            <div className="font-mono text-[10px] text-primary bg-primary/10 border border-primary/20 p-2 text-center font-bold rounded-lg">
               {syncStatusText}
             </div>
           )}
@@ -701,63 +703,64 @@ export default function TodoPage() {
       )}
 
       {/* Today Completion progress-strip */}
-      <div className="flex flex-wrap items-center gap-x-8 gap-y-2 border-b border-[#1a1a1a]/10 bg-[#f4f2eb] px-6 py-2.5 font-mono text-[10px] text-[#1a1a1a]/80 shrink-0">
-        <div className="flex items-center gap-2">
-          <span className="font-bold uppercase tracking-wider text-[#2d4a3e]">Today</span>
-          <div className="w-24 h-2 bg-[#1a1a1a]/10 border border-[#1a1a1a]/10">
+      <div className="flex flex-wrap items-center gap-x-8 gap-y-2.5 border border-border bg-card px-5 py-3 font-mono text-[10px] text-muted-foreground shrink-0 rounded-2xl shadow-sm">
+        <div className="flex items-center gap-2.5">
+          <span className="font-bold uppercase tracking-wider text-primary">Today</span>
+          <div className="w-24 h-2 bg-secondary border border-border rounded-full overflow-hidden">
             <div 
-              className="h-full bg-[#2d4a3e]" 
+              className="h-full bg-primary" 
               style={{ width: `${todayTasks.length > 0 ? (todayDone / todayTasks.length) * 100 : 0}%` }}
             />
           </div>
-          <span className="font-bold">[{todayDone}/{todayTasks.length}]</span>
+          <span className="font-bold text-foreground">[{todayDone}/{todayTasks.length}]</span>
         </div>
 
-        <div className="flex items-center gap-2">
-          <span className="font-bold uppercase tracking-wider text-[#2d4a3e]">This Week</span>
-          <div className="w-24 h-2 bg-[#1a1a1a]/10 border border-[#1a1a1a]/10">
+        <div className="flex items-center gap-2.5">
+          <span className="font-bold uppercase tracking-wider text-primary">This Week</span>
+          <div className="w-24 h-2 bg-secondary border border-border rounded-full overflow-hidden">
             <div 
-              className="h-full bg-[#2d4a3e]" 
+              className="h-full bg-primary" 
               style={{ width: `${weekTasks.length > 0 ? (weekDone / weekTasks.length) * 100 : 0}%` }}
             />
           </div>
-          <span className="font-bold">[{weekDone}/{weekTasks.length}]</span>
+          <span className="font-bold text-foreground">[{weekDone}/{weekTasks.length}]</span>
         </div>
 
-        <div className="flex items-center gap-2">
-          <span className="font-bold uppercase tracking-wider text-[#2d4a3e]">This Month</span>
-          <div className="w-24 h-2 bg-[#1a1a1a]/10 border border-[#1a1a1a]/10">
+        <div className="flex items-center gap-2.5">
+          <span className="font-bold uppercase tracking-wider text-primary">This Month</span>
+          <div className="w-24 h-2 bg-secondary border border-border rounded-full overflow-hidden">
             <div 
-              className="h-full bg-[#2d4a3e]" 
+              className="h-full bg-primary" 
               style={{ width: `${monthTasks.length > 0 ? (monthDone / monthTasks.length) * 100 : 0}%` }}
             />
           </div>
-          <span className="font-bold">[{monthDone}/{monthTasks.length}]</span>
+          <span className="font-bold text-foreground">[{monthDone}/{monthTasks.length}]</span>
         </div>
       </div>
 
       {/* Task Fast Input Form */}
-      <div className="px-6 py-4 border-b border-[#1a1a1a]/10 bg-[#faf9f5] shrink-0">
+      <div className="px-5 py-4 border border-border bg-card shrink-0 rounded-2xl shadow-sm relative overflow-hidden">
+        <div className="absolute left-0 top-0 bottom-0 w-[4px] bg-primary" />
         <form onSubmit={handleAddTask} className="flex gap-2 w-full">
-          <div className="flex-1 relative flex items-center border-l-4 border-l-[#2d4a3e]">
+          <div className="flex-1 relative flex items-center">
             <input
               type="text"
               placeholder='Add a task... shorthand: "Review mockups @growth-hacker P0"'
               value={newTaskText}
               onChange={(e) => setNewTaskText(e.target.value)}
-              className="w-full px-4 py-2.5 text-xs font-mono bg-[#f4f2eb] border border-[#1a1a1a]/15 text-[#1a1a1a] rounded-none focus:outline-none focus:bg-[#faf9f5] focus:border-[#2d4a3e] transition-all placeholder:text-[#1a1a1a]/40"
+              className="w-full px-4 py-2.5 text-xs font-mono bg-secondary/40 border border-border text-foreground rounded-xl focus:outline-none focus:bg-secondary/60 focus:border-primary/50 transition-all placeholder:text-muted-foreground/45"
               disabled={isSubmitting}
             />
           </div>
           <button
             type="submit"
             disabled={isSubmitting || !newTaskText.trim()}
-            className="px-5 py-2 bg-[#2d4a3e] text-[#faf9f5] font-mono text-xs font-bold uppercase tracking-wider border border-[#2d4a3e] hover:bg-[#faf9f5] hover:text-[#2d4a3e] transition-all disabled:opacity-50 disabled:pointer-events-none rounded-none shrink-0 flex items-center gap-1"
+            className="px-5 py-2 bg-primary text-[#0F2A2E] font-mono text-xs font-bold uppercase tracking-wider border border-primary hover:bg-transparent hover:text-primary transition-all disabled:opacity-50 disabled:pointer-events-none rounded-xl shrink-0 flex items-center gap-1.5 cursor-pointer h-9"
           >
             {isSubmitting ? (
-              <Loader2 className="h-3 w-3 animate-spin" />
+              <Loader2 className="h-3.5 w-3.5 animate-spin" />
             ) : (
-              <Plus className="h-3 w-3" />
+              <Plus className="h-3.5 w-3.5" />
             )}
             <span>Add Task</span>
           </button>
@@ -765,10 +768,10 @@ export default function TodoPage() {
       </div>
 
       {/* Main Content Area */}
-      <div className="flex-1 p-6">
+      <div className="flex-1">
         {loading && tasks.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-64 font-mono text-xs gap-3 text-[#1a1a1a]/60">
-            <Loader2 className="h-6 w-6 animate-spin text-[#2d4a3e]" />
+          <div className="flex flex-col items-center justify-center h-64 font-mono text-xs gap-3 text-muted-foreground animate-pulse">
+            <Loader2 className="h-6 w-6 animate-spin text-primary" />
             <span>HYDRATING FROM ACMI COCKPIT...</span>
           </div>
         ) : viewMode === "kanban" ? (
@@ -781,12 +784,12 @@ export default function TodoPage() {
                   key={colTitle}
                   onDragOver={handleDragOver}
                   onDrop={(e) => handleDrop(e, colTitle)}
-                  className="flex flex-col border border-[#1a1a1a]/15 bg-[#f4f2eb]/40 min-h-[450px]"
+                  className="flex flex-col border border-border bg-card/65 rounded-2xl min-h-[500px] overflow-hidden shadow-md"
                 >
                   {/* Column Header */}
-                  <div className="px-4 py-3 bg-[#f4f2eb] border-b border-[#1a1a1a]/15 font-mono text-xs font-bold flex justify-between items-center text-[#1a1a1a]">
-                    <span>{colTitle.toUpperCase()}</span>
-                    <span className="text-[10px] bg-[#2d4a3e]/10 px-1.5 py-0.5 border border-[#2d4a3e]/15 text-[#2d4a3e] font-bold">
+                  <div className="px-4 py-3 bg-secondary/35 border-b border-border font-mono text-xs font-bold flex justify-between items-center text-foreground uppercase tracking-wide">
+                    <span>{colTitle}</span>
+                    <span className="text-[10px] bg-primary/10 px-2 py-0.5 border border-primary/20 text-primary font-bold rounded-full">
                       {columnTasks.length}
                     </span>
                   </div>
@@ -794,7 +797,7 @@ export default function TodoPage() {
                   {/* Task List */}
                   <div className="flex-1 p-3 flex flex-col gap-3 overflow-y-auto">
                     {columnTasks.length === 0 ? (
-                      <div className="flex-1 border border-dashed border-[#1a1a1a]/10 flex items-center justify-center p-6 text-center text-[10px] font-mono text-[#1a1a1a]/40 uppercase tracking-wider py-12">
+                      <div className="flex-1 border border-dashed border-border/40 flex items-center justify-center p-6 text-center text-[10px] font-mono text-muted-foreground/30 uppercase tracking-wider py-16 rounded-xl bg-black/5">
                         Drag items here
                       </div>
                     ) : (
@@ -802,24 +805,24 @@ export default function TodoPage() {
                         <div key={task.id}>
                           {editingTaskId === task.id ? (
                             /* CARD EDIT FORM */
-                            <div className="p-3 bg-[#f4f2eb] border border-[#2d4a3e] shadow-sm select-none flex flex-col gap-2.5">
+                            <div className="p-3.5 bg-secondary/80 border border-primary/30 shadow-sm flex flex-col gap-3 rounded-xl select-none">
                               <div className="flex flex-col gap-1">
-                                <label className="font-mono text-[9px] text-[#1a1a1a]/50 uppercase">Task Title</label>
+                                <label className="font-mono text-[9px] text-muted-foreground uppercase">Task Title</label>
                                 <input
                                   type="text"
                                   value={editingTitle}
                                   onChange={(e) => setEditingTitle(e.target.value)}
-                                  className="w-full p-1.5 text-xs font-mono bg-[#faf9f5] border border-[#1a1a1a]/15 rounded-none text-[#1a1a1a] focus:outline-none focus:border-[#2d4a3e]"
+                                  className="w-full p-1.5 text-xs font-mono bg-card border border-border rounded-lg text-foreground focus:outline-none focus:border-primary/50"
                                 />
                               </div>
                               
                               <div className="grid grid-cols-2 gap-2">
                                 <div className="flex flex-col gap-1">
-                                  <label className="font-mono text-[9px] text-[#1a1a1a]/50 uppercase">Owner</label>
+                                  <label className="font-mono text-[9px] text-muted-foreground uppercase">Owner</label>
                                   <select
                                     value={editingOwner}
                                     onChange={(e) => setEditingOwner(e.target.value)}
-                                    className="w-full p-1 text-xs font-mono bg-[#faf9f5] border border-[#1a1a1a]/15 rounded-none text-[#1a1a1a] focus:outline-none focus:border-[#2d4a3e]"
+                                    className="w-full p-1 text-xs font-mono bg-card border border-border rounded-lg text-foreground focus:outline-none focus:border-primary/50"
                                   >
                                     {FLEET_OWNERS.map(o => (
                                       <option key={o} value={o}>{o}</option>
@@ -828,11 +831,11 @@ export default function TodoPage() {
                                 </div>
                                 
                                 <div className="flex flex-col gap-1">
-                                  <label className="font-mono text-[9px] text-[#1a1a1a]/50 uppercase">Priority</label>
+                                  <label className="font-mono text-[9px] text-muted-foreground uppercase">Priority</label>
                                   <select
                                     value={editingPriority}
                                     onChange={(e) => setEditingPriority(e.target.value as TaskItem["priority"])}
-                                    className="w-full p-1 text-xs font-mono bg-[#faf9f5] border border-[#1a1a1a]/15 rounded-none text-[#1a1a1a] focus:outline-none focus:border-[#2d4a3e]"
+                                    className="w-full p-1 text-xs font-mono bg-card border border-border rounded-lg text-foreground focus:outline-none focus:border-primary/50"
                                   >
                                     <option value="P0">P0</option>
                                     <option value="P1">P1</option>
@@ -844,21 +847,21 @@ export default function TodoPage() {
 
                               <div className="grid grid-cols-2 gap-2">
                                 <div className="flex flex-col gap-1">
-                                  <label className="font-mono text-[9px] text-[#1a1a1a]/50 uppercase">Due Date</label>
+                                  <label className="font-mono text-[9px] text-muted-foreground uppercase">Due Date</label>
                                   <input
                                     type="date"
                                     value={editingDueDate}
                                     onChange={(e) => setEditingDueDate(e.target.value)}
-                                    className="w-full p-1 text-xs font-mono bg-[#faf9f5] border border-[#1a1a1a]/15 rounded-none text-[#1a1a1a] focus:outline-none focus:border-[#2d4a3e]"
+                                    className="w-full p-1 text-xs font-mono bg-card border border-border rounded-lg text-foreground focus:outline-none focus:border-primary/50"
                                   />
                                 </div>
                                 
                                 <div className="flex flex-col gap-1">
-                                  <label className="font-mono text-[9px] text-[#1a1a1a]/50 uppercase">Status</label>
+                                  <label className="font-mono text-[9px] text-muted-foreground uppercase">Status</label>
                                   <select
                                     value={editingStatus}
                                     onChange={(e) => setEditingStatus(e.target.value as TaskItem["status"])}
-                                    className="w-full p-1 text-xs font-mono bg-[#faf9f5] border border-[#1a1a1a]/15 rounded-none text-[#1a1a1a] focus:outline-none focus:border-[#2d4a3e]"
+                                    className="w-full p-1 text-xs font-mono bg-card border border-border rounded-lg text-foreground focus:outline-none focus:border-primary/50"
                                   >
                                     <option value="Today">Today</option>
                                     <option value="This Week">This Week</option>
@@ -868,13 +871,13 @@ export default function TodoPage() {
                                 </div>
                               </div>
 
-                              <div className="flex items-center justify-between border-t border-[#1a1a1a]/10 pt-2 mt-1">
-                                <label className="flex items-center gap-1.5 cursor-pointer font-mono text-[10px] text-[#1a1a1a]/70 select-none">
+                              <div className="flex items-center justify-between border-t border-border/40 pt-2.5 mt-1">
+                                <label className="flex items-center gap-1.5 cursor-pointer font-mono text-[10px] text-muted-foreground select-none">
                                   <input
                                     type="checkbox"
                                     checked={editingBlocked}
                                     onChange={(e) => setEditingBlocked(e.target.checked)}
-                                    className="h-3.5 w-3.5 accent-[#9c3e3e]"
+                                    className="h-3.5 w-3.5 accent-red-500 cursor-pointer"
                                   />
                                   <span>Blocked</span>
                                 </label>
@@ -882,27 +885,27 @@ export default function TodoPage() {
                                 <button
                                   type="button"
                                   onClick={() => handleDeleteTask(task.id)}
-                                  className="text-[9px] font-mono font-bold uppercase text-[#9c3e3e] hover:underline flex items-center gap-0.5 border border-[#9c3e3e]/20 bg-[#9c3e3e]/5 px-1.5 py-0.5"
+                                  className="text-[9px] font-mono font-bold uppercase text-red-400 hover:underline flex items-center gap-0.5 border border-red-500/20 bg-red-500/5 px-2 py-0.5 rounded cursor-pointer"
                                 >
                                   <Trash2 className="h-2.5 w-2.5" />
                                   Delete
                                 </button>
                               </div>
 
-                              <div className="flex justify-end gap-1.5 border-t border-[#1a1a1a]/10 pt-2 mt-1 font-mono text-[10px]">
+                              <div className="flex justify-end gap-1.5 border-t border-border/40 pt-2.5 mt-1 font-mono text-[10px]">
                                 <button
                                   type="button"
                                   onClick={() => setEditingTaskId(null)}
-                                  className="px-2 py-1 border border-[#1a1a1a]/15 hover:bg-[#1a1a1a]/5 text-[#1a1a1a]/80"
+                                  className="px-2.5 py-1 border border-border hover:bg-secondary text-muted-foreground rounded-lg cursor-pointer"
                                 >
-                                  [Cancel]
+                                  Cancel
                                 </button>
                                 <button
                                   type="button"
                                   onClick={() => handleSaveTask(task.id)}
-                                  className="px-2 py-1 bg-[#2d4a3e] border border-[#2d4a3e] hover:bg-transparent hover:text-[#2d4a3e] text-[#faf9f5] font-bold"
+                                  className="px-2.5 py-1 bg-primary border border-primary text-[#0F2A2E] font-bold rounded-lg cursor-pointer"
                                 >
-                                  [Save]
+                                  Save
                                 </button>
                               </div>
                             </div>
@@ -912,51 +915,56 @@ export default function TodoPage() {
                               draggable
                               onDragStart={(e) => handleDragStart(e, task.id)}
                               className={cn(
-                                "p-3 bg-[#faf9f5] border transition-all cursor-grab active:cursor-grabbing hover:border-[#2d4a3e]/40 select-none group relative",
-                                task.done ? "border-[#1a1a1a]/10 bg-[#faf9f5]/50 opacity-60" : "border-[#1a1a1a]/15 shadow-sm"
+                                "p-3.5 bg-secondary/40 border transition-all cursor-grab active:cursor-grabbing hover:border-primary/45 select-none group relative rounded-xl",
+                                task.done ? "border-border/30 bg-secondary/15 opacity-60" : "border-border shadow-sm"
                               )}
                             >
                               {/* Top row */}
-                              <div className="flex items-start justify-between gap-2 mb-1.5">
+                              <div className="flex items-start justify-between gap-2 mb-2">
                                 <div className="flex items-center gap-1.5">
                                   <span className={cn(
-                                    "text-[9px] font-mono font-extrabold px-1 border leading-none py-0.5",
-                                    task.priority === "P0" ? "bg-[#9c3e3e] text-[#faf9f5] border-[#9c3e3e]" :
-                                    task.priority === "P1" ? "bg-[#c4903a] text-[#faf9f5] border-[#c4903a]" :
-                                    "bg-[#1a1a1a]/5 text-[#1a1a1a]/60 border-[#1a1a1a]/10"
+                                    "text-[9px] font-mono font-extrabold px-1.5 py-0.5 border leading-none rounded-md",
+                                    task.priority === "P0" ? "bg-red-500/10 text-red-400 border-red-500/20" :
+                                    task.priority === "P1" ? "bg-yellow-500/10 text-yellow-400 border-yellow-500/20" :
+                                    task.priority === "P2" ? "bg-blue-500/10 text-blue-400 border-blue-500/20" :
+                                    "bg-secondary text-muted-foreground border-border"
                                   )}>
                                     {task.priority}
                                   </span>
                                   {task.blocked && (
-                                    <span className="text-[9px] font-mono font-bold px-1 bg-[#9c3e3e]/10 border border-[#9c3e3e]/20 text-[#9c3e3e] uppercase leading-none py-0.5 flex items-center gap-0.5">
+                                    <span className="text-[9px] font-mono font-bold px-1.5 py-0.5 bg-red-500/10 border border-red-500/20 text-red-400 uppercase leading-none flex items-center gap-0.5 rounded-md">
                                       <AlertCircle className="h-2 w-2" />
                                       <span>BLOCKED</span>
                                     </span>
                                   )}
                                 </div>
-                                <input
-                                  type="checkbox"
-                                  checked={task.done}
-                                  onChange={() => toggleDone(task.id)}
-                                  className="h-3.5 w-3.5 rounded-none border-[#1a1a1a]/30 accent-[#2d4a3e] cursor-pointer"
-                                  aria-label="Toggle task completed state"
-                                />
+                                
+                                <div 
+                                  onClick={() => toggleDone(task.id)}
+                                  className="h-5 w-5 rounded-md flex items-center justify-center border border-border bg-black/20 hover:border-primary/50 text-muted-foreground/35 cursor-pointer transition-all shrink-0"
+                                >
+                                  {task.done ? (
+                                    <CheckCircle2 className="h-3.5 w-3.5 text-primary shrink-0" />
+                                  ) : (
+                                    <Circle className="h-2 w-2 bg-transparent shrink-0" />
+                                  )}
+                                </div>
                               </div>
 
                               {/* Task Title */}
                               <div className={cn(
-                                "text-xs font-semibold leading-snug break-words",
-                                task.done ? "line-through text-[#1a1a1a]/40" : "text-[#1a1a1a]"
+                                "text-xs font-semibold leading-snug break-words pr-2 font-sans",
+                                task.done ? "line-through text-muted-foreground/45" : "text-foreground"
                               )}>
                                 {task.title}
                               </div>
 
                               {/* Meta footer row */}
-                              <div className="flex items-center justify-between text-[10px] font-mono text-[#1a1a1a]/50 mt-2 border-t border-[#1a1a1a]/5 pt-2">
-                                <span className="text-[#2d4a3e] font-semibold">{task.owner}</span>
+                              <div className="flex items-center justify-between text-[10px] font-mono text-muted-foreground mt-2.5 border-t border-border/25 pt-2">
+                                <span className="text-primary font-semibold">{task.owner}</span>
                                 <div className="flex items-center gap-2">
                                   {task.dueDate && (
-                                    <span className="flex items-center gap-1 text-[9px]">
+                                    <span className="flex items-center gap-1 text-[9px] text-muted-foreground/75">
                                       <Calendar className="h-2.5 w-2.5" />
                                       <span>{task.dueDate}</span>
                                     </span>
@@ -964,9 +972,9 @@ export default function TodoPage() {
                                   <button
                                     type="button"
                                     onClick={() => startEditing(task)}
-                                    className="opacity-0 group-hover:opacity-100 transition-opacity text-[8px] uppercase border border-[#1a1a1a]/15 px-1 bg-[#f4f2eb] text-[#1a1a1a]/60 hover:text-[#2d4a3e] font-bold"
+                                    className="opacity-0 group-hover:opacity-100 transition-opacity text-[8px] uppercase border border-border px-1.5 py-0.5 bg-secondary text-muted-foreground hover:text-primary font-bold rounded cursor-pointer"
                                   >
-                                    [Edit]
+                                    Edit
                                   </button>
                                 </div>
                               </div>
@@ -982,16 +990,16 @@ export default function TodoPage() {
           </div>
         ) : (
           /* Gantt Timeline View */
-          <div className="border border-[#1a1a1a]/15 bg-[#faf9f5]">
-            <div className="px-4 py-3 bg-[#f4f2eb] border-b border-[#1a1a1a]/15 font-mono text-xs font-bold flex justify-between items-center text-[#1a1a1a]">
-              <span>TIMELINE (GANTT VIEW)</span>
-              <span className="text-[9px] text-[#1a1a1a]/60 uppercase tracking-widest">ZOOM: MONTHLY GRID</span>
+          <div className="border border-border bg-card rounded-2xl overflow-hidden shadow-md">
+            <div className="px-4 py-3 bg-secondary/35 border-b border-border font-mono text-xs font-bold flex justify-between items-center text-foreground uppercase tracking-wide">
+              <span>Timeline (Gantt View)</span>
+              <span className="text-[9px] text-muted-foreground/60 uppercase tracking-widest">Zoom: Monthly Grid</span>
             </div>
 
-            <div className="p-6">
-              <div className="relative border-b border-[#1a1a1a]/10 pb-8 flex flex-col gap-6">
+            <div className="p-5">
+              <div className="relative border-b border-border/40 pb-8 flex flex-col gap-6">
                 {filteredTasks.length === 0 ? (
-                  <div className="text-center font-mono text-xs text-[#1a1a1a]/40 py-12">
+                  <div className="text-center font-mono text-xs text-muted-foreground/40 py-12">
                     NO TASKS MATCHING FILTER
                   </div>
                 ) : (
@@ -1002,19 +1010,19 @@ export default function TodoPage() {
                     
                     return (
                       <div key={task.id} className="relative h-8 flex items-center w-full">
-                        <span className="w-32 font-mono text-[10px] text-[#1a1a1a]/70 truncate uppercase">
+                        <span className="w-32 font-mono text-[10px] text-muted-foreground truncate uppercase shrink-0">
                           {task.owner} · {task.priority}
                         </span>
 
-                        <div className="flex-1 relative h-full bg-[#1a1a1a]/5">
+                        <div className="flex-1 relative h-full bg-secondary/30 rounded-lg overflow-hidden border border-border/10">
                           <div 
                             style={{ left: startLeft, width: barWidth }}
                             className={cn(
-                              "absolute top-0 h-full border-l-2 p-1.5 flex items-center justify-between text-[9px] font-mono text-left font-bold overflow-hidden select-none",
-                              task.done ? "bg-[#faf9f5]/80 text-[#1a1a1a]/40 border-l-[#1a1a1a]/30 border border-[#1a1a1a]/10" :
-                              task.priority === "P0" ? "bg-[#9c3e3e]/10 text-[#9c3e3e] border-l-[#9c3e3e]" :
-                              task.priority === "P1" ? "bg-[#c4903a]/10 text-[#c4903a] border-l-[#c4903a]" :
-                              "bg-[#2d4a3e]/10 text-[#2d4a3e] border-l-[#2d4a3e]"
+                              "absolute top-0 h-full border-l-2 p-1.5 flex items-center justify-between text-[9px] font-mono text-left font-bold overflow-hidden select-none rounded-lg",
+                              task.done ? "bg-secondary text-muted-foreground/40 border-l-muted-foreground border border-border/30" :
+                              task.priority === "P0" ? "bg-red-500/10 text-red-400 border-l-red-500 border border-red-500/20" :
+                              task.priority === "P1" ? "bg-yellow-500/10 text-yellow-400 border-l-yellow-500 border border-yellow-500/20" :
+                              "bg-primary/10 text-primary border-l-primary border border-primary/20"
                             )}
                           >
                             <span className="truncate uppercase">{task.title}</span>
@@ -1028,7 +1036,7 @@ export default function TodoPage() {
               </div>
 
               {/* Time steps headers */}
-              <div className="flex justify-between font-mono text-[9px] text-[#1a1a1a]/40 mt-4 px-32">
+              <div className="flex justify-between font-mono text-[9px] text-muted-foreground/45 mt-4 px-32">
                 <span>MAY 18</span>
                 <span>MAY 21</span>
                 <span>MAY 24</span>
