@@ -1417,10 +1417,41 @@ export async function fetchProjectActivity(
 
   // 5. Build project → work item + event index
   const projects: ProjectActivity[] = [];
-  for (let i = 0; i < projectIdSample.length; i++) {
-    const r = projectRecords[i];
+  
+  let projectIdSampleToUse = [...projectIdSample];
+  let projectRecordsToUse = [...projectRecords];
+  
+  if (projectIdSampleToUse.length === 0 && workIndex.length > 0) {
+    const virtualSlugs = new Set<string>();
+    for (const w of workIndex) {
+      const parts = w.id.split("-");
+      if (parts.length > 0 && parts[0].length >= 3) {
+        virtualSlugs.add(parts[0]);
+      } else {
+        virtualSlugs.add("general");
+      }
+    }
+    for (const slug of Array.from(virtualSlugs)) {
+      projectIdSampleToUse.push(slug);
+      projectRecordsToUse.push({
+        status: "fulfilled",
+        value: {
+          profile: {
+            slug,
+            title: slug.charAt(0).toUpperCase() + slug.slice(1) + " Workstream",
+            description: `Auto-synthesized project container for "${slug}" work items.`,
+            owner: "agent:claude-engineer"
+          },
+          signals: {}
+        }
+      } as any);
+    }
+  }
+
+  for (let i = 0; i < projectIdSampleToUse.length; i++) {
+    const r = projectRecordsToUse[i];
     if (r.status !== "fulfilled" || !r.value) continue;
-    const pid = projectIdSample[i];
+    const pid = projectIdSampleToUse[i];
     const profile = (r.value.profile || {}) as Record<string, unknown>;
     const signals = (r.value.signals || {}) as Record<string, unknown>;
     const slug = String(profile.slug || pid);
@@ -1439,7 +1470,7 @@ export async function fetchProjectActivity(
           status: status as ProjectActivityTask["status"],
           owner: w.profile.owner as string | undefined,
           priority: (["P0", "P1", "P2", "P3"].includes(String(priority)) ? priority : undefined) as ProjectActivityTask["priority"],
-          progress: Number(w.signals.progress || 0),
+          progress: Number(w.signals.progress_pct ?? w.signals.progress ?? 0),
           updatedAt,
           silent,
         };
