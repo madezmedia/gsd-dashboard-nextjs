@@ -556,41 +556,41 @@ export default function CalendarPage() {
 
 
   const getTimelineIcon = (source: string) => {
-    if (source.includes("claude")) return <Workflow className="w-4 h-4 text-[#2d4a3e]" />;
-    if (source.includes("design") || source.includes("brand")) return <Compass className="w-4 h-4 text-[#c4903a]" />;
-    if (source.includes("operator")) return <CheckCircle className="w-4 h-4 text-[#2d4a3e]" />;
-    return <FileText className="w-4 h-4 text-[#1a1a1a]/50" />;
+    if (source.includes("claude")) return <Workflow className="w-4 h-4 text-primary" />;
+    if (source.includes("design") || source.includes("brand")) return <Compass className="w-4 h-4 text-yellow-400" />;
+    if (source.includes("operator")) return <CheckCircle className="w-4 h-4 text-primary" />;
+    return <FileText className="w-4 h-4 text-foreground/50" />;
   };
 
   return (
-    <div className="flex flex-col h-full bg-[#faf9f5] overflow-y-auto font-sans relative select-none antialiased">
+    <div className="flex flex-col h-full bg-transparent overflow-y-auto font-sans relative select-none antialiased">
       {/* ── Header Toolbar Banner ─────────────────────────── */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between border-b border-[#1a1a1a]/15 bg-[#faf9f5] p-5 gap-4 shrink-0">
+      <div className="flex flex-col md:flex-row md:items-center justify-between border-b border-border/40 bg-card p-5 gap-4 shrink-0">
         <div className="flex items-center gap-3">
-          <div className="flex items-center justify-center w-10 h-10 bg-[#2d4a3e]/10 border border-[#2d4a3e]/30 text-[#2d4a3e]">
+          <div className="flex items-center justify-center w-10 h-10 bg-primary/10 border border-[#2d4a3e]/30 text-primary">
             <CalendarIcon className="w-5 h-5" />
           </div>
           <div>
-            <h1 className="text-lg font-bold font-mono text-[#1a1a1a] uppercase tracking-wider">
+            <h1 className="text-lg font-bold font-mono text-foreground uppercase tracking-wider">
               Calendar & Pipeline Coordination
             </h1>
-            <p className="text-xs text-[#1a1a1a]/60 font-mono flex items-center gap-1">
+            <p className="text-xs text-foreground/60 font-mono flex items-center gap-1">
               <span>{monthNames[month]} {year}</span>
               <span>·</span>
-              <span className="text-[#2d4a3e] font-bold">{cronRoster.length} ACTIVE CRONS</span>
+              <span className="text-primary font-bold">{cronRoster.length} ACTIVE CRONS</span>
               <span>·</span>
-              <span className="text-[#c4903a] font-bold">{events.length} EVENTS</span>
+              <span className="text-yellow-400 font-bold">{events.length} EVENTS</span>
             </p>
           </div>
         </div>
 
         {/* View Mode Switcher */}
-        <div className="flex items-center bg-[#f4f2eb] p-1 border border-[#1a1a1a]/15 font-mono text-[10px] font-bold">
+        <div className="flex items-center bg-secondary/35 p-1 border border-border/40 font-mono text-[10px] font-bold">
           <button
             onClick={() => setViewMode("month")}
             className={cn(
               "px-3 py-1.5 cursor-pointer transition-colors flex items-center gap-1",
-              viewMode === "month" ? "bg-[#2d4a3e] text-[#faf9f5]" : "text-[#1a1a1a]/60 hover:text-[#1a1a1a]"
+              viewMode === "month" ? "bg-primary text-[#0F2A2E] text-[#faf9f5]" : "text-foreground/60 hover:text-foreground"
             )}
           >
             <Grid className="w-3.5 h-3.5" />
@@ -600,7 +600,7 @@ export default function CalendarPage() {
             onClick={() => setViewMode("schedule")}
             className={cn(
               "px-3 py-1.5 cursor-pointer transition-colors flex items-center gap-1",
-              viewMode === "schedule" ? "bg-[#2d4a3e] text-[#faf9f5]" : "text-[#1a1a1a]/60 hover:text-[#1a1a1a]"
+              viewMode === "schedule" ? "bg-primary text-[#0F2A2E] text-[#faf9f5]" : "text-foreground/60 hover:text-foreground"
             )}
           >
             <List className="w-3.5 h-3.5" />
@@ -610,7 +610,7 @@ export default function CalendarPage() {
             onClick={() => setViewMode("crons")}
             className={cn(
               "px-3 py-1.5 cursor-pointer transition-colors flex items-center gap-1",
-              viewMode === "crons" ? "bg-[#2d4a3e] text-[#faf9f5]" : "text-[#1a1a1a]/60 hover:text-[#1a1a1a]"
+              viewMode === "crons" ? "bg-primary text-[#0F2A2E] text-[#faf9f5]" : "text-foreground/60 hover:text-foreground"
             )}
           >
             <Activity className="w-3.5 h-3.5" />
@@ -621,8 +621,8 @@ export default function CalendarPage() {
 
       {loading ? (
         <div className="flex-1 flex flex-col items-center justify-center p-12">
-          <Loader2 className="w-8 h-8 animate-spin text-[#2d4a3e] mb-2" />
-          <span className="text-xs font-mono text-[#1a1a1a]/60 tracking-wider">RESOLVING LIVE ACMI COORD SCHEDULER...</span>
+          <Loader2 className="w-8 h-8 animate-spin text-primary mb-2" />
+          <span className="text-xs font-mono text-foreground/60 tracking-wider">RESOLVING LIVE ACMI COORD SCHEDULER...</span>
         </div>
       ) : (
         <div className="p-4 md:p-6 space-y-6 flex-1">
@@ -630,11 +630,11 @@ export default function CalendarPage() {
           {viewMode === "month" && (
             <div className="space-y-6">
               {/* Navigation Header */}
-              <div className="flex justify-between items-center bg-[#f4f2eb] p-3 border border-[#1a1a1a]/15">
+              <div className="flex justify-between items-center bg-secondary/35 p-3 border border-border/40">
                 <div className="flex items-center gap-2 font-mono text-xs">
                   <button
                     onClick={prevMonth}
-                    className="p-1.5 bg-[#faf9f5] border border-[#1a1a1a]/15 hover:bg-[#1a1a1a]/5 cursor-pointer"
+                    className="p-1.5 bg-card border border-border/40 hover:bg-[#1a1a1a]/5 cursor-pointer"
                   >
                     <ChevronLeft className="w-4 h-4" />
                   </button>
@@ -643,24 +643,24 @@ export default function CalendarPage() {
                   </span>
                   <button
                     onClick={nextMonth}
-                    className="p-1.5 bg-[#faf9f5] border border-[#1a1a1a]/15 hover:bg-[#1a1a1a]/5 cursor-pointer"
+                    className="p-1.5 bg-card border border-border/40 hover:bg-[#1a1a1a]/5 cursor-pointer"
                   >
                     <ChevronRight className="w-4 h-4" />
                   </button>
                 </div>
                 <button
                   onClick={setToday}
-                  className="px-3 py-1.5 font-mono text-[10px] font-bold bg-[#2d4a3e] hover:bg-[#2d4a3e]/90 text-[#faf9f5] uppercase tracking-wider cursor-pointer"
+                  className="px-3 py-1.5 font-mono text-[10px] font-bold bg-primary text-[#0F2A2E] hover:bg-primary text-[#0F2A2E]/90 text-[#faf9f5] uppercase tracking-wider cursor-pointer"
                 >
                   RESET (MAY 2026)
                 </button>
               </div>
 
               {/* Grid block */}
-              <div className="border border-[#1a1a1a]/15 bg-[#faf9f5] shadow-sm">
-                <div className="grid grid-cols-7 border-b border-[#1a1a1a]/15 font-mono text-2xs font-bold text-center bg-[#f4f2eb]">
+              <div className="border border-border/40 bg-card shadow-sm">
+                <div className="grid grid-cols-7 border-b border-border/40 font-mono text-2xs font-bold text-center bg-secondary/35">
                   {["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"].map((dayName) => (
-                    <div key={dayName} className="py-2.5 border-r border-[#1a1a1a]/10 last:border-r-0 text-[#1a1a1a]/70">
+                    <div key={dayName} className="py-2.5 border-r border-border/20 last:border-r-0 text-foreground/70">
                       {dayName}
                     </div>
                   ))}
@@ -676,27 +676,27 @@ export default function CalendarPage() {
                         key={`${cell.dateStr}-${idx}`}
                         onClick={() => handleDayClick(cell)}
                         className={cn(
-                          "min-h-24 md:min-h-28 bg-[#faf9f5] p-2 flex flex-col transition-all cursor-pointer relative group hover:bg-[#f4f2eb]/20",
-                          !cell.isCurrentMonth && "bg-[#f4f2eb]/40 text-[#1a1a1a]/30",
-                          isToday && "bg-[#2d4a3e]/4 border-2 border-[#2d4a3e]"
+                          "min-h-24 md:min-h-28 bg-card p-2 flex flex-col transition-all cursor-pointer relative group hover:bg-secondary/35/20",
+                          !cell.isCurrentMonth && "bg-secondary/35/40 text-foreground/30",
+                          isToday && "bg-primary/5 border-2 border-[#2d4a3e]"
                         )}
                       >
                         <div className="flex items-center justify-between mb-1">
                           <span
                             className={cn(
                               "text-xs font-mono font-bold leading-none w-5 h-5 flex items-center justify-center",
-                              isToday && "bg-[#2d4a3e] text-[#faf9f5]"
+                              isToday && "bg-primary text-[#0F2A2E] text-[#faf9f5]"
                             )}
                           >
                             {cell.dayNum}
                           </span>
                           {isToday && (
-                            <span className="text-[7px] font-mono font-bold uppercase tracking-wider text-[#2d4a3e] bg-[#2d4a3e]/10 border border-[#2d4a3e]/20 px-1 py-0.5">
+                            <span className="text-[7px] font-mono font-bold uppercase tracking-wider text-primary bg-primary/10 border border-[#2d4a3e]/20 px-1 py-0.5">
                               Today
                             </span>
                           )}
                           {!isToday && cell.isCurrentMonth && (
-                            <span className="text-[9px] font-mono text-[#2d4a3e] opacity-0 group-hover:opacity-100 transition-opacity">
+                            <span className="text-[9px] font-mono text-primary opacity-0 group-hover:opacity-100 transition-opacity">
                               + ADD
                             </span>
                           )}
@@ -708,9 +708,9 @@ export default function CalendarPage() {
                               key={`${evt.id || "evt"}-${idx}`}
                               className={cn(
                                 "text-[9px] leading-tight px-1.5 py-0.5 border font-mono font-semibold tracking-tight truncate select-none",
-                                evt.kind === "milestone" && "bg-[#c4903a]/10 border-[#c4903a]/35 text-[#c4903a]",
-                                evt.kind === "deadline" && "bg-[#9c3e3e]/10 border-[#9c3e3e]/35 text-[#9c3e3e]",
-                                evt.kind === "task" && "bg-[#2d4a3e]/10 border-[#2d4a3e]/35 text-[#2d4a3e]"
+                                evt.kind === "milestone" && "bg-yellow-500/10 border-[#c4903a]/35 text-yellow-400",
+                                evt.kind === "deadline" && "bg-red-500/10 border-[#9c3e3e]/35 text-red-400",
+                                evt.kind === "task" && "bg-primary/10 border-[#2d4a3e]/35 text-primary"
                               )}
                             >
                               {evt.title}
@@ -729,13 +729,13 @@ export default function CalendarPage() {
           {viewMode === "schedule" && (
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
               {/* Left Column: Agenda Shifts */}
-              <div className="lg:col-span-2 border border-[#1a1a1a]/15 bg-[#faf9f5] p-5">
-                <div className="border-b border-[#1a1a1a]/10 pb-3 mb-4">
-                  <h2 className="text-sm font-bold font-mono uppercase tracking-wide text-[#2d4a3e] flex items-center gap-2">
+              <div className="lg:col-span-2 border border-border/40 bg-card p-5">
+                <div className="border-b border-border/20 pb-3 mb-4">
+                  <h2 className="text-sm font-bold font-mono uppercase tracking-wide text-primary flex items-center gap-2">
                     <Clock className="w-4.5 h-4.5" />
                     Combined 24h Pipeline Agenda (Today)
                   </h2>
-                  <p className="text-2xs text-[#1a1a1a]/50 font-mono mt-0.5 uppercase">
+                  <p className="text-2xs text-foreground/50 font-mono mt-0.5 uppercase">
                     Chronological shift schedule merging custom coordination milestones & background crons
                   </p>
                 </div>
@@ -745,37 +745,37 @@ export default function CalendarPage() {
                     <div
                       key={idx}
                       className={cn(
-                        "flex border border-[#1a1a1a]/10 items-center justify-between p-3.5 hover:border-[#1a1a1a]/20 transition-all",
-                        item.type === "event" ? "bg-[#f4f2eb]/60" : "bg-[#faf9f5]"
+                        "flex border border-border/20 items-center justify-between p-3.5 hover:border-border/30 transition-all",
+                        item.type === "event" ? "bg-secondary/35/60" : "bg-card"
                       )}
                     >
                       <div className="flex items-center gap-4">
-                        <div className="w-20 font-mono text-2xs font-extrabold text-[#c4903a] text-center border border-[#c4903a]/30 bg-[#c4903a]/5 px-2 py-1 uppercase select-none">
+                        <div className="w-20 font-mono text-2xs font-extrabold text-yellow-400 text-center border border-[#c4903a]/30 bg-yellow-500/5 px-2 py-1 uppercase select-none">
                           {item.timeLabel}
                         </div>
                         <div>
                           <div className="flex items-center gap-2">
-                            <h3 className="text-xs font-bold font-mono text-[#1a1a1a]">
+                            <h3 className="text-xs font-bold font-mono text-foreground">
                               {item.title}
                             </h3>
                             <span
                               className={cn(
                                 "text-[9px] font-mono font-bold px-1.5 py-0.5 border uppercase",
                                 item.type === "event"
-                                  ? "bg-[#c4903a]/10 border-[#c4903a]/30 text-[#c4903a]"
-                                  : "bg-[#2d4a3e]/10 border-[#2d4a3e]/30 text-[#2d4a3e]"
+                                  ? "bg-yellow-500/10 border-[#c4903a]/30 text-yellow-400"
+                                  : "bg-primary/10 border-[#2d4a3e]/30 text-primary"
                               )}
                             >
                               {item.type}
                             </span>
                             {item.pipeline && (
-                              <span className="text-[8px] font-mono bg-black/5 text-[#1a1a1a]/70 border border-[#1a1a1a]/10 px-1 py-0.5 uppercase">
+                              <span className="text-[8px] font-mono bg-black/5 text-foreground/70 border border-border/20 px-1 py-0.5 uppercase">
                                 {item.pipeline}
                               </span>
                             )}
                           </div>
                           {item.summary && (
-                            <p className="text-[11px] text-[#1a1a1a]/60 mt-1 max-w-lg font-mono truncate">
+                            <p className="text-[11px] text-foreground/60 mt-1 max-w-lg font-mono truncate">
                               Last run result: {item.summary}
                             </p>
                           )}
@@ -788,13 +788,13 @@ export default function CalendarPage() {
                           <span
                             className={cn(
                               "w-2 h-2 rounded-full",
-                              item.status === "success" && "bg-[#2d4a3e]",
-                              item.status === "failed" && "bg-[#9c3e3e]",
+                              item.status === "success" && "bg-primary text-[#0F2A2E]",
+                              item.status === "failed" && "bg-red-500/20 text-red-400",
                               item.status === "running" && "bg-[#5ef2c6] animate-ping",
                               item.status === "idle" && "bg-gray-300"
                             )}
                           />
-                          <span className="font-mono text-[9px] font-bold text-[#1a1a1a]/70 uppercase">
+                          <span className="font-mono text-[9px] font-bold text-foreground/70 uppercase">
                             {item.status}
                           </span>
                         </div>
@@ -805,13 +805,13 @@ export default function CalendarPage() {
               </div>
 
               {/* Right Column: Mini pipeline flowchart */}
-              <div className="border border-[#1a1a1a]/15 bg-[#f4f2eb] p-5 flex flex-col justify-between">
+              <div className="border border-border/40 bg-secondary/35 p-5 flex flex-col justify-between">
                 <div>
-                  <div className="border-b border-[#1a1a1a]/10 pb-3 mb-4">
-                    <h2 className="text-sm font-bold font-mono uppercase tracking-wide text-[#2d4a3e]">
+                  <div className="border-b border-border/20 pb-3 mb-4">
+                    <h2 className="text-sm font-bold font-mono uppercase tracking-wide text-primary">
                       Business Pipeline Flows
                     </h2>
-                    <p className="text-2xs text-[#1a1a1a]/50 font-mono mt-0.5 uppercase">
+                    <p className="text-2xs text-foreground/50 font-mono mt-0.5 uppercase">
                       7 streams that map to full revenue automation loops
                     </p>
                   </div>
@@ -826,15 +826,15 @@ export default function CalendarPage() {
                       { name: "Team", desc: "Telegram briefs ➜ Midday standups ➜ Rollups", color: "border-l-4 border-l-[#c4903a]" },
                       { name: "Ops", desc: "RAG indexer ➜ Sentinel ➜ Cost monitor ➜ Git Auto-commit", color: "border-l-4 border-l-gray-400" },
                     ].map((p, idx) => (
-                      <div key={idx} className={cn("p-3 bg-[#faf9f5] border border-[#1a1a1a]/10 flex flex-col gap-1 hover:border-[#1a1a1a]/20 transition-all", p.color)}>
-                        <h4 className="font-bold text-[#1a1a1a] uppercase text-2xs">{p.name} Pipeline</h4>
-                        <p className="text-[10px] text-[#1a1a1a]/65 leading-relaxed">{p.desc}</p>
+                      <div key={idx} className={cn("p-3 bg-card border border-border/20 flex flex-col gap-1 hover:border-border/30 transition-all", p.color)}>
+                        <h4 className="font-bold text-foreground uppercase text-2xs">{p.name} Pipeline</h4>
+                        <p className="text-[10px] text-foreground/65 leading-relaxed">{p.desc}</p>
                       </div>
                     ))}
                   </div>
                 </div>
 
-                <div className="mt-6 p-3 bg-[#faf9f5] border border-[#1a1a1a]/10 font-mono text-[10px] text-[#2d4a3e] font-semibold text-center select-none">
+                <div className="mt-6 p-3 bg-card border border-border/20 font-mono text-[10px] text-primary font-semibold text-center select-none">
                   ⚡ ALL PIPELINES MONITORING AUTOMATION LOGGED ON BUS
                 </div>
               </div>
@@ -845,10 +845,10 @@ export default function CalendarPage() {
           {viewMode === "crons" && (
             <div className="space-y-6">
               {/* Filter Bar */}
-              <div className="flex flex-col md:flex-row gap-4 justify-between bg-[#f4f2eb] p-4 border border-[#1a1a1a]/15 font-mono text-xs">
+              <div className="flex flex-col md:flex-row gap-4 justify-between bg-secondary/35 p-4 border border-border/40 font-mono text-xs">
                 {/* Shift filters */}
                 <div className="flex flex-wrap items-center gap-2">
-                  <span className="font-bold text-[#1a1a1a]/60 uppercase text-2xs select-none">Shifts:</span>
+                  <span className="font-bold text-foreground/60 uppercase text-2xs select-none">Shifts:</span>
                   <div className="flex flex-wrap gap-1">
                     {shiftNames.map((shift) => (
                       <button
@@ -858,8 +858,8 @@ export default function CalendarPage() {
                           "px-2.5 py-1 border text-[9px] font-bold uppercase transition-all cursor-pointer",
                           (shift === "ALL" && cronFilterShift === "ALL") ||
                           (shift !== "ALL" && cronFilterShift !== "ALL" && shift.includes(cronFilterShift))
-                            ? "bg-[#2d4a3e] text-[#faf9f5] border-[#2d4a3e]"
-                            : "bg-[#faf9f5] text-[#1a1a1a]/70 border-[#1a1a1a]/15 hover:bg-[#1a1a1a]/5"
+                            ? "bg-primary text-[#0F2A2E] text-[#faf9f5] border-[#2d4a3e]"
+                            : "bg-card text-foreground/70 border-border/40 hover:bg-[#1a1a1a]/5"
                         )}
                       >
                         {shift.replace(" SHIFT", "")}
@@ -871,11 +871,11 @@ export default function CalendarPage() {
                 {/* Pipeline filters & Add Cron */}
                 <div className="flex items-center gap-3">
                   <div className="flex items-center gap-2">
-                    <span className="font-bold text-[#1a1a1a]/60 uppercase text-2xs select-none">Pipeline:</span>
+                    <span className="font-bold text-foreground/60 uppercase text-2xs select-none">Pipeline:</span>
                     <select
                       value={pipelineFilter}
                       onChange={(e) => setPipelineFilter(e.target.value)}
-                      className="bg-[#faf9f5] border border-[#1a1a1a]/25 px-2 py-1 text-2xs font-bold uppercase outline-none focus:border-[#2d4a3e] cursor-pointer"
+                      className="bg-card border border-border/40 px-2 py-1 text-2xs font-bold uppercase outline-none focus:border-[#2d4a3e] cursor-pointer"
                     >
                       {pipelineNames.map((name) => (
                         <option key={name} value={name}>{name}</option>
@@ -884,7 +884,7 @@ export default function CalendarPage() {
                   </div>
                   <button
                     onClick={handleAddCronClick}
-                    className="px-3 py-1 bg-[#2d4a3e] hover:bg-[#2d4a3e]/90 text-[#faf9f5] font-bold border border-[#2d4a3e] uppercase cursor-pointer transition-colors text-2xs flex items-center gap-1.5"
+                    className="px-3 py-1 bg-primary text-[#0F2A2E] hover:bg-primary text-[#0F2A2E]/90 text-[#faf9f5] font-bold border border-[#2d4a3e] uppercase cursor-pointer transition-colors text-2xs flex items-center gap-1.5"
                   >
                     <Plus className="w-3.5 h-3.5" /> ADD CRON
                   </button>
@@ -892,16 +892,16 @@ export default function CalendarPage() {
               </div>
 
               {/* Roster high density table */}
-              <div className="border border-[#1a1a1a]/15 bg-[#faf9f5] overflow-x-auto shadow-sm">
+              <div className="border border-border/40 bg-card overflow-x-auto shadow-sm">
                 <table className="w-full border-collapse font-mono text-xs text-left">
                   <thead>
-                    <tr className="bg-[#f4f2eb] border-b border-[#1a1a1a]/15 font-bold uppercase text-[10px]">
-                      <th className="p-3 border-r border-[#1a1a1a]/10">Employee / Cron ID</th>
-                      <th className="p-3 border-r border-[#1a1a1a]/10">Shift</th>
-                      <th className="p-3 border-r border-[#1a1a1a]/10">Schedule</th>
-                      <th className="p-3 border-r border-[#1a1a1a]/10">Pipeline</th>
-                      <th className="p-3 border-r border-[#1a1a1a]/10">Target Script / command</th>
-                      <th className="p-3 border-r border-[#1a1a1a]/10 text-center">Status</th>
+                    <tr className="bg-secondary/35 border-b border-border/40 font-bold uppercase text-[10px]">
+                      <th className="p-3 border-r border-border/20">Employee / Cron ID</th>
+                      <th className="p-3 border-r border-border/20">Shift</th>
+                      <th className="p-3 border-r border-border/20">Schedule</th>
+                      <th className="p-3 border-r border-border/20">Pipeline</th>
+                      <th className="p-3 border-r border-border/20">Target Script / command</th>
+                      <th className="p-3 border-r border-border/20 text-center">Status</th>
                       <th className="p-3 text-center">Actions</th>
                     </tr>
                   </thead>
@@ -915,54 +915,54 @@ export default function CalendarPage() {
                           key={`${cron.id}-${idx}`}
                           onClick={() => setSelectedCronId(isSelected ? null : cron.id)}
                           className={cn(
-                            "border-b border-[#1a1a1a]/10 last:border-b-0 hover:bg-[#2d4a3e]/2 cursor-pointer transition-colors",
-                            isSelected && "bg-[#2d4a3e]/4 font-bold"
+                            "border-b border-border/20 last:border-b-0 hover:bg-primary/5 cursor-pointer transition-colors",
+                            isSelected && "bg-primary/5 font-bold"
                           )}
                         >
-                          <td className="p-3 border-r border-[#1a1a1a]/10 font-bold flex items-center gap-1.5 truncate">
-                            {cron.isStarred && <span className="text-[#c4903a]">★</span>}
+                          <td className="p-3 border-r border-border/20 font-bold flex items-center gap-1.5 truncate">
+                            {cron.isStarred && <span className="text-yellow-400">★</span>}
                             {cron.name}
                             {cron.isNew && (
-                              <span className="text-[7px] bg-[#5ef2c6]/30 text-[#2d4a3e] border border-[#2d4a3e]/20 px-1 py-0.5 uppercase tracking-wide">
+                              <span className="text-[7px] bg-[#5ef2c6]/30 text-primary border border-[#2d4a3e]/20 px-1 py-0.5 uppercase tracking-wide">
                                 new
                               </span>
                             )}
                           </td>
-                          <td className="p-3 border-r border-[#1a1a1a]/10 uppercase text-[10px] text-[#1a1a1a]/60 truncate">
+                          <td className="p-3 border-r border-border/20 uppercase text-[10px] text-foreground/60 truncate">
                             {cron.shift}
                           </td>
-                          <td className="p-3 border-r border-[#1a1a1a]/10 text-[10px] whitespace-nowrap">
+                          <td className="p-3 border-r border-border/20 text-[10px] whitespace-nowrap">
                             {cron.clockIn} - {cron.clockOut}
                           </td>
-                          <td className="p-3 border-r border-[#1a1a1a]/10 uppercase text-[10px]">
+                          <td className="p-3 border-r border-border/20 uppercase text-[10px]">
                             <span
                               className={cn(
                                 "px-1.5 py-0.5 border text-[9px] font-extrabold tracking-wide",
                                 cron.pipeline.toLowerCase() === "revenue" && "bg-emerald-50 border-emerald-200 text-emerald-700",
-                                cron.pipeline.toLowerCase() === "marketing" && "bg-[#c4903a]/10 border-[#c4903a]/30 text-[#c4903a]",
+                                cron.pipeline.toLowerCase() === "marketing" && "bg-yellow-500/10 border-[#c4903a]/30 text-yellow-400",
                                 cron.pipeline.toLowerCase() === "outreach" && "bg-rose-50 border-rose-200 text-rose-700",
                                 cron.pipeline.toLowerCase() === "ops" && "bg-gray-50 border-gray-200 text-gray-700",
-                                cron.pipeline.toLowerCase() === "team" && "bg-[#2d4a3e]/10 border-[#2d4a3e]/30 text-[#2d4a3e]"
+                                cron.pipeline.toLowerCase() === "team" && "bg-primary/10 border-[#2d4a3e]/30 text-primary"
                               )}
                             >
                               {cron.pipeline}
                             </span>
                           </td>
-                          <td className="p-3 border-r border-[#1a1a1a]/10 max-w-xs truncate text-[11px] text-[#1a1a1a]/70" title={cron.script}>
+                          <td className="p-3 border-r border-border/20 max-w-xs truncate text-[11px] text-foreground/70" title={cron.script}>
                             {cron.script}
                           </td>
-                          <td className="p-3 border-r border-[#1a1a1a]/10 text-center">
+                          <td className="p-3 border-r border-border/20 text-center">
                             <div className="flex items-center justify-center gap-1.5">
                               <span
                                 className={cn(
                                   "w-2 h-2 rounded-full",
-                                  exec.status === "success" && "bg-[#2d4a3e]",
-                                  exec.status === "failed" && "bg-[#9c3e3e]",
+                                  exec.status === "success" && "bg-primary text-[#0F2A2E]",
+                                  exec.status === "failed" && "bg-red-500/20 text-red-400",
                                   exec.status === "running" && "bg-[#5ef2c6] animate-ping",
                                   exec.status === "idle" && "bg-gray-300"
                                 )}
                               />
-                              <span className="text-[9px] uppercase font-bold text-[#1a1a1a]/70">
+                              <span className="text-[9px] uppercase font-bold text-foreground/70">
                                 {exec.status}
                               </span>
                             </div>
@@ -972,20 +972,20 @@ export default function CalendarPage() {
                               onClick={() => setSelectedCronId(isSelected ? null : cron.id)}
                               className={cn(
                                 "px-2 py-1 text-[9px] font-bold border uppercase cursor-pointer transition-colors",
-                                isSelected ? "bg-[#2d4a3e] text-[#faf9f5] border-[#2d4a3e]" : "bg-[#f4f2eb] text-[#1a1a1a]/70 border-[#1a1a1a]/15 hover:bg-[#1a1a1a]/5"
+                                isSelected ? "bg-primary text-[#0F2A2E] text-[#faf9f5] border-[#2d4a3e]" : "bg-secondary/35 text-foreground/70 border-border/40 hover:bg-[#1a1a1a]/5"
                               )}
                             >
                               {isSelected ? "HIDE LOGS" : "LOGS"}
                             </button>
                             <button
                               onClick={() => handleEditCronClick(cron)}
-                              className="px-2 py-1 text-[9px] font-bold border bg-[#faf9f5] text-[#2d4a3e] border-[#2d4a3e]/30 hover:bg-[#2d4a3e]/5 uppercase cursor-pointer transition-colors flex items-center gap-0.5"
+                              className="px-2 py-1 text-[9px] font-bold border bg-card text-primary border-[#2d4a3e]/30 hover:bg-primary/5 uppercase cursor-pointer transition-colors flex items-center gap-0.5"
                             >
                               <Edit className="w-3 h-3" /> EDIT
                             </button>
                             <button
                               onClick={() => handleDeleteCronClick(cron)}
-                              className="px-2 py-1 text-[9px] font-bold border bg-[#faf9f5] text-[#9c3e3e] border-[#9c3e3e]/30 hover:bg-[#9c3e3e]/5 uppercase cursor-pointer transition-colors flex items-center gap-0.5"
+                              className="px-2 py-1 text-[9px] font-bold border bg-card text-red-400 border-[#9c3e3e]/30 hover:bg-red-500/5 uppercase cursor-pointer transition-colors flex items-center gap-0.5"
                             >
                               <Trash2 className="w-3 h-3" /> DEL
                             </button>
@@ -1000,16 +1000,16 @@ export default function CalendarPage() {
           )}
 
           {/* ── Thread Log / ACMI Coordination Timeline ─────────────────────────── */}
-          <div className="border border-[#1a1a1a]/15 bg-[#f4f2eb] p-5 rounded-none shadow-sm">
-            <div className="flex items-center justify-between border-b border-[#1a1a1a]/10 pb-3 mb-4">
-              <h2 className="text-xs font-bold font-mono uppercase tracking-wider text-[#2d4a3e] flex items-center gap-2">
+          <div className="border border-border/40 bg-secondary/35 p-5 rounded-2xl shadow-sm">
+            <div className="flex items-center justify-between border-b border-border/20 pb-3 mb-4">
+              <h2 className="text-xs font-bold font-mono uppercase tracking-wider text-primary flex items-center gap-2">
                 <Terminal className="w-4.5 h-4.5" />
                 {selectedCronId ? `ACMI Logs: ${selectedCronId}` : "Live ACMI Coordination Stream"}
               </h2>
               {selectedCronId && (
                 <button
                   onClick={() => setSelectedCronId(null)}
-                  className="font-mono text-[9px] font-extrabold uppercase bg-transparent text-[#9c3e3e] border border-[#9c3e3e]/30 px-2 py-0.5 hover:bg-[#9c3e3e]/5 cursor-pointer"
+                  className="font-mono text-[9px] font-extrabold uppercase bg-transparent text-red-400 border border-[#9c3e3e]/30 px-2 py-0.5 hover:bg-red-500/5 cursor-pointer"
                 >
                   Clear Filter [X]
                 </button>
@@ -1021,33 +1021,33 @@ export default function CalendarPage() {
                 filteredTimeline.slice(0, 10).map((item, idx) => (
                   <div
                     key={`${item.id || "item"}-${idx}`}
-                    className="flex gap-3 bg-[#faf9f5] border border-[#1a1a1a]/10 p-3.5 items-start hover:border-[#1a1a1a]/25 transition-all"
+                    className="flex gap-3 bg-card border border-border/20 p-3.5 items-start hover:border-border/40 transition-all"
                   >
-                    <div className="p-1.5 bg-[#f4f2eb] border border-[#1a1a1a]/15 flex items-center justify-center shrink-0">
+                    <div className="p-1.5 bg-secondary/35 border border-border/40 flex items-center justify-center shrink-0">
                       {getTimelineIcon(item.source)}
                     </div>
                     <div className="flex-1 font-mono text-xs">
                       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-1.5">
                         <div className="flex items-center gap-1.5 flex-wrap">
-                          <span className="font-extrabold text-[#2d4a3e] bg-[#2d4a3e]/5 px-2 py-0.5 border border-[#2d4a3e]/15 text-[10px] uppercase">
+                          <span className="font-extrabold text-primary bg-primary/5 px-2 py-0.5 border border-[#2d4a3e]/15 text-[10px] uppercase">
                             {item.source}
                           </span>
-                          <span className="text-[9px] text-[#1a1a1a]/55 border border-[#1a1a1a]/10 px-1.5 py-0.5 uppercase tracking-wide font-medium">
+                          <span className="text-[9px] text-foreground/55 border border-border/20 px-1.5 py-0.5 uppercase tracking-wide font-medium">
                             {item.kind}
                           </span>
                         </div>
-                        <span className="text-2xs text-[#1a1a1a]/40 shrink-0 font-medium">
+                        <span className="text-2xs text-foreground/40 shrink-0 font-medium">
                           {formatTimeAgo(item.ts)}
                         </span>
                       </div>
-                      <p className="text-[11px] text-[#1a1a1a]/85 font-sans leading-normal">
+                      <p className="text-[11px] text-foreground/85 font-sans leading-normal">
                         {item.summary}
                       </p>
                     </div>
                   </div>
                 ))
               ) : (
-                <div className="text-center py-12 font-mono text-xs text-[#1a1a1a]/40 border border-dashed border-[#1a1a1a]/15 select-none bg-[#faf9f5]">
+                <div className="text-center py-12 font-mono text-xs text-foreground/40 border border-dashed border-border/40 select-none bg-card">
                   NO RECENT LOGS RECEIVED IN THIS FILTER STREAM.
                 </div>
               )}
@@ -1059,14 +1059,14 @@ export default function CalendarPage() {
       {/* Tactile Brutalist Event Creation Overlay Modal */}
       {modalOpen && (
         <div className="fixed inset-0 bg-[#1a1a1a]/30 backdrop-blur-xs flex items-center justify-center z-50 p-4">
-          <div className="w-full max-w-md bg-[#faf9f5] border-2 border-[#1a1a1a] shadow-[4px_4px_0px_0px_#1a1a1a] flex flex-col rounded-none">
-            <div className="flex items-center justify-between p-3.5 border-b border-[#1a1a1a] bg-[#f4f2eb] font-mono">
-              <h3 className="text-xs font-bold text-[#1a1a1a] uppercase tracking-wider flex items-center gap-1.5">
-                <Plus className="w-4 h-4 text-[#2d4a3e]" /> Create ACMI Coordination Event
+          <div className="w-full max-w-md bg-card border-2 border-border shadow-xl flex flex-col rounded-2xl">
+            <div className="flex items-center justify-between p-3.5 border-b border-border bg-secondary/35 font-mono">
+              <h3 className="text-xs font-bold text-foreground uppercase tracking-wider flex items-center gap-1.5">
+                <Plus className="w-4 h-4 text-primary" /> Create ACMI Coordination Event
               </h3>
               <button
                 onClick={() => setModalOpen(false)}
-                className="text-[#1a1a1a] hover:text-[#9c3e3e] cursor-pointer"
+                className="text-foreground hover:text-red-400 cursor-pointer"
                 disabled={isSubmitting}
               >
                 <X className="w-4 h-4" />
@@ -1075,19 +1075,19 @@ export default function CalendarPage() {
 
             <form onSubmit={handleSubmitEvent} className="p-4 space-y-4">
               <div className="space-y-1.5 font-mono text-xs">
-                <label className="block font-bold text-[#1a1a1a]/60 uppercase tracking-wide">
+                <label className="block font-bold text-foreground/60 uppercase tracking-wide">
                   Target Workspace Date
                 </label>
                 <input
                   type="text"
                   value={selectedDayStr}
                   disabled
-                  className="w-full px-3 py-2 bg-[#f4f2eb] border border-[#1a1a1a]/15 text-[#1a1a1a]/50 text-xs rounded-none focus:outline-none"
+                  className="w-full px-3 py-2 bg-secondary/35 border border-border/40 text-foreground/50 text-xs rounded-2xl focus:outline-none"
                 />
               </div>
 
               <div className="space-y-1.5 font-mono text-xs">
-                <label className="block font-bold text-[#1a1a1a]/60 uppercase tracking-wide">
+                <label className="block font-bold text-foreground/60 uppercase tracking-wide">
                   Event Title / Headline
                 </label>
                 <input
@@ -1097,13 +1097,13 @@ export default function CalendarPage() {
                   value={newTitle}
                   onChange={(e) => setNewTitle(e.target.value)}
                   disabled={isSubmitting}
-                  className="w-full px-3 py-2 bg-[#faf9f5] border border-[#1a1a1a]/30 text-xs rounded-none uppercase focus:outline-none focus:border-[#2d4a3e] placeholder-[#1a1a1a]/30"
+                  className="w-full px-3 py-2 bg-card border border-border/50 text-xs rounded-2xl uppercase focus:outline-none focus:border-[#2d4a3e] placeholder-[#1a1a1a]/30"
                   autoFocus
                 />
               </div>
 
               <div className="space-y-1.5 font-mono text-xs">
-                <label className="block font-bold text-[#1a1a1a]/60 uppercase tracking-wide">
+                <label className="block font-bold text-foreground/60 uppercase tracking-wide">
                   Original Type
                 </label>
                 <div className="grid grid-cols-3 gap-2">
@@ -1114,14 +1114,14 @@ export default function CalendarPage() {
                       disabled={isSubmitting}
                       onClick={() => setNewKind(kd)}
                       className={cn(
-                        "py-2 border text-2xs uppercase tracking-wider font-bold transition-colors cursor-pointer rounded-none",
+                        "py-2 border text-2xs uppercase tracking-wider font-bold transition-colors cursor-pointer rounded-2xl",
                         newKind === kd
                           ? kd === "milestone"
-                            ? "bg-[#c4903a] text-[#faf9f5] border-[#c4903a]"
+                            ? "bg-yellow-500/20 text-yellow-400 text-[#faf9f5] border-[#c4903a]"
                             : kd === "deadline"
-                            ? "bg-[#9c3e3e] text-[#faf9f5] border-[#9c3e3e]"
-                            : "bg-[#2d4a3e] text-[#faf9f5] border-[#2d4a3e]"
-                          : "bg-[#f4f2eb] text-[#1a1a1a]/60 border-[#1a1a1a]/15 hover:bg-[#1a1a1a]/5"
+                            ? "bg-red-500/20 text-red-400 text-[#faf9f5] border-[#9c3e3e]"
+                            : "bg-primary text-[#0F2A2E] text-[#faf9f5] border-[#2d4a3e]"
+                          : "bg-secondary/35 text-foreground/60 border-border/40 hover:bg-[#1a1a1a]/5"
                       )}
                     >
                       {kd === "milestone" && "● "}
@@ -1133,19 +1133,19 @@ export default function CalendarPage() {
                 </div>
               </div>
 
-              <div className="pt-3 border-t border-[#1a1a1a]/10 flex justify-end gap-2 font-mono text-xs">
+              <div className="pt-3 border-t border-border/20 flex justify-end gap-2 font-mono text-xs">
                 <button
                   type="button"
                   onClick={() => setModalOpen(false)}
                   disabled={isSubmitting}
-                  className="px-4 py-2 bg-[#f4f2eb] hover:bg-[#1a1a1a]/5 text-[#1a1a1a]/80 border border-[#1a1a1a]/15 cursor-pointer rounded-none uppercase font-bold tracking-wider"
+                  className="px-4 py-2 bg-secondary/35 hover:bg-[#1a1a1a]/5 text-foreground/80 border border-border/40 cursor-pointer rounded-2xl uppercase font-bold tracking-wider"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={isSubmitting || !newTitle.trim()}
-                  className="px-4 py-2 bg-[#2d4a3e] hover:bg-[#2d4a3e]/90 text-[#faf9f5] font-bold cursor-pointer rounded-none uppercase tracking-wider flex items-center gap-1.5"
+                  className="px-4 py-2 bg-primary text-[#0F2A2E] hover:bg-primary text-[#0F2A2E]/90 text-[#faf9f5] font-bold cursor-pointer rounded-2xl uppercase tracking-wider flex items-center gap-1.5"
                 >
                   {isSubmitting ? (
                     <>
@@ -1164,15 +1164,15 @@ export default function CalendarPage() {
       {/* Tactile Brutalist Cron Roster Management Modal */}
       {rosterModalOpen && (
         <div className="fixed inset-0 bg-[#1a1a1a]/30 backdrop-blur-xs flex items-center justify-center z-50 p-4">
-          <div className="w-full max-w-lg bg-[#faf9f5] border-2 border-[#1a1a1a] shadow-[4px_4px_0px_0px_#1a1a1a] flex flex-col rounded-none">
-            <div className="flex items-center justify-between p-3.5 border-b border-[#1a1a1a] bg-[#f4f2eb] font-mono">
-              <h3 className="text-xs font-bold text-[#1a1a1a] uppercase tracking-wider flex items-center gap-1.5">
-                {editingCron ? <Edit className="w-4 h-4 text-[#2d4a3e]" /> : <Plus className="w-4 h-4 text-[#2d4a3e]" />}
+          <div className="w-full max-w-lg bg-card border-2 border-border shadow-xl flex flex-col rounded-2xl">
+            <div className="flex items-center justify-between p-3.5 border-b border-border bg-secondary/35 font-mono">
+              <h3 className="text-xs font-bold text-foreground uppercase tracking-wider flex items-center gap-1.5">
+                {editingCron ? <Edit className="w-4 h-4 text-primary" /> : <Plus className="w-4 h-4 text-primary" />}
                 {editingCron ? `Edit Cron Job: ${editingCron.id}` : "Add New Cron Job"}
               </h3>
               <button
                 onClick={() => setRosterModalOpen(false)}
-                className="text-[#1a1a1a] hover:text-[#9c3e3e] cursor-pointer"
+                className="text-foreground hover:text-red-400 cursor-pointer"
                 disabled={rosterSubmitting}
               >
                 <X className="w-4 h-4" />
@@ -1182,7 +1182,7 @@ export default function CalendarPage() {
             <form onSubmit={handleRosterSubmit} className="p-5 space-y-4 max-h-[80vh] overflow-y-auto">
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1.5 font-mono text-xs">
-                  <label className="block font-bold text-[#1a1a1a]/60 uppercase tracking-wide">
+                  <label className="block font-bold text-foreground/60 uppercase tracking-wide">
                     Cron / Agent ID
                   </label>
                   <input
@@ -1192,12 +1192,12 @@ export default function CalendarPage() {
                     placeholder="e.g. lead-scorer"
                     value={cronId}
                     onChange={(e) => setCronId(e.target.value)}
-                    className="w-full px-3 py-2 bg-[#faf9f5] border border-[#1a1a1a]/30 text-xs rounded-none focus:outline-none focus:border-[#2d4a3e] disabled:bg-[#f4f2eb] disabled:text-[#1a1a1a]/55 disabled:border-[#1a1a1a]/15"
+                    className="w-full px-3 py-2 bg-card border border-border/50 text-xs rounded-2xl focus:outline-none focus:border-[#2d4a3e] disabled:bg-secondary/35 disabled:text-foreground/55 disabled:border-border/40"
                   />
                 </div>
 
                 <div className="space-y-1.5 font-mono text-xs">
-                  <label className="block font-bold text-[#1a1a1a]/60 uppercase tracking-wide">
+                  <label className="block font-bold text-foreground/60 uppercase tracking-wide">
                     Display Name
                   </label>
                   <input
@@ -1206,20 +1206,20 @@ export default function CalendarPage() {
                     placeholder="e.g. Lead Scorer Agent"
                     value={cronName}
                     onChange={(e) => setCronName(e.target.value)}
-                    className="w-full px-3 py-2 bg-[#faf9f5] border border-[#1a1a1a]/30 text-xs rounded-none focus:outline-none focus:border-[#2d4a3e]"
+                    className="w-full px-3 py-2 bg-card border border-border/50 text-xs rounded-2xl focus:outline-none focus:border-[#2d4a3e]"
                   />
                 </div>
               </div>
 
               <div className="grid grid-cols-3 gap-4">
                 <div className="space-y-1.5 font-mono text-xs">
-                  <label className="block font-bold text-[#1a1a1a]/60 uppercase tracking-wide">
+                  <label className="block font-bold text-foreground/60 uppercase tracking-wide">
                     Shift
                   </label>
                   <select
                     value={cronShift}
                     onChange={(e) => setCronShift(e.target.value)}
-                    className="w-full px-3 py-2 bg-[#faf9f5] border border-[#1a1a1a]/30 text-xs rounded-none focus:outline-none focus:border-[#2d4a3e] cursor-pointer"
+                    className="w-full px-3 py-2 bg-card border border-border/50 text-xs rounded-2xl focus:outline-none focus:border-[#2d4a3e] cursor-pointer"
                   >
                     {shiftNames.filter(s => s !== "ALL").map((shift) => (
                       <option key={shift} value={shift}>{shift}</option>
@@ -1228,7 +1228,7 @@ export default function CalendarPage() {
                 </div>
 
                 <div className="space-y-1.5 font-mono text-xs">
-                  <label className="block font-bold text-[#1a1a1a]/60 uppercase tracking-wide">
+                  <label className="block font-bold text-foreground/60 uppercase tracking-wide">
                     Clock In
                   </label>
                   <input
@@ -1237,12 +1237,12 @@ export default function CalendarPage() {
                     placeholder="e.g. 9:00 AM"
                     value={cronClockIn}
                     onChange={(e) => setCronClockIn(e.target.value)}
-                    className="w-full px-3 py-2 bg-[#faf9f5] border border-[#1a1a1a]/30 text-xs rounded-none focus:outline-none focus:border-[#2d4a3e]"
+                    className="w-full px-3 py-2 bg-card border border-border/50 text-xs rounded-2xl focus:outline-none focus:border-[#2d4a3e]"
                   />
                 </div>
 
                 <div className="space-y-1.5 font-mono text-xs">
-                  <label className="block font-bold text-[#1a1a1a]/60 uppercase tracking-wide">
+                  <label className="block font-bold text-foreground/60 uppercase tracking-wide">
                     Clock Out
                   </label>
                   <input
@@ -1251,20 +1251,20 @@ export default function CalendarPage() {
                     placeholder="e.g. 5:00 PM"
                     value={cronClockOut}
                     onChange={(e) => setCronClockOut(e.target.value)}
-                    className="w-full px-3 py-2 bg-[#faf9f5] border border-[#1a1a1a]/30 text-xs rounded-none focus:outline-none focus:border-[#2d4a3e]"
+                    className="w-full px-3 py-2 bg-card border border-border/50 text-xs rounded-2xl focus:outline-none focus:border-[#2d4a3e]"
                   />
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1.5 font-mono text-xs">
-                  <label className="block font-bold text-[#1a1a1a]/60 uppercase tracking-wide">
+                  <label className="block font-bold text-foreground/60 uppercase tracking-wide">
                     Pipeline
                   </label>
                   <select
                     value={cronPipeline}
                     onChange={(e) => setCronPipeline(e.target.value)}
-                    className="w-full px-3 py-2 bg-[#faf9f5] border border-[#1a1a1a]/30 text-xs rounded-none focus:outline-none focus:border-[#2d4a3e] cursor-pointer"
+                    className="w-full px-3 py-2 bg-card border border-border/50 text-xs rounded-2xl focus:outline-none focus:border-[#2d4a3e] cursor-pointer"
                   >
                     {pipelineNames.filter(p => p !== "ALL").map((pipeline) => (
                       <option key={pipeline} value={pipeline}>{pipeline.charAt(0) + pipeline.slice(1).toLowerCase()}</option>
@@ -1273,7 +1273,7 @@ export default function CalendarPage() {
                 </div>
 
                 <div className="space-y-1.5 font-mono text-xs">
-                  <label className="block font-bold text-[#1a1a1a]/60 uppercase tracking-wide">
+                  <label className="block font-bold text-foreground/60 uppercase tracking-wide">
                     Tools Required
                   </label>
                   <input
@@ -1281,13 +1281,13 @@ export default function CalendarPage() {
                     placeholder="e.g. exec, read, write"
                     value={cronTools}
                     onChange={(e) => setCronTools(e.target.value)}
-                    className="w-full px-3 py-2 bg-[#faf9f5] border border-[#1a1a1a]/30 text-xs rounded-none focus:outline-none focus:border-[#2d4a3e]"
+                    className="w-full px-3 py-2 bg-card border border-border/50 text-xs rounded-2xl focus:outline-none focus:border-[#2d4a3e]"
                   />
                 </div>
               </div>
 
               <div className="space-y-1.5 font-mono text-xs">
-                <label className="block font-bold text-[#1a1a1a]/60 uppercase tracking-wide">
+                <label className="block font-bold text-foreground/60 uppercase tracking-wide">
                   Target Script / Execution Command
                 </label>
                 <input
@@ -1296,12 +1296,12 @@ export default function CalendarPage() {
                   placeholder="e.g. tools/sales-engine/score-leads.mjs"
                   value={cronScript}
                   onChange={(e) => setCronScript(e.target.value)}
-                  className="w-full px-3 py-2 bg-[#faf9f5] border border-[#1a1a1a]/30 text-xs rounded-none focus:outline-none focus:border-[#2d4a3e]"
+                  className="w-full px-3 py-2 bg-card border border-border/50 text-xs rounded-2xl focus:outline-none focus:border-[#2d4a3e]"
                 />
               </div>
 
               <div className="flex gap-6 font-mono text-xs pt-2">
-                <label className="flex items-center gap-2 font-bold text-[#1a1a1a]/70 cursor-pointer">
+                <label className="flex items-center gap-2 font-bold text-foreground/70 cursor-pointer">
                   <input
                     type="checkbox"
                     checked={cronIsStarred}
@@ -1311,7 +1311,7 @@ export default function CalendarPage() {
                   STARRED CRON (★)
                 </label>
 
-                <label className="flex items-center gap-2 font-bold text-[#1a1a1a]/70 cursor-pointer">
+                <label className="flex items-center gap-2 font-bold text-foreground/70 cursor-pointer">
                   <input
                     type="checkbox"
                     checked={cronIsNew}
@@ -1322,19 +1322,19 @@ export default function CalendarPage() {
                 </label>
               </div>
 
-              <div className="pt-4 border-t border-[#1a1a1a]/10 flex justify-end gap-2 font-mono text-xs">
+              <div className="pt-4 border-t border-border/20 flex justify-end gap-2 font-mono text-xs">
                 <button
                   type="button"
                   onClick={() => setRosterModalOpen(false)}
                   disabled={rosterSubmitting}
-                  className="px-4 py-2 bg-[#f4f2eb] hover:bg-[#1a1a1a]/5 text-[#1a1a1a]/80 border border-[#1a1a1a]/15 cursor-pointer rounded-none uppercase font-bold tracking-wider"
+                  className="px-4 py-2 bg-secondary/35 hover:bg-[#1a1a1a]/5 text-foreground/80 border border-border/40 cursor-pointer rounded-2xl uppercase font-bold tracking-wider"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={rosterSubmitting}
-                  className="px-4 py-2 bg-[#2d4a3e] hover:bg-[#2d4a3e]/90 text-[#faf9f5] font-bold cursor-pointer rounded-none uppercase tracking-wider flex items-center gap-1.5"
+                  className="px-4 py-2 bg-primary text-[#0F2A2E] hover:bg-primary text-[#0F2A2E]/90 text-[#faf9f5] font-bold cursor-pointer rounded-2xl uppercase tracking-wider flex items-center gap-1.5"
                 >
                   {rosterSubmitting ? (
                     <>
