@@ -4,7 +4,7 @@ import React, { useEffect, useState } from "react";
 import { Activity, Terminal, Send, RefreshCw, Layers, Users } from "lucide-react";
 import { AcmiClusterDashboard } from "@/components/acmi/AcmiClusterDashboard";
 import { subscribeToBus, type BusEvent } from "@/lib/bus-stream";
-import { acmiCall } from "@/lib/acmi-client";
+import { acmiClient, acmiCall } from "@/lib/acmi-client";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -14,12 +14,34 @@ export default function AcmiDashboardPage() {
   const [sendingEvent, setSendingEvent] = useState(false);
   const [broadcastLog, setBroadcastLog] = useState<string | null>(null);
 
-  // 1. Subscribe to Super Bus Stream
+  const [rollup, setRollup] = useState<any>(null);
+  const [loadingRollup, setLoadingRollup] = useState(false);
+  const [rawTextMode, setRawTextMode] = useState(false);
+
+  const loadRollup = async () => {
+    setLoadingRollup(true);
+    try {
+      const data = await acmiClient.fetchLatestRollup();
+      setRollup(data);
+    } catch (err) {
+      console.error("Failed to load rollup:", err);
+    } finally {
+      setLoadingRollup(false);
+    }
+  };
+
+  // 1. Subscribe to Super Bus Stream & fetch initial Rollup
   useEffect(() => {
+    loadRollup();
+    const rollupInterval = setInterval(loadRollup, 10000); // Poll rollup every 10 seconds
+
     const unsubscribe = subscribeToBus((event) => {
       setBusEvents((prev) => [event, ...prev].slice(0, 50));
     });
-    return () => unsubscribe();
+    return () => {
+      unsubscribe();
+      clearInterval(rollupInterval);
+    };
   }, []);
 
   // 2. Dispatch Comms v1.5 compliant testing spawn event
@@ -151,6 +173,157 @@ export default function AcmiDashboardPage() {
                 'antigravity'
               ]}
             />
+          </div>
+
+          {/* Latest Fleet Rollup Card */}
+          <div className="border border-border bg-card rounded-2xl p-5 shadow-md space-y-4 relative overflow-hidden">
+            <div className="absolute left-0 top-0 bottom-0 w-[4px] bg-primary rounded-l-2xl" />
+            <div className="flex items-center justify-between border-b border-border/40 pb-3">
+              <div className="flex items-center gap-2">
+                <Activity className="h-4 w-4 text-primary" />
+                <h2 className="font-bold text-foreground text-sm tracking-wide font-serif uppercase">
+                  Latest Session Rollup Summary
+                </h2>
+              </div>
+              <div className="flex items-center gap-2">
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => setRawTextMode(!rawTextMode)}
+                  className="font-mono text-[9px] text-muted-foreground uppercase hover:bg-secondary h-6 cursor-pointer"
+                >
+                  {rawTextMode ? "Formatted View" : "Raw JSON"}
+                </Button>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={loadRollup}
+                  disabled={loadingRollup}
+                  className="h-6 w-6 p-0 text-muted-foreground hover:text-foreground cursor-pointer"
+                >
+                  <RefreshCw className={cn("h-3 w-3", loadingRollup && "animate-spin")} />
+                </Button>
+              </div>
+            </div>
+
+            {loadingRollup && !rollup ? (
+              <div className="py-8 text-center text-xs font-mono text-muted-foreground uppercase animate-pulse">
+                Fetching rollup data...
+              </div>
+            ) : !rollup ? (
+              <div className="py-8 text-center text-xs font-mono text-muted-foreground/40 uppercase">
+                No session rollup found in Redis
+              </div>
+            ) : rawTextMode ? (
+              <pre className="p-3 bg-black/40 text-[10px] text-primary font-mono overflow-auto max-h-[300px] border border-border/30 rounded-lg">
+                {JSON.stringify(rollup, null, 2)}
+              </pre>
+            ) : (
+              <div className="space-y-5">
+                {/* Rollup Header Meta */}
+                <div className="flex flex-wrap items-center justify-between gap-2 bg-secondary/35 p-3 border border-border/40 text-[10px] font-mono text-muted-foreground">
+                  <div>
+                    <span className="text-foreground font-bold">Correlation ID:</span>{" "}
+                    <span className="text-primary">{rollup.correlationId || "N/A"}</span>
+                  </div>
+                  <div>
+                    <span className="text-foreground font-bold">Sync Time:</span>{" "}
+                    <span className="text-primary">{rollup.updated_at || "N/A"}</span>
+                  </div>
+                </div>
+
+                {/* Grid of headline stats */}
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                  <div className="bg-secondary/20 border border-border/30 p-2.5 rounded-lg flex flex-col justify-center">
+                    <span className="font-mono text-[9px] text-muted-foreground uppercase block">Agents online</span>
+                    <span className="text-lg font-bold text-foreground mt-0.5">
+                      {rollup.agent_status_snapshot?.online?.length ?? 0}
+                    </span>
+                  </div>
+                  <div className="bg-secondary/20 border border-border/30 p-2.5 rounded-lg flex flex-col justify-center">
+                    <span className="font-mono text-[9px] text-muted-foreground uppercase block">Known issues</span>
+                    <span className="text-lg font-bold text-red-400 mt-0.5">
+                      {rollup.open_known_issues?.length ?? 0}
+                    </span>
+                  </div>
+                  <div className="bg-secondary/20 border border-border/30 p-2.5 rounded-lg flex flex-col justify-center">
+                    <span className="font-mono text-[9px] text-muted-foreground uppercase block">Delegated Tasks</span>
+                    <span className="text-lg font-bold text-primary mt-0.5">
+                      {rollup.delegations_complete?.length ?? rollup.delegations?.length ?? 0}
+                    </span>
+                  </div>
+                  <div className="bg-secondary/20 border border-border/30 p-2.5 rounded-lg flex flex-col justify-center">
+                    <span className="font-mono text-[9px] text-muted-foreground uppercase block">Skills Stored</span>
+                    <span className="text-lg font-bold text-[#7DB8FF] mt-0.5">
+                      {rollup.skills_saved?.length ?? 0}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Priority Issues & Action Items layout */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* Open Issues */}
+                  <div className="space-y-2">
+                    <span className="font-mono text-[9px] font-bold text-red-400 uppercase tracking-wider block">
+                      ⚠️ Open Issues ({rollup.open_known_issues?.length || 0})
+                    </span>
+                    <div className="space-y-1.5 max-h-[220px] overflow-auto pr-1 scrollbar-thin">
+                      {rollup.open_known_issues?.map((issue: any, idx: number) => (
+                        <div key={idx} className="bg-black/20 border border-red-500/10 hover:border-red-500/20 p-2.5 text-[10px] rounded-lg">
+                          <div className="flex items-center justify-between gap-1.5 mb-1">
+                            <span className="font-bold text-foreground font-mono truncate">{issue.id}</span>
+                            <span className={cn(
+                              "font-mono text-[8px] uppercase px-1 rounded-sm shrink-0 border",
+                              issue.severity === "P1" 
+                                ? "bg-red-500/10 text-red-400 border-red-500/20" 
+                                : "bg-yellow-500/10 text-yellow-400 border-yellow-500/20"
+                            )}>
+                              {issue.severity}
+                            </span>
+                          </div>
+                          <p className="text-muted-foreground leading-normal font-sans">
+                            {issue.description || issue.symptom || issue.notes || "Active block issue."}
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Human Action Queue */}
+                  <div className="space-y-2">
+                    <span className="font-mono text-[9px] font-bold text-primary uppercase tracking-wider block">
+                      ⚡ Action items & next steps
+                    </span>
+                    <div className="space-y-1.5 max-h-[220px] overflow-auto pr-1 scrollbar-thin">
+                      {rollup.next_session_priorities?.map((action: string, idx: number) => (
+                        <div key={idx} className="bg-black/20 border border-border/30 hover:border-primary/20 p-2.5 text-[10px] rounded-lg flex items-start gap-2">
+                          <span className="font-mono text-primary text-[10px] leading-tight shrink-0 mt-0.5">{idx + 1}.</span>
+                          <p className="text-muted-foreground leading-normal font-sans">{action}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Telemetry Footer Info */}
+                <div className="border-t border-border/30 pt-3 flex flex-wrap gap-x-5 gap-y-2 text-[9px] font-mono text-muted-foreground">
+                  <div>
+                    <span className="text-foreground/75 font-bold">Mac Bridge:</span>{" "}
+                    <span className={cn(rollup.fleet_telemetry?.mac_bridge_status?.includes("online") ? "text-primary" : "text-yellow-400")}>
+                      {rollup.fleet_telemetry?.mac_bridge_status || "offline"}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-foreground/75 font-bold">Relay Stream PID:</span>{" "}
+                    <span className="text-foreground">{rollup.fleet_telemetry?.opencode_bus_relay_pid || "none"}</span>
+                  </div>
+                  <div>
+                    <span className="text-foreground/75 font-bold">Mattermost:</span>{" "}
+                    <span className="text-foreground">{rollup.fleet_telemetry?.mattermost_ops_center_status || "offline"}</span>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         </div>
 

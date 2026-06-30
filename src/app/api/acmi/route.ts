@@ -1072,6 +1072,20 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ result: "OK", success: true });
       }
 
+      case "acmi_rollup_get": {
+        const key = params?.key ? String(params.key) : "acmi:madez:agent:ops-center:rollup:latest";
+        const res = await executeUpstashCommand(config, ["GET", key], false);
+        let parsed = null;
+        if (res?.result) {
+          try {
+            parsed = JSON.parse(String(res.result));
+          } catch {
+            parsed = res.result;
+          }
+        }
+        return NextResponse.json({ result: parsed, success: true });
+      }
+
       case "fleet_sync_trigger": {
         await executeUpstashCommand(config, ["PUBLISH", "fleet:sync", "trigger"], false);
         return NextResponse.json({ result: "OK", success: true });

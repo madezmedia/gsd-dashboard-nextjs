@@ -691,7 +691,7 @@ export async function fetchWorkItems(): Promise<ACMIWorkItem[]> {
         title,
         status,
         owner: profile?.owner || profile?.team?.lead || "unassigned",
-        progress: signals?.progress ? parseInt(String(signals.progress)) || 0 : 0,
+        progress: (signals?.progress_pct ?? signals?.progress) ? parseInt(String(signals.progress_pct ?? signals.progress)) || 0 : 0,
         stages,
         createdAt: profile?.timeline?.created,
         updatedAt: profile?.timeline?.updated || profile?.timeline?.target,
@@ -778,7 +778,7 @@ export async function fetchWorkItem(id: string): Promise<ACMIWorkItem | null> {
       title,
       status,
       owner: profile?.owner || profile?.team?.lead || "unassigned",
-      progress: signals?.progress ? parseInt(String(signals.progress)) || 0 : 0,
+      progress: (signals?.progress_pct ?? signals?.progress) ? parseInt(String(signals.progress_pct ?? signals.progress)) || 0 : 0,
       stages,
       createdAt: profile?.timeline?.created,
       updatedAt: profile?.timeline?.updated || profile?.timeline?.target,
@@ -1137,6 +1137,17 @@ export async function fetchDashboardBootstrap(): Promise<ACMIDashboardBootstrapP
     return res.result || res;
   } catch (err) {
     console.error("Failed to fetch dashboard bootstrap bundle:", err);
+    return null;
+  }
+}
+
+export async function fetchLatestRollup(key?: string): Promise<any> {
+  try {
+    const res = await acmiCall("acmi_rollup_get", { key });
+    if (!res) return null;
+    return res.result || res;
+  } catch (err) {
+    console.error("Failed to fetch latest rollup:", err);
     return null;
   }
 }
@@ -1562,6 +1573,7 @@ export const acmiClient = {
   acmiCall,
   createWorkItem, getWorkItem, listWorkItems, updateWorkItemStatus, updateWorkItemMilestones,
   fetchDashboardBootstrap,
+  fetchLatestRollup,
   fetchProjectActivity,
   rawCommand,
   getMockBootstrap,
