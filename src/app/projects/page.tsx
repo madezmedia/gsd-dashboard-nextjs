@@ -21,9 +21,11 @@ import {
   type ProjectRow,
   type ActivityFeedEntry
 } from "@/lib/project-activity";
+import { VercelProjectsTab } from "@/components/projects/vercel-projects-tab";
+import { ProjectTodos } from "@/components/projects/project-todos";
 
 type ProjectItem = ProjectRow;
-type ViewMode = "kanban" | "table" | "activity" | "git-vercel";
+type ViewMode = "kanban" | "table" | "activity" | "git-vercel" | "vercel";
 
 const AGENT_LIST = [
   "unassigned",
@@ -454,7 +456,7 @@ function ProjectsPageContent() {
         <div className="flex flex-wrap items-center gap-3">
           {/* View Toggle */}
           <div className="flex bg-secondary p-1 border border-border">
-            {(["kanban", "table", "activity", "git-vercel"] as ViewMode[]).map((mode) => (
+            {(["kanban", "table", "activity", "git-vercel", "vercel"] as ViewMode[]).map((mode) => (
               <button
                 key={mode}
                 onClick={() => setViewMode(mode)}
@@ -465,7 +467,7 @@ function ProjectsPageContent() {
                     : "bg-transparent text-muted-foreground border-transparent hover:text-foreground"
                 )}
               >
-                {mode === "git-vercel" ? "Git & Vercel" : mode}
+                {mode === "git-vercel" ? "Git & Vercel" : mode === "vercel" ? "Vercel Projects" : mode}
               </button>
             ))}
           </div>
@@ -889,6 +891,9 @@ function ProjectsPageContent() {
         </div>
       )}
 
+      {/* 5. VERCEL PROJECTS REGISTRY */}
+      {viewMode === "vercel" && <VercelProjectsTab />}
+
       {/* ── CREATE PROJECT MODAL ───────────────────────── */}
       {showCreateModal && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
@@ -1215,6 +1220,14 @@ function KanbanColumn({
                         <Plus className="h-3.5 w-3.5" />
                       </Button>
                     </div>
+                  </div>
+
+                  {/* Todos panel */}
+                  <div className="border-t border-border pt-4 mt-4">
+                    <ProjectTodos
+                      projectId={project.id}
+                      projectTitle={project.title}
+                    />
                   </div>
 
                 </div>
