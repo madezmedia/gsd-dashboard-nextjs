@@ -6,6 +6,18 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { fetchServices } from "@/lib/acmi-client";
+import { ServiceIframe } from "@/components/services/service-iframe";
+
+const EMBED_URLS: Record<string, string> = {
+  nocodb: "https://nocodb-u70402.vm.elestio.app",
+  n8n: "https://n8n-u70402.vm.elestio.app",
+  git: "https://git-u70402.vm.elestio.app",
+  serpbear: "https://serpbear-u70402.vm.elestio.app",
+  langfuse: "https://langfuse-u70402.vm.elestio.app",
+  "uptime-kuma": "https://uptime-u70402.vm.elestio.app",
+  mattermost: "http://152.53.201.27:8065",
+  searxng: "https://searxng-u70402.vm.elestio.app",
+};
 
 interface ServiceRegistry {
   slug: string;
@@ -25,6 +37,7 @@ export default function ServicesStatusPage() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [mountedTime] = useState(() => Date.now());
+  const [activeEmbed, setActiveEmbed] = useState<{ name: string; url: string } | null>(null);
 
   const loadServices = useCallback(async () => {
     try {
@@ -172,23 +185,45 @@ export default function ServicesStatusPage() {
                     </div>
                   )}
 
-                  {svc.url && (
-                    <a 
-                      href={svc.url} 
-                      target="_blank" 
-                      rel="noopener noreferrer" 
-                      className="inline-flex items-center gap-1 text-[10px] font-mono text-primary hover:text-primary-hover transition-colors uppercase cursor-pointer"
-                    >
-                      <span>Console</span>
-                      <ExternalLink className="h-2.5 w-2.5" />
-                    </a>
-                  )}
+                  <div className="flex items-center gap-2">
+                    {EMBED_URLS[svc.slug] && (
+                      <button
+                        onClick={() => setActiveEmbed(
+                          activeEmbed?.name === svc.name
+                            ? null
+                            : { name: svc.name, url: EMBED_URLS[svc.slug] as string }
+                        )}
+                        className="text-[10px] font-mono text-amber-400 hover:text-amber-300 uppercase cursor-pointer transition-colors"
+                      >
+                        {activeEmbed?.name === svc.name ? "Close" : "Embed"}
+                      </button>
+                    )}
+                    {svc.url && (
+                      <a
+                        href={svc.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1 text-[10px] font-mono text-primary hover:text-primary/80 transition-colors uppercase cursor-pointer"
+                      >
+                        <span>Console</span>
+                        <ExternalLink className="h-2.5 w-2.5" />
+                      </a>
+                    )}
+                  </div>
                 </div>
               </CardContent>
             </Card>
           );
         })}
       </div>
+
+      {activeEmbed && (
+        <ServiceIframe
+          name={activeEmbed.name}
+          url={activeEmbed.url}
+          onClose={() => setActiveEmbed(null)}
+        />
+      )}
     </div>
   );
 }
