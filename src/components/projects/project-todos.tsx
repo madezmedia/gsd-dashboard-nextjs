@@ -48,12 +48,16 @@ export function ProjectTodos({ projectId, projectTitle }: Props) {
 
   useEffect(() => { load(); }, [load]);
 
-  const persist = useCallback(async (updated: Todo[]) => {
-    setTodos(updated);
+  const persist = useCallback(async (updater: Todo[] | ((prev: Todo[]) => Todo[])) => {
+    let updated: Todo[];
+    setTodos((prev) => {
+      updated = typeof updater === "function" ? updater(prev) : updater;
+      return updated;
+    });
     await fetch("/api/projects/todos", {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ projectId, todos: updated }),
+      body: JSON.stringify({ projectId, todos: updated! }),
     });
   }, [projectId]);
 
@@ -72,9 +76,9 @@ export function ProjectTodos({ projectId, projectTitle }: Props) {
   };
 
   const toggleDone = (id: string) =>
-    persist(todos.map((t) => (t.id === id ? { ...t, done: !t.done } : t)));
+    persist((prev) => prev.map((t) => (t.id === id ? { ...t, done: !t.done } : t)));
 
-  const deleteTodo = (id: string) => persist(todos.filter((t) => t.id !== id));
+  const deleteTodo = (id: string) => persist((prev) => prev.filter((t) => t.id !== id));
 
   const runAudit = async () => {
     setAuditing(true);
