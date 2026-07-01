@@ -16,7 +16,7 @@ export async function GET() {
     const data = await res.json();
 
     const projects = await Promise.all(
-      (data.projects as any[]).map(async (p) => {
+      ((data.projects ?? []) as any[]).map(async (p) => {
         const dRes = await fetch(
           `https://api.vercel.com/v6/deployments?projectId=${p.id}&limit=3${teamQs}`,
           { headers: { Authorization: `Bearer ${token}` }, cache: "no-store" }
