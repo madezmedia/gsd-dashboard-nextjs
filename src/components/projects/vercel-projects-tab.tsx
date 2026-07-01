@@ -53,11 +53,16 @@ export function VercelProjectsTab() {
   const load = async (showRefreshing = false) => {
     if (showRefreshing) setRefreshing(true);
     else setLoading(true);
-    const res = await fetch("/api/vercel/projects");
-    const data = await res.json();
-    setProjects(data.projects ?? []);
-    setLoading(false);
-    setRefreshing(false);
+    try {
+      const res = await fetch("/api/vercel/projects");
+      const data = await res.json();
+      setProjects(data.projects ?? []);
+    } catch {
+      // keep existing projects on refresh error, show nothing on initial load
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
   };
 
   useEffect(() => { load(); }, []);
@@ -109,6 +114,13 @@ export function VercelProjectsTab() {
 
       {/* Project grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
+        {filtered.length === 0 && (
+          <div className="col-span-full py-8 text-center">
+            <p className="text-[10px] font-mono text-muted-foreground/50 uppercase tracking-wider">
+              No projects match &quot;{search}&quot;
+            </p>
+          </div>
+        )}
         {filtered.map((project) => {
           const dep = project.latestDeployment;
           const state = dep?.state ?? "UNKNOWN";
