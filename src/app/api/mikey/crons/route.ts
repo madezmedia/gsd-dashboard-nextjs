@@ -424,6 +424,16 @@ const CRON_REGISTRY: CronItem[] = [
     host: "cicd-qpy7t",
   },
   {
+    id: "vm-cron-unified-kanban-sync",
+    name: "Unified Kanban Synchronizer",
+    schedule: "*/2 * * * *",
+    command: "/opt/acmi-bridge/sync-vm-kanbans.sh",
+    logPath: "/var/log/sync-vm-kanbans.log",
+    description: "Periodically syncs VM main Hermes and Folana-Hermes SQLite databases with Upstash Redis ACMI.",
+    source: "vm-crontab",
+    host: "cicd-qpy7t",
+  },
+  {
     id: "vm-cron-borg-attended-upgrades",
     name: "Borg Backup + Unattended Upgrades (Sunday 5am)",
     schedule: "0 5 * * 0",

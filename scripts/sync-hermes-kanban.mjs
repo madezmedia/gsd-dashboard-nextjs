@@ -8,7 +8,8 @@ import { DatabaseSync } from "node:sqlite";
 import fs from "node:fs";
 import path from "node:path";
 
-const KANBAN_DB_PATH = "/Users/michaelshaw/.hermes/kanban.db";
+const argPath = process.argv.find((arg, idx) => idx >= 2 && !arg.startsWith("-"));
+const KANBAN_DB_PATH = argPath || process.env.KANBAN_DB_PATH || "/Users/michaelshaw/.hermes/kanban.db";
 const ENV_PATH = "/Users/michaelshaw/Projects/gsd-dashboard-nextjs/.env.local";
 
 // Status Mappings
@@ -28,16 +29,16 @@ const REDIS_TO_SQLITE_STATUS = {
 };
 
 // 1. Resolve environment credentials
-let REDIS_URL = "http://152.53.201.27:8081/exec";
-let REDIS_TOKEN = "default_token";
+let REDIS_URL = process.env.REDIS_URL || process.env.UPSTASH_REDIS_REST_URL || "http://152.53.201.27:8081/exec";
+let REDIS_TOKEN = process.env.REDIS_TOKEN || process.env.UPSTASH_REDIS_REST_TOKEN || "default_token";
 
 if (fs.existsSync(ENV_PATH)) {
   const envContent = fs.readFileSync(ENV_PATH, "utf8");
   for (const line of envContent.split("\n")) {
     const matchUrl = line.match(/^UPSTASH_REDIS_REST_URL="?([^"]+)"?/);
     const matchToken = line.match(/^UPSTASH_REDIS_REST_TOKEN="?([^"]+)"?/);
-    if (matchUrl) REDIS_URL = matchUrl[1];
-    if (matchToken) REDIS_TOKEN = matchToken[1];
+    if (matchUrl && !process.env.REDIS_URL && !process.env.UPSTASH_REDIS_REST_URL) REDIS_URL = matchUrl[1];
+    if (matchToken && !process.env.REDIS_TOKEN && !process.env.UPSTASH_REDIS_REST_TOKEN) REDIS_TOKEN = matchToken[1];
   }
 }
 
