@@ -3,10 +3,13 @@ import { NextResponse } from "next/server";
 export async function GET() {
   const token = process.env.VERCEL_TOKEN;
   const projectId = process.env.VERCEL_PROJECT_ID || process.env.NEXT_PUBLIC_VERCEL_PROJECT_ID;
+  const teamId = process.env.VERCEL_ORG_ID;
 
   if (token && projectId) {
     try {
-      const res = await fetch(`https://api.vercel.com/v6/deployments?projectId=${projectId}`, {
+      const params = new URLSearchParams({ projectId, limit: "10" });
+      if (teamId) params.set("teamId", teamId);
+      const res = await fetch(`https://api.vercel.com/v6/deployments?${params}`, {
         headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",

@@ -19,6 +19,7 @@ import {
   FileCode,
   Activity,
   Cpu,
+  Key,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -44,6 +45,12 @@ const navItems = [
     label: "Mikey's Crons",
     icon: Cpu,
     badge: "CRON",
+  },
+  {
+    href: "/integrations",
+    label: "Integrations",
+    icon: Key,
+    badge: "KEY",
   },
   {
     href: "/agents",

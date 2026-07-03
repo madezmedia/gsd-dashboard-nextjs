@@ -33,6 +33,192 @@ interface DocItem {
 
 const DEFAULT_DOCS: DocItem[] = [
   {
+    id: "openacp-comms-cheatsheet",
+    title: "OpenACP Comms Cheatsheet",
+    type: "Guide",
+    lastModified: Date.now(),
+    content: `# OpenACP Comms Cheatsheet
+
+**Version:** v1.0 · **Updated:** 2026-07-01 · **Audience:** agents + humans on the madez fleet
+
+OpenACP = multi-host agent coordination framework. Agents run on different machines, communicate through ACMI Redis + fleet bus. Single-page reference for inter-agent comms.
+
+---
+
+## 1 · The Two Channels
+
+| Channel | When | How | Latency |
+|---|---|---|---|
+| **ACMI** (Redis) | State, identity, signals, acks | \`acmi:*\` keys via REST bridge | ~10ms |
+| **Fleet Bus** (n8n) | Events, broadcasts, triggers | POST to n8n webhook | ~200ms |
+
+**Rule:** ACMI for state reads. Fleet bus for fire-and-forget events that need to fan out.
+
+---
+
+## 2 · ACMI REST Bridge
+
+**Endpoint:** \`http://152.53.201.27:8081/exec\`
+
+**Format:** Flat JSON array — NOT object format.
+
+\`\`\`bash
+# ✅ Correct
+curl -s -X POST http://152.53.201.27:8081/exec \\
+  -H "Content-Type: application/json" \\
+  -d '["GET","acmi:agent:claude-vm"]'
+
+# ❌ Wrong (returns 403 or ignores)
+curl -d '{"command":"GET","args":["acmi:agent:claude-vm"]}'
+\`\`\`
+
+### Common Commands
+
+\`\`\`bash
+["GET", "acmi:agent:<id>:profile"]           # read agent profile
+["GET", "acmi:agent:<id>:signals"]           # read live status
+["SET", "acmi:signal:<agent>:<key>", "{}"]  # write signal
+["ZADD", "acmi:agent:<id>:timeline", "<ts_ms>", "{}"]  # append event
+["KEYS", "acmi:agent:*"]                     # list keys by pattern
+\`\`\`
+
+---
+
+## 3 · Fleet Bus (n8n Webhook)
+
+**Endpoint:** \`https://n8n-u70402.vm.elestio.app/webhook/fleet-bus\`
+
+\`\`\`bash
+curl -s -X POST https://n8n-u70402.vm.elestio.app/webhook/fleet-bus \\
+  -H "Content-Type: application/json" \\
+  -d '{"ts":1782900000000,"source":"agent:claude-code","kind":"agent-registered","correlationId":"agentRegistered-1782900000000","summary":"[agent-registered @fleet] claude-code registered"}'
+\`\`\`
+
+### Event Kinds
+
+| Kind | Use When |
+|---|---|
+| \`agent-registered\` | New agent joins fleet |
+| \`coord-note\` | Coordination FYI — no action required |
+| \`milestone-shipped\` | Work item completed |
+| \`handoff\` | Task handed off to another agent |
+| \`alert\` | Something needs attention |
+| \`heartbeat\` | Periodic liveness signal |
+
+---
+
+## 4 · ACMI Event Envelope (v2)
+
+\`\`\`json
+{
+  "ts": 1782900000000,
+  "source": "agent:claude-code",
+  "kind": "coord-note",
+  "correlationId": "verbScope-1782900000000",
+  "parentCorrelationId": "verbScope-Pre-1782899990000",
+  "summary": "[kind-tag @recipient] one-line summary"
+}
+\`\`\`
+
+**correlationId convention:** \`camelCaseVerb-msEpoch\`
+
+---
+
+## 5 · Agent Identity Keys (required for every agent)
+
+| Key | Type | What |
+|---|---|---|
+| \`acmi:agent:<id>:profile\` | STRING (JSON) | id, name, role, host, tier, capabilities |
+| \`acmi:agent:<id>:signals\` | STRING (JSON) | status, comms_protocol, last_seen |
+| \`acmi:agent:<id>:rollup:latest\` | STRING (JSON) | pending_tasks, next_priorities |
+
+**Tiers:** T1=VM/cloud always-on · T2=specialized cloud · T3=cron/workflow · T4=local/laptop
+
+---
+
+## 6 · Active Fleet Agents (2026-07-01)
+
+| Agent | Host | Tier | Role |
+|---|---|---|---|
+| \`claude-code\` | grok-mac | T4 | Local coding + fleet ops |
+| \`claude-vm\` | cicd-qpy7t | T1 | VM-side coding agent |
+| \`opencode\` | cicd-qpy7t | T1 | OpenACP primary coding agent |
+| \`bentley\` | Mac mini | T1 | Fleet orchestrator + Rule-9 |
+| \`ops-center\` | cicd-qpy7t | T1 | Fleet ops, kanban, MM bridge |
+| \`codex\` | cicd-qpy7t | T2 | Coding agent (OpenAI Codex) |
+| \`grok\` | elestio-vm-884653 | T2 | xAI agent |
+
+---
+
+## 7 · 2-Way Comms Pattern (MAC ↔ VM)
+
+\`\`\`bash
+# VM writes heartbeat
+["SET","acmi:signal:claude-vm:heartbeat","{\\"agent\\":\\"claude-vm\\",\\"status\\":\\"online\\"}"]
+
+# Mac reads + acks
+["GET","acmi:signal:claude-vm:heartbeat"]
+["SET","acmi:signal:claude-code:vm-ack","{\\"status\\":\\"two_way_comms_verified\\"}"]
+\`\`\`
+
+---
+
+## 8 · OpenACP Agent Registration
+
+\`\`\`bash
+cat /opt/app/openacp-fleet/.openacp/agents.json | jq '.agents | keys'
+pm2 status fleet-sync-daemon
+npm list -g @agentclientprotocol/claude-agent-acp   # must be ≥0.53.0
+\`\`\`
+
+---
+
+## 9 · Mattermost Posts
+
+**Base URL:** \`http://152.53.201.27:8065\`
+
+| Channel | ID |
+|---|---|
+| \`agent-roundtable\` | \`tg8qsrsgufg1ummsh5d4xn467y\` |
+
+\`\`\`bash
+curl -X POST http://152.53.201.27:8065/api/v4/posts \\
+  -H "Authorization: Bearer $MM_TOKEN_OPENCODE" \\
+  -H "Content-Type: application/json" \\
+  -d '{"channel_id":"tg8qsrsgufg1ummsh5d4xn467y","message":"your message"}'
+\`\`\`
+
+---
+
+## 10 · Common Gotchas
+
+| Symptom | Cause | Fix |
+|---|---|---|
+| \`WRONGTYPE\` on signals | External writer set string not hash | DEL then SET with JSON string |
+| \`403\` on PUBLISH/SUBSCRIBE via bridge | Bridge allowlist | Use LIST bus: \`LPUSH acmi:madez:bus:events\` |
+| Fleet bus not relaying to MM | bus-relay PID dead | Restart \`opencode-bus-relay.mjs\` |
+| \`claude\` CLI "Credit balance too low" | Anthropic account depleted | Top up at console.anthropic.com |
+| \`--dangerously-skip-permissions\` blocked | Running as root | SSH from grok-mac instead |
+
+---
+
+## 11 · Secret Locations
+
+| Secret | Location |
+|---|---|
+| Anthropic key | \`~/clawd/.env\` → \`ANTHROPIC_API_KEY\` |
+| NocoDB token | \`~/clawd/.env\` → \`NOCODB_API_KEY\` |
+| Gitea token | \`~/clawd/.env\` → \`GITEA_TOKEN\` |
+| MM tokens | \`/root/.hermes/.env\` (VM) |
+| Redis password | \`sBufS1HE-202x-WjGvT2c9\` (native :26379) |
+| ACMI REST | \`http://152.53.201.27:8081/exec\` — LAN only, no auth |
+
+**Rules:** Never write secrets to ACMI values. Never commit to git.
+
+*Source file: \`~/clawd/docs/OPENACP-COMMS-CHEATSHEET.md\`*
+`,
+  },
+  {
     id: "acmi-super-bus-spec",
     title: "ACMI Super Bus Specification v1.4",
     type: "Spec",
