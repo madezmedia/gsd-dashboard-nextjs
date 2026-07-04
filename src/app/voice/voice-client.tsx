@@ -179,6 +179,10 @@ export default function VoiceClient() {
   const [deepgramApiKey, setDeepgramApiKey] = useState("");
   const [groqApiKey, setGroqApiKey] = useState("");
 
+  const [voiceProvider, setVoiceProvider] = useState<"webspeech" | "deepgram">("deepgram");
+  const [deepgramVoice, setDeepgramVoice] = useState("aura-asteria-en");
+  const activeAudioRef = useRef<HTMLAudioElement | null>(null);
+
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
   const analyserRef = useRef<AnalyserNode | null>(null);
@@ -219,9 +223,9 @@ export default function VoiceClient() {
     }
   }, []);
 
-  // WebSpeech Synthesis Queue Handlers
-  const speakNext = () => {
-    if (!synthRef.current || speakQueueRef.current.length === 0) {
+  // WebSpeech & Deepgram Synthesis Queue Handlers
+  const speakNext = async () => {
+    if (speakQueueRef.current.length === 0) {
       speakingRef.current = false;
       return;
     }
@@ -232,6 +236,44 @@ export default function VoiceClient() {
       return;
     }
 
+    if (voiceProvider === "deepgram") {
+      try {
+        const res = await fetch("/api/voice/tts", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ text: sentence, voice: deepgramVoice }),
+        });
+        if (!res.ok) throw new Error("Deepgram TTS proxy failed");
+        const blob = await res.blob();
+        const audioUrl = URL.createObjectURL(blob);
+        const audio = new Audio(audioUrl);
+        activeAudioRef.current = audio;
+        
+        audio.onended = () => {
+          URL.revokeObjectURL(audioUrl);
+          if (activeAudioRef.current === audio) activeAudioRef.current = null;
+          speakNext();
+        };
+        audio.onerror = () => {
+          URL.revokeObjectURL(audioUrl);
+          if (activeAudioRef.current === audio) activeAudioRef.current = null;
+          speakNext();
+        };
+        await audio.play();
+      } catch (err) {
+        console.error("Deepgram TTS error, falling back to WebSpeech:", err);
+        speakWebSpeech(sentence);
+      }
+    } else {
+      speakWebSpeech(sentence);
+    }
+  };
+
+  const speakWebSpeech = (sentence: string) => {
+    if (!synthRef.current) {
+      speakNext();
+      return;
+    }
     const utterance = new SpeechSynthesisUtterance(sentence);
     const voices = synthRef.current.getVoices();
     const preferredVoice =
@@ -259,6 +301,10 @@ export default function VoiceClient() {
   const stopSpeaking = () => {
     if (synthRef.current) {
       synthRef.current.cancel();
+    }
+    if (activeAudioRef.current) {
+      activeAudioRef.current.pause();
+      activeAudioRef.current = null;
     }
     speakQueueRef.current = [];
     speakingRef.current = false;
@@ -771,6 +817,30 @@ export default function VoiceClient() {
                   <option value="en-US">English (en-US)</option>
                   <option value="es-ES">Spanish (es-ES)</option>
                   <option value="de-DE">German (de-DE)</option>
+                </select>
+              </div>
+              <div className="space-y-1">
+                <label className="text-[10px] uppercase text-[#1a1a1a]/50">Voice Synthesis Engine</label>
+                <select
+                  value={voiceProvider}
+                  onChange={(e) => setVoiceProvider(e.target.value as any)}
+                  className="w-full bg-[#faf9f5] border border-[#1a1a1a]/10 p-2 text-xs font-mono outline-none rounded-none focus:border-[#1a1a1a]/40 text-[#1a1a1a]"
+                >
+                  <option value="deepgram">Deepgram Aura (High Quality)</option>
+                  <option value="webspeech">WebSpeech API (Local Browser)</option>
+                </select>
+              </div>
+              <div className="space-y-1">
+                <label className="text-[10px] uppercase text-[#1a1a1a]/50">Aura Voice Avatar</label>
+                <select
+                  value={deepgramVoice}
+                  onChange={(e) => setDeepgramVoice(e.target.value)}
+                  className="w-full bg-[#faf9f5] border border-[#1a1a1a]/10 p-2 text-xs font-mono outline-none rounded-none focus:border-[#1a1a1a]/40 text-[#1a1a1a]"
+                  disabled={voiceProvider !== "deepgram"}
+                >
+                  <option value="aura-asteria-en">Asteria (Sultry Female)</option>
+                  <option value="aura-luna-en">Luna (Warm Female)</option>
+                  <option value="aura-arcas-en">Arcas (Deep Male)</option>
                 </select>
               </div>
               <div className="md:col-span-2 flex items-center justify-between pt-1 border-t border-[#1a1a1a]/5">
