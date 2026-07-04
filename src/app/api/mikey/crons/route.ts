@@ -434,6 +434,16 @@ const CRON_REGISTRY: CronItem[] = [
     host: "cicd-qpy7t",
   },
   {
+    id: "vm-cron-verify-services",
+    name: "Docker Services Verifier",
+    schedule: "*/5 * * * *",
+    command: "python3 /opt/acmi-bridge/verify-services.py",
+    logPath: "/var/log/verify-services.log",
+    description: "Audits all running VM docker container microservices and updates their verification statuses in Redis.",
+    source: "vm-crontab",
+    host: "cicd-qpy7t",
+  },
+  {
     id: "vm-cron-borg-attended-upgrades",
     name: "Borg Backup + Unattended Upgrades (Sunday 5am)",
     schedule: "0 5 * * 0",
