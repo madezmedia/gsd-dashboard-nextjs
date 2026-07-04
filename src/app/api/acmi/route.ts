@@ -631,7 +631,8 @@ export async function POST(req: NextRequest) {
       tool !== "saas_get_status" &&
       tool !== "acmi_service_list" &&
       tool !== "acmi_hitl_list" &&
-      tool !== "fleet_sync_trigger"
+      tool !== "fleet_sync_trigger" &&
+      tool !== "acmi_rollup_get"
     ) {
       return NextResponse.json({ error: "Missing required parameter 'id'" }, { status: 400 });
     }
