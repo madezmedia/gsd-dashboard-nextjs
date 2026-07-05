@@ -67,7 +67,7 @@ YOUR CAPABILITIES:
     tools: {
       getACMITasks: {
         description: "Fetch all ACMI work items / tasks currently registered in the database.",
-        parameters: z.object({}),
+        parameters: z.object({}).passthrough(),
         execute: async () => {
           try {
             const keys1 = await callRedis(["KEYS", "acmi:work:*:profile"]) || [];
@@ -102,7 +102,7 @@ YOUR CAPABILITIES:
           status: z.enum(["todo", "ready", "in_progress", "blocked", "done", "pending", "active", "stalled", "completed"]).describe("State of the task"),
           assignee: z.string().optional().describe("Who is assigned (e.g. 'user' or 'agent:bentley')"),
           workspace_kind: z.string().optional().describe("Folder/scope workspace kind (e.g. 'scratch')"),
-        }),
+        }).passthrough(),
         execute: async ({ taskId, title, status, assignee, workspace_kind }: any) => {
           try {
             const profileKey = `acmi:work:${taskId}:profile`;
@@ -129,14 +129,17 @@ YOUR CAPABILITIES:
           kind: z.string().describe("Event classification, e.g. 'voice-input', 'task-update'"),
           summary: z.string().describe("Detail of what occurred"),
           correlationId: z.string().describe("Tracking chain identifier, e.g. 'voiceInput-1783...'"),
-        }),
-        execute: async ({ kind, summary, correlationId }: any) => {
+          signal: z.any().optional().describe("Optional signal payload block"),
+          status: z.string().optional().describe("Optional status descriptor"),
+        }).passthrough(),
+        execute: async ({ kind, summary, correlationId, ...extra }: any) => {
           try {
             const payload = JSON.stringify({
               source: "agent:voice-copilot",
               kind,
               summary,
-              correlationId
+              correlationId,
+              ...extra
             });
             const script = "/Users/michaelshaw/clawd/acmi-bus-relay/emit-bus-event.sh";
             await execAsync(`echo '${payload}' | ${script} --stdin`);
@@ -151,7 +154,7 @@ YOUR CAPABILITIES:
         description: "Runs a diagnostic check, status monitor, or system command on the remote VM via SSH.",
         parameters: z.object({
           command: z.string().describe("The exact bash command to execute, e.g. 'docker ps', 'free -m', or '/opt/acmi-bridge/sync-vm-kanbans.sh'"),
-        }),
+        }).passthrough(),
         execute: async ({ command }: any) => {
           try {
             const output = await runSSH(command);
@@ -167,7 +170,7 @@ YOUR CAPABILITIES:
         parameters: z.object({
           actionName: z.string().describe("The Composio action name (e.g. 'GOOGLETASKS_CREATE_TASK')"),
           input: z.record(z.string(), z.any()).describe("Parameters/arguments required for the Composio action"),
-        }),
+        }).passthrough(),
         execute: async ({ actionName, input }: any) => {
           try {
             const composioKey = process.env.COMPOSIO_API_KEY || "ak_xHrrW-9SrFPEC1LPv6eJ";
