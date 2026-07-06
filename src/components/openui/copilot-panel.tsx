@@ -3,7 +3,6 @@
 import { useState, useRef, useEffect } from "react";
 import { Bot, Send, X, RefreshCw, Radio, HardDrive, Cpu, Settings } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 
 interface Message {
@@ -42,12 +41,10 @@ export function CopilotPanel() {
   const [loading, setLoading] = useState(false);
   const [signalEmitting, setSignalEmitting] = useState<string | null>(null);
   const [enhancing, setEnhancing] = useState(false);
-  const scrollRef = useRef<HTMLDivElement>(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (scrollRef.current) {
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
-    }
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
   async function triggerBusSignal(kind: string, summary: string) {
@@ -108,6 +105,9 @@ export function CopilotPanel() {
     setInput("");
     setLoading(true);
 
+    // Optimistically add empty assistant message bubble to stream text into
+    setMessages((prev) => [...prev, { role: "assistant", content: "" }]);
+
     try {
       const groqApiKey = typeof window !== "undefined" ? window.localStorage.getItem("groq_api_key") || "" : "";
       const headers: Record<string, string> = { "Content-Type": "application/json" };
@@ -124,15 +124,16 @@ export function CopilotPanel() {
         }),
       });
 
-      if (!res.ok) throw new Error("Failed to send message");
+      if (!res.ok) {
+        const errJson = await res.json().catch(() => ({}));
+        throw new Error(errJson.error || "Failed to communicate with fleet agent network.");
+      }
 
       const reader = res.body?.getReader();
-      if (!reader) throw new Error("No response stream");
+      if (!reader) throw new Error("No response stream available.");
 
       const decoder = new TextDecoder();
       let assistantContent = "";
-
-      setMessages((prev) => [...prev, { role: "assistant", content: "" }]);
 
       while (true) {
         const { done, value } = await reader.read();
@@ -146,11 +147,27 @@ export function CopilotPanel() {
           return updated;
         });
       }
-    } catch {
-      setMessages((prev) => [
-        ...prev,
-        { role: "assistant", content: "Error communicating with the fleet agent network. Verify credentials or model availability." },
-      ]);
+
+      if (!assistantContent.trim()) {
+        setMessages((prev) => {
+          const updated = [...prev];
+          updated[updated.length - 1] = {
+            role: "assistant",
+            content: "Agent responded with an empty signal stream. Please try rephrasing your command."
+          };
+          return updated;
+        });
+      }
+    } catch (err: any) {
+      console.error("Chat stream error:", err);
+      setMessages((prev) => {
+        const updated = [...prev];
+        updated[updated.length - 1] = {
+          role: "assistant",
+          content: err.message || "Error communicating with the fleet agent network. Verify credentials or model availability."
+        };
+        return updated;
+      });
     } finally {
       setLoading(false);
     }
@@ -230,7 +247,7 @@ export function CopilotPanel() {
 
           {/* Messages */}
           <div className="flex-1 overflow-hidden flex flex-col min-h-0">
-            <ScrollArea ref={scrollRef} className="flex-1 p-4 space-y-3">
+            <div className="flex-1 overflow-y-auto p-4 space-y-3">
               {/* Quick Action Chips */}
               <div className="border border-dashed border-[#1a1a1a]/15 dark:border-white/10 p-3 bg-[#f4f2eb]/20 mb-4 space-y-2">
                 <p className="text-[9px] font-mono uppercase text-muted-foreground font-bold tracking-wider">
@@ -295,7 +312,8 @@ export function CopilotPanel() {
                   </div>
                 </div>
               )}
-            </ScrollArea>
+              <div ref={messagesEndRef} />
+            </div>
 
             {/* Input Form */}
             <form onSubmit={handleSubmit} className="border-t border-[#1a1a1a]/10 dark:border-white/10 p-3 flex flex-col gap-2 shrink-0 bg-[#faf9f5] dark:bg-card">
