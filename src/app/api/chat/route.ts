@@ -151,7 +151,7 @@ YOUR CAPABILITIES:
           summary: z.string().optional().describe("Detail of what occurred"),
           correlationId: z.string().describe("Tracking chain identifier, e.g. 'voiceInput-1783...'"),
           source: z.string().optional().describe("Optional event source agent name"),
-          signal: z.union([z.string(), z.record(z.string(), z.any())]).optional().describe("Optional nested JSON signal payload object or stringified JSON"),
+          signal: z.string().optional().describe("Optional stringified JSON signal payload object"),
           status: z.string().optional().describe("Optional status descriptor"),
           description: z.string().optional().describe("Optional detailed description of the event"),
           message: z.string().optional().describe("Optional message content"),
@@ -165,13 +165,9 @@ YOUR CAPABILITIES:
               correlationId,
             };
             if (signal) {
-              if (typeof signal === "string") {
-                try {
-                  eventPayload.signal = JSON.parse(signal);
-                } catch {
-                  eventPayload.signal = signal;
-                }
-              } else {
+              try {
+                eventPayload.signal = JSON.parse(signal);
+              } catch {
                 eventPayload.signal = signal;
               }
             }
