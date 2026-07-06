@@ -74,13 +74,20 @@ YOUR CAPABILITIES:
             const keys2 = await callRedis(["KEYS", "acmi:madez:work:*:profile"]) || [];
             const allKeys = Array.from(new Set([...keys1, ...keys2]));
             
+            if (allKeys.length === 0) {
+              return { success: true, tasks: [] };
+            }
+
+            const values = await callRedis(["MGET", ...allKeys]) || [];
             const tasks = [];
-            for (const key of allKeys) {
-              const raw = await callRedis(["GET", key]);
+            
+            for (let i = 0; i < allKeys.length; i++) {
+              const raw = values[i];
               if (raw) {
                 try {
                   tasks.push(JSON.parse(raw));
                 } catch {
+                  const key = allKeys[i];
                   const parts = key.split(":");
                   const wid = parts[parts.length - 2];
                   tasks.push({ id: wid, title: wid, status: "unknown" });
