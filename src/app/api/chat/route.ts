@@ -78,7 +78,11 @@ YOUR VOICE:
 YOUR CAPABILITIES:
 - If a user asks about task status, look up ACMI tasks.
 - If a user asks to add or change a task, write it to Redis or trigger Composio.
-- If a user asks about VM health or sync status, query the VM using SSH command tools.`,
+- If a user asks about VM health or sync status, query the VM using SSH command tools.
+
+CRITICAL STREAMING PROTOCOL:
+- You MUST write a brief sentence explaining what you are doing (e.g. "I am fetching the current task list...", "Querying the remote VM status now...") BEFORE calling any tool.
+- This is mandatory to keep the stream alive. Do not skip this under any circumstances.`,
     messages: apiMessages,
     onError: ({ error }: { error: any }) => {
       console.error("[route.ts] Stream failed asynchronously:", error);
