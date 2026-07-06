@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "test": "npx tsx --test src/**/*.test.ts"
+    "test": "npx tsx --test src/**/*.test.ts",
+    "sync-docs": "node scripts/sync-gsd-docs-to-nocodb.mjs"
   },
   "dependencies": {
     "@ai-sdk/groq": "^4.0.5",
