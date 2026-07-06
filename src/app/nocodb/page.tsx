@@ -13,10 +13,22 @@ interface TableData {
   documents: NocoDBRecord[];
   procedures: NocoDBRecord[];
   glossary: NocoDBRecord[];
+  tasks: NocoDBRecord[];
+  checklists: NocoDBRecord[];
+  agents: NocoDBRecord[];
+  mcp: NocoDBRecord[];
 }
 
 export default function NocoDBPage() {
-  const [data, setData] = useState<TableData>({ documents: [], procedures: [], glossary: [] });
+  const [data, setData] = useState<TableData>({
+    documents: [],
+    procedures: [],
+    glossary: [],
+    tasks: [],
+    checklists: [],
+    agents: [],
+    mcp: []
+  });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<keyof TableData>("documents");
@@ -71,10 +83,10 @@ export default function NocoDBPage() {
         <div>
           <h1 className="text-xl font-bold tracking-tight font-mono flex items-center gap-2 text-[#2d4a3e] dark:text-[#5EF2C6] uppercase">
             <Database className="h-5 w-5" />
-            NocoDB Fleet Database
+            NocoDB Fleet Database Cockpit
           </h1>
           <p className="text-[10px] font-mono text-muted-foreground uppercase mt-0.5">
-            Base: <span className="underline">pm9mqdzjuh98a0n</span> (Fleet Docs Hub) · Live records view
+            Relational databases sync console · Documents, Instructions, & Todos bases
           </p>
         </div>
         <button
@@ -96,24 +108,24 @@ export default function NocoDBPage() {
         )}
 
         {/* Tab selection & Search bar */}
-        <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center justify-between mb-4 pb-3 border-b border-[#1a1a1a]/5 dark:border-[#e3e4e6]/5">
+        <div className="flex flex-col xl:flex-row gap-3 items-stretch xl:items-center justify-between mb-4 pb-3 border-b border-[#1a1a1a]/5 dark:border-[#e3e4e6]/5">
           {/* Table Selectors */}
-          <div className="flex border border-[#1a1a1a]/15 dark:border-[#e3e4e6]/15 bg-[#f4f2eb] dark:bg-[#151617] p-0.5">
+          <div className="flex flex-wrap gap-1 border border-[#1a1a1a]/15 dark:border-[#e3e4e6]/15 bg-[#f4f2eb] dark:bg-[#151617] p-0.5">
             <button
               onClick={() => { setActiveTab("documents"); setSelectedRecord(null); }}
               className={cn(
-                "px-3 py-1 text-xs font-mono uppercase tracking-wider transition-all",
+                "px-2.5 py-1 text-[10px] font-mono uppercase tracking-wider transition-all",
                 activeTab === "documents"
                   ? "bg-[#faf9f5] dark:bg-[#222426] text-[#1a1a1a] dark:text-white font-bold border border-[#1a1a1a]/15 dark:border-white/10"
                   : "text-[#1a1a1a]/65 dark:text-white/65 hover:text-primary"
               )}
             >
-              Documents ({data.documents.length})
+              Docs Index ({data.documents.length})
             </button>
             <button
               onClick={() => { setActiveTab("procedures"); setSelectedRecord(null); }}
               className={cn(
-                "px-3 py-1 text-xs font-mono uppercase tracking-wider transition-all",
+                "px-2.5 py-1 text-[10px] font-mono uppercase tracking-wider transition-all",
                 activeTab === "procedures"
                   ? "bg-[#faf9f5] dark:bg-[#222426] text-[#1a1a1a] dark:text-white font-bold border border-[#1a1a1a]/15 dark:border-white/10"
                   : "text-[#1a1a1a]/65 dark:text-white/65 hover:text-primary"
@@ -124,7 +136,7 @@ export default function NocoDBPage() {
             <button
               onClick={() => { setActiveTab("glossary"); setSelectedRecord(null); }}
               className={cn(
-                "px-3 py-1 text-xs font-mono uppercase tracking-wider transition-all",
+                "px-2.5 py-1 text-[10px] font-mono uppercase tracking-wider transition-all",
                 activeTab === "glossary"
                   ? "bg-[#faf9f5] dark:bg-[#222426] text-[#1a1a1a] dark:text-white font-bold border border-[#1a1a1a]/15 dark:border-white/10"
                   : "text-[#1a1a1a]/65 dark:text-white/65 hover:text-primary"
@@ -132,10 +144,54 @@ export default function NocoDBPage() {
             >
               Glossary ({data.glossary.length})
             </button>
+            <button
+              onClick={() => { setActiveTab("tasks"); setSelectedRecord(null); }}
+              className={cn(
+                "px-2.5 py-1 text-[10px] font-mono uppercase tracking-wider transition-all",
+                activeTab === "tasks"
+                  ? "bg-[#faf9f5] dark:bg-[#222426] text-[#1a1a1a] dark:text-white font-bold border border-[#1a1a1a]/15 dark:border-white/10"
+                  : "text-[#1a1a1a]/65 dark:text-white/65 hover:text-primary"
+              )}
+            >
+              Agent Tasks ({data.tasks.length})
+            </button>
+            <button
+              onClick={() => { setActiveTab("checklists"); setSelectedRecord(null); }}
+              className={cn(
+                "px-2.5 py-1 text-[10px] font-mono uppercase tracking-wider transition-all",
+                activeTab === "checklists"
+                  ? "bg-[#faf9f5] dark:bg-[#222426] text-[#1a1a1a] dark:text-white font-bold border border-[#1a1a1a]/15 dark:border-white/10"
+                  : "text-[#1a1a1a]/65 dark:text-white/65 hover:text-primary"
+              )}
+            >
+              Checklists ({data.checklists.length})
+            </button>
+            <button
+              onClick={() => { setActiveTab("agents"); setSelectedRecord(null); }}
+              className={cn(
+                "px-2.5 py-1 text-[10px] font-mono uppercase tracking-wider transition-all",
+                activeTab === "agents"
+                  ? "bg-[#faf9f5] dark:bg-[#222426] text-[#1a1a1a] dark:text-white font-bold border border-[#1a1a1a]/15 dark:border-white/10"
+                  : "text-[#1a1a1a]/65 dark:text-white/65 hover:text-primary"
+              )}
+            >
+              Fleet Agents ({data.agents.length})
+            </button>
+            <button
+              onClick={() => { setActiveTab("mcp"); setSelectedRecord(null); }}
+              className={cn(
+                "px-2.5 py-1 text-[10px] font-mono uppercase tracking-wider transition-all",
+                activeTab === "mcp"
+                  ? "bg-[#faf9f5] dark:bg-[#222426] text-[#1a1a1a] dark:text-white font-bold border border-[#1a1a1a]/15 dark:border-white/10"
+                  : "text-[#1a1a1a]/65 dark:text-white/65 hover:text-primary"
+              )}
+            >
+              MCP Endpoints ({data.mcp.length})
+            </button>
           </div>
 
           {/* Search bar */}
-          <div className="relative w-full sm:w-64">
+          <div className="relative w-full xl:w-64">
             <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-muted-foreground" />
             <input
               type="text"
@@ -186,6 +242,42 @@ export default function NocoDBPage() {
                       <th className="p-3">Service</th>
                     </>
                   )}
+                  {activeTab === "tasks" && (
+                    <>
+                      <th className="p-3">Title</th>
+                      <th className="p-3">Status</th>
+                      <th className="p-3">Priority</th>
+                      <th className="p-3">Assignee Agent</th>
+                      <th className="p-3">Requester</th>
+                      <th className="p-3">Notes</th>
+                    </>
+                  )}
+                  {activeTab === "checklists" && (
+                    <>
+                      <th className="p-3">Pipeline Name</th>
+                      <th className="p-3">Step Order</th>
+                      <th className="p-3">Command</th>
+                      <th className="p-3">Last Result</th>
+                    </>
+                  )}
+                  {activeTab === "agents" && (
+                    <>
+                      <th className="p-3">Agent ID</th>
+                      <th className="p-3">Tier</th>
+                      <th className="p-3">Role</th>
+                      <th className="p-3">Host</th>
+                      <th className="p-3">Status</th>
+                    </>
+                  )}
+                  {activeTab === "mcp" && (
+                    <>
+                      <th className="p-3">Agent ID</th>
+                      <th className="p-3">Server Name</th>
+                      <th className="p-3">Command</th>
+                      <th className="p-3">Env JSON</th>
+                      <th className="p-3">Base Scope</th>
+                    </>
+                  )}
                   <th className="p-3 w-10"></th>
                 </tr>
               </thead>
@@ -200,6 +292,7 @@ export default function NocoDBPage() {
                     )}
                   >
                     <td className="p-3 text-center text-muted-foreground">{record.id}</td>
+                    
                     {activeTab === "documents" && (
                       <>
                         <td className="p-3 font-semibold text-[#2d4a3e] dark:text-[#5EF2C6]">
@@ -217,6 +310,7 @@ export default function NocoDBPage() {
                         <td className="p-3 text-muted-foreground">{record.fields["Last Verified"]}</td>
                       </>
                     )}
+                    
                     {activeTab === "procedures" && (
                       <>
                         <td className="p-3 font-semibold text-[#2d4a3e] dark:text-[#5EF2C6]">
@@ -226,6 +320,7 @@ export default function NocoDBPage() {
                         <td className="p-3 text-muted-foreground">{record.fields.Duration || "N/A"}</td>
                       </>
                     )}
+                    
                     {activeTab === "glossary" && (
                       <>
                         <td className="p-3 font-bold">{record.fields.Term}</td>
@@ -240,6 +335,71 @@ export default function NocoDBPage() {
                         </td>
                       </>
                     )}
+
+                    {activeTab === "tasks" && (
+                      <>
+                        <td className="p-3 font-semibold text-[#2d4a3e] dark:text-[#5EF2C6]">
+                          {record.fields.Title}
+                        </td>
+                        <td className="p-3 uppercase text-[10px] font-bold text-muted-foreground">
+                          {record.fields.Status}
+                        </td>
+                        <td className="p-3">
+                          <span className={cn(
+                            "px-1.5 py-0.5 text-[9px] font-bold bg-background border",
+                            record.fields.Priority === "high" ? "border-red-500/30 text-red-500" : "border-[#1a1a1a]/15 dark:border-white/10"
+                          )}>
+                            {record.fields.Priority || "medium"}
+                          </span>
+                        </td>
+                        <td className="p-3 text-[#2d4a3e] dark:text-[#5EF2C6]">{record.fields["Assignee Agent"]}</td>
+                        <td className="p-3 text-muted-foreground">{record.fields.Requester}</td>
+                        <td className="p-3 text-muted-foreground max-w-xs truncate" title={record.fields.Notes}>{record.fields.Notes}</td>
+                      </>
+                    )}
+
+                    {activeTab === "checklists" && (
+                      <>
+                        <td className="p-3 font-bold text-[#2d4a3e] dark:text-[#5EF2C6]">{record.fields["Pipeline Name"]}</td>
+                        <td className="p-3 text-center">{record.fields["Step Order"]}</td>
+                        <td className="p-3 text-muted-foreground truncate font-mono text-[10px]" title={record.fields.Command}>
+                          {record.fields.Command}
+                        </td>
+                        <td className="p-3 uppercase text-[10px] font-bold">{record.fields["Last Result"]}</td>
+                      </>
+                    )}
+
+                    {activeTab === "agents" && (
+                      <>
+                        <td className="p-3 font-bold text-[#2d4a3e] dark:text-[#5EF2C6]">{record.fields["Agent ID"]}</td>
+                        <td className="p-3 text-center">{record.fields.Tier}</td>
+                        <td className="p-3 text-muted-foreground truncate max-w-xs" title={record.fields.Role}>{record.fields.Role}</td>
+                        <td className="p-3 text-muted-foreground">{record.fields.Host}</td>
+                        <td className="p-3">
+                          <span className={cn(
+                            "px-1.5 py-0.5 text-[9px] font-bold border",
+                            record.fields.Status === "live" || record.fields.Status === "active" || record.fields.Status === "ok"
+                              ? "border-green-500/30 text-green-500 bg-green-500/5"
+                              : "border-yellow-500/30 text-yellow-500 bg-yellow-500/5"
+                          )}>
+                            {record.fields.Status}
+                          </span>
+                        </td>
+                      </>
+                    )}
+
+                    {activeTab === "mcp" && (
+                      <>
+                        <td className="p-3 font-semibold text-[#2d4a3e] dark:text-[#5EF2C6]">{record.fields["Agent ID"]}</td>
+                        <td className="p-3 font-bold">{record.fields["Server Name"]}</td>
+                        <td className="p-3 text-muted-foreground font-mono text-[10px]">{record.fields.Command}</td>
+                        <td className="p-3 text-muted-foreground truncate max-w-xs font-mono text-[10px]" title={record.fields["Env JSON"]}>
+                          {record.fields["Env JSON"]}
+                        </td>
+                        <td className="p-3 text-muted-foreground">{record.fields["Base Scope"]}</td>
+                      </>
+                    )}
+                    
                     <td className="p-3 text-center text-muted-foreground">
                       <ChevronRight className="h-4 w-4" />
                     </td>
