@@ -172,13 +172,14 @@ YOUR CAPABILITIES:
           summary: z.string().optional().describe("Detail of what occurred"),
           correlationId: z.string().describe("Tracking chain identifier, e.g. 'voiceInput-1783...'"),
           source: z.string().optional().describe("Optional event source agent name"),
-          signal: z.any().optional().describe("Optional signal payload object or string"),
-          status: z.any().optional().describe("Optional status descriptor"),
+          signalObject: z.record(z.string(), z.any()).optional().describe("Optional signal payload object / metadata dictionary"),
+          signalString: z.string().optional().describe("Optional signal payload raw text string"),
+          status: z.string().optional().describe("Optional status descriptor string"),
           description: z.string().optional().describe("Optional detailed description of the event"),
           message: z.string().optional().describe("Optional message content"),
           event: z.string().optional().describe("Optional event tag or content name"),
         }),
-        execute: async ({ kind, summary, correlationId, source, message, description, signal, status, event }: any) => {
+        execute: async ({ kind, summary, correlationId, source, message, description, signalObject, signalString, status, event }: any) => {
           try {
             const eventPayload: Record<string, any> = {
               source: source || "agent:voice-copilot",
@@ -186,19 +187,20 @@ YOUR CAPABILITIES:
               summary: summary || message || description || event || "No summary provided",
               correlationId,
             };
-            if (signal !== undefined && signal !== null) {
-              if (typeof signal === "string") {
+            const rawSignal = signalObject || signalString;
+            if (rawSignal !== undefined && rawSignal !== null) {
+              if (typeof rawSignal === "string") {
                 try {
-                  eventPayload.signal = JSON.parse(signal);
+                  eventPayload.signal = JSON.parse(rawSignal);
                 } catch {
-                  eventPayload.signal = signal;
+                  eventPayload.signal = rawSignal;
                 }
               } else {
-                eventPayload.signal = signal;
+                eventPayload.signal = rawSignal;
               }
             }
             if (status !== undefined && status !== null) {
-              eventPayload.status = typeof status === "string" ? status : JSON.stringify(status);
+              eventPayload.status = status;
             }
             if (description) eventPayload.description = description;
             if (message) eventPayload.message = message;
