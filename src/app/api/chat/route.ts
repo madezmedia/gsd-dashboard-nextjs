@@ -55,7 +55,9 @@ export async function POST(req: Request) {
     const customKey = req.headers.get("x-groq-api-key");
     console.log("[route.ts] Custom key header present:", !!customKey);
     
-    const modelProvider = customKey ? createGroq({ apiKey: customKey }) : groq;
+    const modelProvider = createGroq({
+      apiKey: customKey || process.env.GROQ_API_KEY || "",
+    });
 
     console.log("[route.ts] Initializing streamText...");
     const result = streamText({
