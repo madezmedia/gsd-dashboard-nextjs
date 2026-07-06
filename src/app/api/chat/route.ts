@@ -75,8 +75,10 @@ YOUR CAPABILITIES:
     tools: {
       getACMITasks: {
         description: "Fetch all ACMI work items / tasks currently registered in the database.",
-        parameters: z.object({}),
-        execute: async () => {
+        parameters: z.object({
+          limit: z.number().optional().describe("Optional limit of tasks to fetch"),
+        }),
+        execute: async ({ limit }: { limit?: number }) => {
           try {
             const keys1 = await callRedis(["KEYS", "acmi:work:*:profile"]) || [];
             const keys2 = await callRedis(["KEYS", "acmi:madez:work:*:profile"]) || [];
@@ -204,10 +206,20 @@ YOUR CAPABILITIES:
         description: "Executes an action using the Composio API Integration (e.g. creating Google Tasks).",
         parameters: z.object({
           actionName: z.string().describe("The Composio action name (e.g. 'GOOGLETASKS_CREATE_TASK')"),
-          input: z.record(z.string(), z.any()).describe("Parameters/arguments required for the Composio action"),
+          input: z.string().describe("Stringified JSON object with the parameters required for the Composio action"),
         }),
         execute: async ({ actionName, input }: any) => {
           try {
+            let parsedInput = {};
+            if (typeof input === "string") {
+              try {
+                parsedInput = JSON.parse(input);
+              } catch {
+                parsedInput = {};
+              }
+            } else {
+              parsedInput = input || {};
+            }
             const composioKey = process.env.COMPOSIO_API_KEY || "ak_xHrrW-9SrFPEC1LPv6eJ";
             const res = await fetch(`https://backend.composio.dev/api/v1/actions/${actionName}/execute`, {
               method: "POST",
@@ -215,7 +227,7 @@ YOUR CAPABILITIES:
                 "Content-Type": "application/json",
                 "x-api-key": composioKey,
               },
-              body: JSON.stringify({ entityId: "default", input }),
+              body: JSON.stringify({ entityId: "default", input: parsedInput }),
             });
             if (!res.ok) {
               const text = await res.text();
