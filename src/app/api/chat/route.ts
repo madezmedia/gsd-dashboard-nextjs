@@ -3,6 +3,9 @@ import { streamText } from "ai";
 import { z } from "zod";
 import { exec } from "child_process";
 import { promisify } from "util";
+import fs from "fs";
+import os from "os";
+import path from "path";
 
 const execAsync = promisify(exec);
 
@@ -30,11 +33,27 @@ async function callRedis(command: any[]) {
 
 // Helper to run remote VM commands
 async function runSSH(cmd: string) {
+  let tempKeyPath = "";
   try {
-    const { stdout, stderr } = await execAsync(`ssh -o StrictHostKeyChecking=no root@152.53.201.27 "${cmd.replace(/"/g, '\\"')}"`);
+    let keyOption = "";
+    if (process.env.SSH_PRIVATE_KEY) {
+      tempKeyPath = path.join(os.tmpdir(), `id_ed25519_${Date.now()}`);
+      fs.writeFileSync(tempKeyPath, process.env.SSH_PRIVATE_KEY + "\n", { mode: 0o600 });
+      keyOption = `-i ${tempKeyPath} `;
+    }
+    const sshCmd = `ssh ${keyOption}-o StrictHostKeyChecking=no root@152.53.201.27 "${cmd.replace(/"/g, '\\"')}"`;
+    const { stdout, stderr } = await execAsync(sshCmd);
     return stdout || stderr;
   } catch (e: any) {
     return `SSH execution failed: ${e.message} (stderr: ${e.stderr || ""})`;
+  } finally {
+    if (tempKeyPath && fs.existsSync(tempKeyPath)) {
+      try {
+        fs.unlinkSync(tempKeyPath);
+      } catch (err) {
+        console.error("Failed to delete temp key:", err);
+      }
+    }
   }
 }
 
