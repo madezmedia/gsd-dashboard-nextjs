@@ -40,11 +40,15 @@ async function runSSH(cmd: string) {
 export async function POST(req: Request) {
   try {
     const { messages } = await req.json();
+    console.log("[route.ts] POST request received. messages count:", messages?.length);
+    console.log("[route.ts] GROQ_API_KEY env key present:", !!process.env.GROQ_API_KEY);
 
     // Extract custom Groq key from headers if present
     const customKey = req.headers.get("x-groq-api-key");
+    console.log("[route.ts] Custom key header present:", !!customKey);
     const modelProvider = customKey ? createGroq({ apiKey: customKey }) : groq;
 
+    console.log("[route.ts] Initializing streamText...");
     const result = streamText({
     model: modelProvider("llama-3.3-70b-versatile"),
     stopWhen: stepCountIs(5), // Enable multi-step tool-calling
