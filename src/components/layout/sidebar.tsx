@@ -20,6 +20,7 @@ import {
   Activity,
   Cpu,
   Key,
+  Database,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -105,6 +106,12 @@ const navItems = [
     label: "Docs Outline",
     icon: FileCode,
     badge: "DOCS",
+  },
+  {
+    href: "/nocodb",
+    label: "NocoDB Database",
+    icon: Database,
+    badge: "DB",
   },
   {
     href: "/voice",
