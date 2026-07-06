@@ -169,8 +169,8 @@ YOUR CAPABILITIES:
           summary: z.string().optional().describe("Detail of what occurred"),
           correlationId: z.string().describe("Tracking chain identifier, e.g. 'voiceInput-1783...'"),
           source: z.string().optional().describe("Optional event source agent name"),
-          signal: z.string().optional().describe("Optional stringified JSON signal payload object"),
-          status: z.string().optional().describe("Optional status descriptor"),
+          signal: z.any().optional().describe("Optional signal payload object or string"),
+          status: z.any().optional().describe("Optional status descriptor"),
           description: z.string().optional().describe("Optional detailed description of the event"),
           message: z.string().optional().describe("Optional message content"),
           event: z.string().optional().describe("Optional event tag or content name"),
@@ -183,14 +183,20 @@ YOUR CAPABILITIES:
               summary: summary || message || description || event || "No summary provided",
               correlationId,
             };
-            if (signal) {
-              try {
-                eventPayload.signal = JSON.parse(signal);
-              } catch {
+            if (signal !== undefined && signal !== null) {
+              if (typeof signal === "string") {
+                try {
+                  eventPayload.signal = JSON.parse(signal);
+                } catch {
+                  eventPayload.signal = signal;
+                }
+              } else {
                 eventPayload.signal = signal;
               }
             }
-            if (status) eventPayload.status = status;
+            if (status !== undefined && status !== null) {
+              eventPayload.status = typeof status === "string" ? status : JSON.stringify(status);
+            }
             if (description) eventPayload.description = description;
             if (message) eventPayload.message = message;
             if (event) eventPayload.event = event;
