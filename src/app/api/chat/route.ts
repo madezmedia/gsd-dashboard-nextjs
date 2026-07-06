@@ -105,7 +105,7 @@ YOUR CAPABILITIES:
     tools: {
       getACMITasks: {
         description: "Fetch all ACMI work items / tasks currently registered in the database.",
-        parameters: z.object({
+        inputSchema: z.object({
           limit: z.string().optional().describe("Optional limit of tasks to fetch (numeric string)"),
         }),
         execute: async ({ limit }: { limit?: string }) => {
@@ -151,7 +151,7 @@ YOUR CAPABILITIES:
 
       updateACMITask: {
         description: "Create or update an ACMI work item / task profile in Redis.",
-        parameters: z.object({
+        inputSchema: z.object({
           taskId: z.string().describe("Unique identifier of the task (e.g. 't_12b6e771')"),
           title: z.string().describe("Title of the task"),
           status: z.string().describe("State of the task (e.g. 'todo', 'in_progress', 'done')"),
@@ -186,7 +186,7 @@ YOUR CAPABILITIES:
 
       emitSignal: {
         description: "Emits a coordination signal or log event to the ACMI Super Bus relay.",
-        parameters: z.object({
+        inputSchema: z.object({
           kind: z.string().describe("Event classification, e.g. 'voice-input', 'task-update'"),
           summary: z.string().optional().describe("Detail of what occurred"),
           correlationId: z.string().describe("Tracking chain identifier, e.g. 'voiceInput-1783...'"),
@@ -237,7 +237,7 @@ YOUR CAPABILITIES:
 
       runVMCommand: {
         description: "Runs a diagnostic check, status monitor, or system command on the remote VM via SSH.",
-        parameters: z.object({
+        inputSchema: z.object({
           command: z.string().describe("The exact bash command to execute, e.g. 'docker ps', 'free -m', or '/opt/acmi-bridge/sync-vm-kanbans.sh'"),
         }),
         execute: async ({ command }: any) => {
@@ -252,7 +252,7 @@ YOUR CAPABILITIES:
 
       executeComposio: {
         description: "Executes an action using the Composio API Integration (e.g. creating Google Tasks).",
-        parameters: z.object({
+        inputSchema: z.object({
           actionName: z.string().describe("The Composio action name (e.g. 'GOOGLETASKS_CREATE_TASK')"),
           input: z.string().describe("Stringified JSON object with the parameters required for the Composio action"),
         }),
