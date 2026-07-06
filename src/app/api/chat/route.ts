@@ -97,11 +97,7 @@ YOUR VOICE:
 YOUR CAPABILITIES:
 - If a user asks about task status, look up ACMI tasks.
 - If a user asks to add or change a task, write it to Redis or trigger Composio.
-- If a user asks about VM health or sync status, query the VM using SSH command tools.
-
-CRITICAL STREAMING PROTOCOL:
-- You MUST write a brief sentence explaining what you are doing (e.g. "I am fetching the current task list...", "Querying the remote VM status now...") BEFORE calling any tool.
-- This is mandatory to keep the stream alive. Do not skip this under any circumstances.`,
+- If a user asks about VM health or sync status, query the VM using SSH command tools.`,
     messages: apiMessages,
     onError: ({ error }: { error: any }) => {
       console.error("[route.ts] Stream failed asynchronously:", error);
@@ -295,8 +291,27 @@ CRITICAL STREAMING PROTOCOL:
     }
   } as any);
 
-  return result.toTextStreamResponse({
+  const transformStream = new ReadableStream({
+    async start(controller) {
+      // Write a single space immediately to keep the Vercel proxy connection alive
+      controller.enqueue(new TextEncoder().encode(" "));
+      
+      try {
+        for await (const chunk of result.textStream) {
+          controller.enqueue(new TextEncoder().encode(chunk));
+        }
+      } catch (err: any) {
+        console.error("[route.ts] Error reading textStream:", err);
+        controller.enqueue(new TextEncoder().encode(`\n[Stream Error: ${err.message}]`));
+      } finally {
+        controller.close();
+      }
+    }
+  });
+
+  return new Response(transformStream, {
     headers: {
+      "Content-Type": "text/plain; charset=utf-8",
       "X-Accel-Buffering": "no",
       "Cache-Control": "no-cache, no-transform",
     }
