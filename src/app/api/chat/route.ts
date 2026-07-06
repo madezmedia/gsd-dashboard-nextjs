@@ -54,7 +54,25 @@ export async function POST(req: Request) {
     // Extract custom Groq key from headers if present
     const customKey = req.headers.get("x-groq-api-key");
     console.log("[route.ts] Custom key header present:", !!customKey);
-    const modelProvider = customKey ? createGroq({ apiKey: customKey }) : groq;
+    
+    const apiKey = customKey || process.env.GROQ_API_KEY || "";
+    const modelProvider = createGroq({
+      apiKey,
+      fetch: async (url, options) => {
+        console.log("[groq-fetch] Request URL:", url);
+        console.log("[groq-fetch] Request body:", options?.body);
+        const res = await fetch(url, options);
+        console.log("[groq-fetch] Response status:", res.status);
+        try {
+          const cloned = res.clone();
+          const text = await cloned.text();
+          console.log("[groq-fetch] Response body:", text);
+        } catch (e: any) {
+          console.log("[groq-fetch] Failed to read response clone:", e.message);
+        }
+        return res;
+      }
+    });
 
     console.log("[route.ts] Initializing streamText...");
     const result = streamText({
