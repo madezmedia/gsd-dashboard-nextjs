@@ -291,38 +291,8 @@ YOUR CAPABILITIES:
     }
   } as any);
 
-  const transformStream = new ReadableStream({
-    async start(controller) {
-      // Write a single space immediately to keep the Vercel proxy connection alive
-      controller.enqueue(new TextEncoder().encode(" "));
-      
-      // Heartbeat interval to write a space every 1 second, keeping the stream active during tool executions
-      const interval = setInterval(() => {
-        try {
-          controller.enqueue(new TextEncoder().encode(" "));
-        } catch {
-          // Stream might be closed, clear interval safely
-          clearInterval(interval);
-        }
-      }, 1000);
-
-      try {
-        for await (const chunk of result.textStream) {
-          controller.enqueue(new TextEncoder().encode(chunk));
-        }
-      } catch (err: any) {
-        console.error("[route.ts] Error reading textStream:", err);
-        controller.enqueue(new TextEncoder().encode(`\n[Stream Error: ${err.message}]`));
-      } finally {
-        clearInterval(interval);
-        controller.close();
-      }
-    }
-  });
-
-  return new Response(transformStream, {
+  return result.toTextStreamResponse({
     headers: {
-      "Content-Type": "text/plain; charset=utf-8",
       "X-Accel-Buffering": "no",
       "Cache-Control": "no-cache, no-transform",
     }
