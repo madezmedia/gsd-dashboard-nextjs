@@ -1,13 +1,7 @@
 import { createGroq, groq } from "@ai-sdk/groq";
 import { streamText, stepCountIs } from "ai";
 import { z } from "zod";
-import { exec } from "child_process";
-import { promisify } from "util";
-import fs from "fs";
-import os from "os";
-import path from "path";
-
-const execAsync = promisify(exec);
+import { Client } from "ssh2";
 
 export const maxDuration = 60;
 export const dynamic = "force-dynamic";
@@ -31,37 +25,53 @@ async function callRedis(command: any[]) {
   return json.result;
 }
 
-// Helper to run remote VM commands
-async function runSSH(cmd: string) {
-  let tempKeyPath = "";
-  try {
-    let keyOption = "";
-    console.log("[runSSH] Received command to run on VM:", cmd);
-    console.log("[runSSH] process.env.SSH_PRIVATE_KEY present:", !!process.env.SSH_PRIVATE_KEY);
-    if (process.env.SSH_PRIVATE_KEY) {
-      tempKeyPath = path.join(os.tmpdir(), `id_ed25519_${Date.now()}`);
-      fs.writeFileSync(tempKeyPath, process.env.SSH_PRIVATE_KEY + "\n", { mode: 0o600 });
-      keyOption = `-i ${tempKeyPath} `;
-      console.log("[runSSH] Wrote temp key to:", tempKeyPath);
-    }
-    const sshCmd = `ssh ${keyOption}-o StrictHostKeyChecking=no root@152.53.201.27 "${cmd.replace(/"/g, '\\"')}"`;
-    console.log("[runSSH] Executing SSH command:", sshCmd.replace(process.env.SSH_PRIVATE_KEY || "", "REDACTED"));
-    const { stdout, stderr } = await execAsync(sshCmd);
-    console.log("[runSSH] SSH command executed successfully. stdout:", stdout, "stderr:", stderr);
-    return stdout || stderr;
-  } catch (e: any) {
-    console.error("[runSSH] SSH command failed with error:", e);
-    return `SSH execution failed: ${e.message} (stderr: ${e.stderr || ""})`;
-  } finally {
-    if (tempKeyPath && fs.existsSync(tempKeyPath)) {
-      try {
-        fs.unlinkSync(tempKeyPath);
-        console.log("[runSSH] Deleted temp key from:", tempKeyPath);
-      } catch (err) {
-        console.error("[runSSH] Failed to delete temp key:", err);
-      }
-    }
+// Helper to run remote VM commands using ssh2 library
+async function runSSH(cmd: string): Promise<string> {
+  console.log("[runSSH] Received command to run on VM:", cmd);
+  console.log("[runSSH] process.env.SSH_PRIVATE_KEY present:", !!process.env.SSH_PRIVATE_KEY);
+  
+  if (!process.env.SSH_PRIVATE_KEY) {
+    return "SSH execution failed: SSH_PRIVATE_KEY environment variable is not defined.";
   }
+
+  return new Promise((resolve) => {
+    const conn = new Client();
+    conn.on("ready", () => {
+      console.log("[runSSH] SSH connection established successfully.");
+      conn.exec(cmd, (err, stream) => {
+        if (err) {
+          console.error("[runSSH] conn.exec failed:", err);
+          resolve(`SSH execution failed: ${err.message}`);
+          conn.end();
+          return;
+        }
+        let stdout = "";
+        let stderr = "";
+        stream.on("close", (code: number, signal: any) => {
+          console.log(`[runSSH] Stream closed with code ${code}.`);
+          conn.end();
+          resolve(stdout || stderr || `Command completed with exit code ${code}`);
+        })
+        .on("data", (data: any) => {
+          stdout += data.toString();
+        })
+        .stderr.on("data", (data: any) => {
+          stderr += data.toString();
+        });
+      });
+    })
+    .on("error", (err) => {
+      console.error("[runSSH] SSH connection error:", err);
+      resolve(`SSH connection failed: ${err.message}`);
+    })
+    .connect({
+      host: "152.53.201.27",
+      port: 22,
+      username: "root",
+      privateKey: process.env.SSH_PRIVATE_KEY,
+      readyTimeout: 10000,
+    });
+  });
 }
 
 export async function POST(req: Request) {
@@ -207,36 +217,53 @@ YOUR CAPABILITIES:
         }),
         execute: async ({ kind, summary, correlationId, source, message, description, signalObject, signalString, status, event }: any) => {
           try {
-            const eventPayload: Record<string, any> = {
+            const builtEvent: Record<string, any> = {
+              ts: Date.now(),
               source: source || "agent:voice-copilot",
               kind,
               summary: summary || message || description || event || "No summary provided",
-              correlationId,
+              correlationId: correlationId || `pub-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+              tenant_id: "madez",
+              speaker_type: "system",
             };
+
             const rawSignal = signalObject || signalString;
+            const payloadObj: Record<string, any> = {};
             if (rawSignal !== undefined && rawSignal !== null) {
               if (typeof rawSignal === "string") {
                 try {
-                  eventPayload.signal = JSON.parse(rawSignal);
+                  payloadObj.signal = JSON.parse(rawSignal);
                 } catch {
-                  eventPayload.signal = rawSignal;
+                  payloadObj.signal = rawSignal;
                 }
               } else {
-                eventPayload.signal = rawSignal;
+                payloadObj.signal = rawSignal;
               }
             }
             if (status !== undefined && status !== null) {
-              eventPayload.status = status;
+              payloadObj.status = status;
             }
-            if (description) eventPayload.description = description;
-            if (message) eventPayload.message = message;
-            if (event) eventPayload.event = event;
+            if (description) payloadObj.description = description;
+            if (message) payloadObj.message = message;
+            if (event) payloadObj.event = event;
 
-            const payload = JSON.stringify(eventPayload);
-            const script = "/Users/michaelshaw/clawd/acmi-bus-relay/emit-bus-event.sh";
-            await execAsync(`echo '${payload}' | ${script} --stdin`);
+            if (Object.keys(payloadObj).length > 0) {
+              builtEvent.payload = payloadObj;
+            }
+
+            const eventStr = JSON.stringify(builtEvent);
+            const timelineKey = "acmi:thread:agent-coordination:timeline";
+            const relayEventsKey = "acmi:bus:relay:events";
+            const busChannel = "acmi:bus:channel";
+
+            // Write to normal timeline, relay events ZSET, and publish to bus channel
+            await callRedis(["ZADD", timelineKey, String(builtEvent.ts), eventStr]);
+            await callRedis(["ZADD", relayEventsKey, String(builtEvent.ts), eventStr]);
+            await callRedis(["PUBLISH", busChannel, eventStr]);
+
             return { success: true, message: "Event successfully emitted to Super Bus." };
           } catch (e: any) {
+            console.error("[route.ts:emitSignal] Failed to emit event:", e);
             return { success: false, error: e.message };
           }
         }
