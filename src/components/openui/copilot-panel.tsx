@@ -10,27 +10,16 @@ interface Message {
   content: string;
 }
 
-const STARTER_PROMPTS: Record<string, string[]> = {
-  opencode: [
-    "Check CPU & memory usage on remote VM",
-    "List running docker services and diagnostic states",
-    "Audit latest error logs from the acmi-bridge container",
-  ],
-  codex: [
-    "Fetch the latest ACMI tasks registered in Redis",
-    "Update ACMI task t_12b6e771 status to completed",
-    "Trigger Composio action to check google tasks sync",
-  ],
-  hermes: [
-    "Emit a manual coordination force-sync event to the bus",
-    "Post a heartbeat signal to the acmi:bus relay",
-    "Summarize all activity logs in the timeline for today",
-  ],
-};
+const STARTER_PROMPTS = [
+  "Check CPU & memory usage on remote VM",
+  "List active docker containers & system diagnostics",
+  "Fetch all ACMI tasks currently registered in Redis",
+  "Emit manual force-sync signal to acmi:bus relay",
+  "Audit latest error logs from the acmi-bridge container",
+];
 
 export function CopilotPanel() {
   const [open, setOpen] = useState(false);
-  const [activeAgent, setActiveAgent] = useState("opencode");
   const [messages, setMessages] = useState<Message[]>([
     {
       role: "assistant",
@@ -119,8 +108,7 @@ export function CopilotPanel() {
         method: "POST",
         headers,
         body: JSON.stringify({
-          messages: [...messages, userMsg].map(({ role, content }) => ({ role, content })),
-          agentId: activeAgent
+          messages: [...messages, userMsg].map(({ role, content }) => ({ role, content }))
         }),
       });
 
@@ -197,7 +185,7 @@ export function CopilotPanel() {
                 ACMI Swarm Copilot
               </h3>
               <p className="text-[9px] font-mono text-muted-foreground uppercase">
-                Active execution bridge · {activeAgent} channel
+                Active execution bridge · Swarm Console
               </p>
             </div>
             <button
@@ -208,32 +196,11 @@ export function CopilotPanel() {
             </button>
           </div>
 
-          {/* Active Agent Context Selection */}
-          <div className="px-4 py-2 border-b border-[#1a1a1a]/5 bg-[#f4f2eb]/40 dark:bg-white/5 flex items-center justify-between gap-2 shrink-0">
-            <span className="text-[9px] font-mono text-muted-foreground uppercase">Target Agent:</span>
-            <div className="flex gap-1">
-              {["opencode", "codex", "hermes"].map((agent) => (
-                <button
-                  key={agent}
-                  onClick={() => setActiveAgent(agent)}
-                  className={cn(
-                    "px-2 py-0.5 text-[9px] font-mono border transition-all rounded-none uppercase",
-                    activeAgent === agent
-                      ? "border-primary text-primary bg-primary/5 font-bold"
-                      : "border-transparent text-muted-foreground hover:text-foreground"
-                  )}
-                >
-                  {agent}
-                </button>
-              ))}
-            </div>
-          </div>
-
           {/* Starter Prompt Pills */}
           <div className="px-4 py-2 border-b border-border bg-background/50 space-y-1 shrink-0">
             <span className="text-[8px] font-mono text-muted-foreground uppercase font-bold tracking-wider">Starter Prompts:</span>
             <div className="flex flex-col gap-1 mt-1">
-              {(STARTER_PROMPTS[activeAgent] || []).map((promptText, idx) => (
+              {STARTER_PROMPTS.map((promptText, idx) => (
                 <button
                   key={idx}
                   onClick={() => setInput(promptText)}
@@ -290,7 +257,7 @@ export function CopilotPanel() {
                   )}
                 >
                   <span className="text-[8px] font-mono text-muted-foreground uppercase mb-0.5">
-                    {msg.role === "user" ? "Operator" : `Agent:${activeAgent}`}
+                    {msg.role === "user" ? "Operator" : "Fleet Copilot"}
                   </span>
                   <div
                     className={cn(
@@ -330,7 +297,7 @@ export function CopilotPanel() {
                   id="copilot-query"
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
-                  placeholder={`Instruct ${activeAgent}...`}
+                  placeholder="Instruct Fleet Copilot..."
                   className="flex-1 rounded-none border border-border bg-[#f4f2eb] dark:bg-[#151617] px-3 py-2 text-xs font-mono outline-none focus:ring-1 focus:ring-primary focus:border-primary text-foreground"
                 />
                 <button
