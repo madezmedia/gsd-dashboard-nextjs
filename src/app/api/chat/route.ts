@@ -44,6 +44,13 @@ export async function POST(req: Request) {
     console.log("[route.ts] POST request received. messages count:", messages?.length);
     console.log("[route.ts] GROQ_API_KEY env key present:", !!process.env.GROQ_API_KEY);
 
+    // Filter out leading assistant messages to ensure request starts with user role for Groq compatibility
+    let apiMessages = messages || [];
+    while (apiMessages.length > 0 && apiMessages[0].role === "assistant") {
+      apiMessages = apiMessages.slice(1);
+    }
+    console.log("[route.ts] Filtered messages count for API:", apiMessages.length);
+
     // Extract custom Groq key from headers if present
     const customKey = req.headers.get("x-groq-api-key");
     console.log("[route.ts] Custom key header present:", !!customKey);
@@ -69,7 +76,7 @@ YOUR CAPABILITIES:
 - If a user asks about task status, look up ACMI tasks.
 - If a user asks to add or change a task, write it to Redis or trigger Composio.
 - If a user asks about VM health or sync status, query the VM using SSH command tools.`,
-    messages,
+    messages: apiMessages,
     onError: ({ error }: { error: any }) => {
       console.error("[route.ts] Stream failed asynchronously:", error);
     },
@@ -158,13 +165,14 @@ YOUR CAPABILITIES:
           status: z.string().optional().describe("Optional status descriptor"),
           description: z.string().optional().describe("Optional detailed description of the event"),
           message: z.string().optional().describe("Optional message content"),
+          event: z.string().optional().describe("Optional event tag or content name"),
         }),
-        execute: async ({ kind, summary, correlationId, source, message, description, signal, status }: any) => {
+        execute: async ({ kind, summary, correlationId, source, message, description, signal, status, event }: any) => {
           try {
             const eventPayload: Record<string, any> = {
               source: source || "agent:voice-copilot",
               kind,
-              summary: summary || message || description || "No summary provided",
+              summary: summary || message || description || event || "No summary provided",
               correlationId,
             };
             if (signal) {
@@ -177,6 +185,7 @@ YOUR CAPABILITIES:
             if (status) eventPayload.status = status;
             if (description) eventPayload.description = description;
             if (message) eventPayload.message = message;
+            if (event) eventPayload.event = event;
 
             const payload = JSON.stringify(eventPayload);
             const script = "/Users/michaelshaw/clawd/acmi-bus-relay/emit-bus-event.sh";

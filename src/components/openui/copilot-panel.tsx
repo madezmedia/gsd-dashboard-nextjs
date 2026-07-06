@@ -108,7 +108,9 @@ export function CopilotPanel() {
         method: "POST",
         headers,
         body: JSON.stringify({
-          messages: [...messages, userMsg].map(({ role, content }) => ({ role, content }))
+          messages: [...messages, userMsg]
+            .filter((msg, idx) => !(idx === 0 && msg.role === "assistant"))
+            .map(({ role, content }) => ({ role, content }))
         }),
       });
 
