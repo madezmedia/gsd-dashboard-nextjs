@@ -38,13 +38,14 @@ async function runSSH(cmd: string) {
 }
 
 export async function POST(req: Request) {
-  const { messages } = await req.json();
+  try {
+    const { messages } = await req.json();
 
-  // Extract custom Groq key from headers if present
-  const customKey = req.headers.get("x-groq-api-key");
-  const modelProvider = customKey ? createGroq({ apiKey: customKey }) : groq;
+    // Extract custom Groq key from headers if present
+    const customKey = req.headers.get("x-groq-api-key");
+    const modelProvider = customKey ? createGroq({ apiKey: customKey }) : groq;
 
-  const result = streamText({
+    const result = streamText({
     model: modelProvider("llama-3.3-70b-versatile"),
     stopWhen: stepCountIs(5), // Enable multi-step tool-calling
     system: `You are the ACMI Fleet Copilot — an advanced, high-agency AI agent system.
@@ -140,22 +141,38 @@ YOUR CAPABILITIES:
         description: "Emits a coordination signal or log event to the ACMI Super Bus relay.",
         parameters: z.object({
           kind: z.string().describe("Event classification, e.g. 'voice-input', 'task-update'"),
-          summary: z.string().describe("Detail of what occurred"),
+          summary: z.string().optional().describe("Detail of what occurred"),
           correlationId: z.string().describe("Tracking chain identifier, e.g. 'voiceInput-1783...'"),
           source: z.string().optional().describe("Optional event source agent name"),
-          signal: z.record(z.string(), z.any()).optional().describe("Optional nested JSON signal payload object"),
+          signal: z.union([z.string(), z.record(z.string(), z.any())]).optional().describe("Optional nested JSON signal payload object or stringified JSON"),
           status: z.string().optional().describe("Optional status descriptor"),
           description: z.string().optional().describe("Optional detailed description of the event"),
+          message: z.string().optional().describe("Optional message content"),
         }),
-        execute: async ({ kind, summary, correlationId, source, ...extra }: any) => {
+        execute: async ({ kind, summary, correlationId, source, message, description, signal, status }: any) => {
           try {
-            const payload = JSON.stringify({
+            const eventPayload: Record<string, any> = {
               source: source || "agent:voice-copilot",
               kind,
-              summary,
+              summary: summary || message || description || "No summary provided",
               correlationId,
-              ...extra
-            });
+            };
+            if (signal) {
+              if (typeof signal === "string") {
+                try {
+                  eventPayload.signal = JSON.parse(signal);
+                } catch {
+                  eventPayload.signal = signal;
+                }
+              } else {
+                eventPayload.signal = signal;
+              }
+            }
+            if (status) eventPayload.status = status;
+            if (description) eventPayload.description = description;
+            if (message) eventPayload.message = message;
+
+            const payload = JSON.stringify(eventPayload);
             const script = "/Users/michaelshaw/clawd/acmi-bus-relay/emit-bus-event.sh";
             await execAsync(`echo '${payload}' | ${script} --stdin`);
             return { success: true, message: "Event successfully emitted to Super Bus." };
@@ -212,4 +229,11 @@ YOUR CAPABILITIES:
   } as any);
 
   return result.toTextStreamResponse();
+  } catch (err: any) {
+    console.error("API Chat route error in detail:", err);
+    return new Response(JSON.stringify({ error: err.message, stack: err.stack }), {
+      status: 500,
+      headers: { "Content-Type": "application/json" },
+    });
+  }
 }
