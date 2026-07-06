@@ -109,8 +109,11 @@ YOUR CAPABILITIES:
           status: z.enum(["todo", "ready", "in_progress", "blocked", "done", "pending", "active", "stalled", "completed"]).describe("State of the task"),
           assignee: z.string().optional().describe("Who is assigned (e.g. 'user' or 'agent:bentley')"),
           workspace_kind: z.string().optional().describe("Folder/scope workspace kind (e.g. 'scratch')"),
+          description: z.string().optional().describe("Optional task details / description"),
+          priority: z.string().optional().describe("Optional task priority, e.g. 'P0', 'P1', 'P2'"),
+          deliverables: z.array(z.string()).optional().describe("Optional deliverables array"),
         }),
-        execute: async ({ taskId, title, status, assignee, workspace_kind }: any) => {
+        execute: async ({ taskId, title, status, assignee, workspace_kind, description, priority, deliverables }: any) => {
           try {
             const profileKey = `acmi:work:${taskId}:profile`;
             const profile = {
@@ -120,7 +123,10 @@ YOUR CAPABILITIES:
               assignee: assignee || "user",
               created_by: "user",
               created_at: new Date().toISOString(),
-              workspace_kind: workspace_kind || "scratch"
+              workspace_kind: workspace_kind || "scratch",
+              description,
+              priority,
+              deliverables
             };
             await callRedis(["SET", profileKey, JSON.stringify(profile)]);
             return { success: true, taskId, message: "Task profile successfully updated in Redis." };
@@ -137,8 +143,9 @@ YOUR CAPABILITIES:
           summary: z.string().describe("Detail of what occurred"),
           correlationId: z.string().describe("Tracking chain identifier, e.g. 'voiceInput-1783...'"),
           source: z.string().optional().describe("Optional event source agent name"),
-          signal: z.string().optional().describe("Optional signal payload block in string format"),
+          signal: z.record(z.string(), z.any()).optional().describe("Optional nested JSON signal payload object"),
           status: z.string().optional().describe("Optional status descriptor"),
+          description: z.string().optional().describe("Optional detailed description of the event"),
         }),
         execute: async ({ kind, summary, correlationId, source, ...extra }: any) => {
           try {
