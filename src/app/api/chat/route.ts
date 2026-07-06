@@ -1,5 +1,5 @@
 import { createGroq, groq } from "@ai-sdk/groq";
-import { streamText } from "ai";
+import { streamText, stepCountIs } from "ai";
 import { z } from "zod";
 import { exec } from "child_process";
 import { promisify } from "util";
@@ -81,7 +81,7 @@ export async function POST(req: Request) {
     console.log("[route.ts] Initializing streamText...");
     const result = streamText({
     model: modelProvider("llama-3.3-70b-versatile"),
-    maxSteps: 5, // Enable multi-step tool-calling
+    stopWhen: stepCountIs(5), // Enable multi-step tool-calling
     system: `You are the ACMI Fleet Copilot — an advanced, high-agency AI agent system.
 You are wired with live access to:
 1. ACMI: Read and write task boards / work items directly on Upstash Redis.
@@ -306,9 +306,12 @@ YOUR CAPABILITIES:
         }
       }, 1000);
 
+      const reader = result.textStream.getReader();
       try {
-        for await (const chunk of result.textStream) {
-          controller.enqueue(new TextEncoder().encode(chunk));
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          controller.enqueue(new TextEncoder().encode(value));
         }
       } catch (err: any) {
         console.error("[route.ts] Error reading textStream:", err);
