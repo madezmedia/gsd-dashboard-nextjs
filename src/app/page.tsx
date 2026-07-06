@@ -371,7 +371,7 @@ export default function CockpitDashboard() {
       {urgentCount > 0 && (
         <Card className="border-red-500/20 bg-red-500/[0.01] rounded-2xl shadow-md overflow-hidden">
           <div className="bg-red-500/10 border-b border-red-500/20 px-4 py-3 flex items-center justify-between">
-            <span className="text-xs font-mono font-bold uppercase tracking-wider text-red-600 flex items-center gap-1.5">
+            <span className="text-xs font-mono font-bold uppercase tracking-wider text-red-400 flex items-center gap-1.5">
               <AlertTriangle className="h-4 w-4" />
               Urgent Operations Board ({urgentCount} alerts)
             </span>

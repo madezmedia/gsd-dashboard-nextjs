@@ -212,7 +212,50 @@ export default function TodoPage() {
           });
         }
       }
-      setTasks(flat.length > 0 ? flat : DEFAULT_TASKS);
+
+      // Fetch NocoDB Tasks
+      let nocoFlat: TaskItem[] = [];
+      try {
+        const nocoRes = await fetch("/api/nocodb-viewer");
+        if (nocoRes.ok) {
+          const nocoJson = await nocoRes.json();
+          if (nocoJson.success && nocoJson.data && Array.isArray(nocoJson.data.tasks)) {
+            nocoFlat = nocoJson.data.tasks.map((t: any) => {
+              const fields = t.fields || {};
+              // Map NocoDB Status ('backlog', 'todo', 'in-progress', 'done') to Kanban status ('Today', 'This Week', 'This Month', 'Backlog')
+              let mappedStatus: TaskItem["status"] = "Backlog";
+              const rawStatus = String(fields.Status).toLowerCase().trim();
+              if (rawStatus === "todo") mappedStatus = "Today";
+              else if (rawStatus === "in-progress" || rawStatus === "active") mappedStatus = "This Week";
+              else if (rawStatus === "done") mappedStatus = "This Month";
+
+              // Map Priority
+              let mappedPriority: TaskItem["priority"] = "P1";
+              const rawPriority = String(fields.Priority).toLowerCase().trim();
+              if (rawPriority === "high") mappedPriority = "P0";
+              else if (rawPriority === "low") mappedPriority = "P2";
+
+              return {
+                id: `nocodb-${t.id || t.id_fields?.Id}`,
+                projectTitle: "NocoDB Base",
+                title: `[NocoDB] ${fields.Title || "Untitled Task"}`,
+                owner: fields["Assignee Agent"] ? `@${fields["Assignee Agent"]}` : "@unassigned",
+                priority: mappedPriority,
+                status: mappedStatus,
+                dueDate: fields["Due At"] ? fields["Due At"].substring(0, 10) : "",
+                blocked: false,
+                done: rawStatus === "done",
+                progress: rawStatus === "done" ? 100 : 0
+              };
+            });
+          }
+        }
+      } catch (err) {
+        console.error("Failed to load NocoDB tasks in Kanban:", err);
+      }
+
+      const merged = [...flat, ...nocoFlat];
+      setTasks(merged.length > 0 ? merged : DEFAULT_TASKS);
     } catch (err) {
       console.error("Error fetching project activity:", err);
       setTasks(DEFAULT_TASKS);

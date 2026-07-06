@@ -309,6 +309,33 @@ export default function CalendarPage() {
         date: c.date,
         kind: (c.kind === "activity" ? "task" : c.kind) as CalendarEvent["kind"],
       }));
+
+      // Fetch NocoDB Tasks
+      let nocodbEvents: CalendarEvent[] = [];
+      try {
+        const nocoRes = await fetch("/api/nocodb-viewer");
+        if (nocoRes.ok) {
+          const nocoJson = await nocoRes.json();
+          if (nocoJson.success && nocoJson.data && Array.isArray(nocoJson.data.tasks)) {
+            nocodbEvents = nocoJson.data.tasks
+              .map((t: any) => {
+                const fields = t.fields || {};
+                const dateRaw = fields["Due At"] || fields.CreatedAt || "";
+                const dateStr = dateRaw.substring(0, 10);
+                return {
+                  id: `noco-task-${t.id}`,
+                  title: `[NocoDB] ${fields.Title || "Untitled Task"}`,
+                  date: dateStr,
+                  kind: "task" as const,
+                };
+              })
+              .filter((e: any) => e.date && /^\d{4}-\d{2}-\d{2}$/.test(e.date));
+          }
+        }
+      } catch (err) {
+        console.error("Failed to load NocoDB tasks in Calendar:", err);
+      }
+
       const parsedTimeline: TimelineItem[] = feed.map((f) => ({
         id: f.id,
         ts: f.ts,
@@ -317,7 +344,8 @@ export default function CalendarPage() {
         summary: `${f.projectTitle} — ${f.summary}`,
       }));
 
-      setEvents(parsedEvents.length > 0 ? parsedEvents : DEFAULT_EVENTS);
+      const finalEvents = [...parsedEvents, ...nocodbEvents];
+      setEvents(finalEvents.length > 0 ? finalEvents : DEFAULT_EVENTS);
       setTimeline(parsedTimeline.length > 0 ? parsedTimeline : DEFAULT_TIMELINE);
     } catch (err) {
       console.error("Failed to load bootstrap for calendar:", err);

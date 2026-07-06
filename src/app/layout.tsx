@@ -29,20 +29,20 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className={`${geistSans.variable} ${geistMono.variable}`} suppressHydrationWarning>
-      <body className="min-h-screen flex font-sans antialiased bg-[#faf9f5]">
+      <body className="min-h-screen flex font-sans antialiased bg-background text-foreground">
         <ThemeProvider
           attribute="class"
-          defaultTheme="system"
-          enableSystem
+          defaultTheme="dark"
+          enableSystem={false}
           disableTransitionOnChange
         >
           <Suspense fallback={null}>
             <ShortcutHandler />
           </Suspense>
-          <Suspense fallback={<div className="w-full h-full flex items-center justify-center font-mono text-[10px] text-[#1a1a1a]/40 uppercase bg-[#faf9f5]">Loading ACMI System...</div>}>
+          <Suspense fallback={<div className="w-full h-full flex items-center justify-center font-mono text-[10px] text-muted-foreground uppercase bg-background">Loading ACMI System...</div>}>
             <ResponsiveLayout>
               <main className="flex-1 flex flex-col overflow-hidden">
-                <div className="flex-1 overflow-auto p-4 lg:p-6">
+                <div className="flex-1 overflow-auto p-4 lg:p-6 bg-background">
                   {children}
                 </div>
               </main>
