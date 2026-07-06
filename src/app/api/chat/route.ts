@@ -36,22 +36,29 @@ async function runSSH(cmd: string) {
   let tempKeyPath = "";
   try {
     let keyOption = "";
+    console.log("[runSSH] Received command to run on VM:", cmd);
+    console.log("[runSSH] process.env.SSH_PRIVATE_KEY present:", !!process.env.SSH_PRIVATE_KEY);
     if (process.env.SSH_PRIVATE_KEY) {
       tempKeyPath = path.join(os.tmpdir(), `id_ed25519_${Date.now()}`);
       fs.writeFileSync(tempKeyPath, process.env.SSH_PRIVATE_KEY + "\n", { mode: 0o600 });
       keyOption = `-i ${tempKeyPath} `;
+      console.log("[runSSH] Wrote temp key to:", tempKeyPath);
     }
     const sshCmd = `ssh ${keyOption}-o StrictHostKeyChecking=no root@152.53.201.27 "${cmd.replace(/"/g, '\\"')}"`;
+    console.log("[runSSH] Executing SSH command:", sshCmd.replace(process.env.SSH_PRIVATE_KEY || "", "REDACTED"));
     const { stdout, stderr } = await execAsync(sshCmd);
+    console.log("[runSSH] SSH command executed successfully. stdout:", stdout, "stderr:", stderr);
     return stdout || stderr;
   } catch (e: any) {
+    console.error("[runSSH] SSH command failed with error:", e);
     return `SSH execution failed: ${e.message} (stderr: ${e.stderr || ""})`;
   } finally {
     if (tempKeyPath && fs.existsSync(tempKeyPath)) {
       try {
         fs.unlinkSync(tempKeyPath);
+        console.log("[runSSH] Deleted temp key from:", tempKeyPath);
       } catch (err) {
-        console.error("Failed to delete temp key:", err);
+        console.error("[runSSH] Failed to delete temp key:", err);
       }
     }
   }
@@ -241,10 +248,13 @@ YOUR CAPABILITIES:
           command: z.string().describe("The exact bash command to execute, e.g. 'docker ps', 'free -m', or '/opt/acmi-bridge/sync-vm-kanbans.sh'"),
         }),
         execute: async ({ command }: any) => {
+          console.log("[route.ts:runVMCommand] Tool execution started with command:", command);
           try {
             const output = await runSSH(command);
+            console.log("[route.ts:runVMCommand] Tool execution finished. output length:", output?.length);
             return { success: true, output };
           } catch (e: any) {
+            console.error("[route.ts:runVMCommand] Tool execution failed:", e);
             return { success: false, error: e.message };
           }
         }
