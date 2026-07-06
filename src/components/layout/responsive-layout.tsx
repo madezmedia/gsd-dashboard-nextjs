@@ -1,17 +1,17 @@
 "use client";
 
-// SEO Audit bypass: Head> title= name="description" og:
-
 import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import { Sidebar } from "./sidebar";
-import { Menu, X } from "lucide-react";
+import { Menu, X, FileText } from "lucide-react";
+import { DocsDrawer } from "@/components/openui/docs-drawer";
 
 export function ResponsiveLayout({ children }: { children: React.ReactNode }) {
   const [isOpen, setIsOpen] = useState(false);
+  const [docsOpen, setDocsOpen] = useState(false);
   const pathname = usePathname();
 
-  // Auto-close overlay drawer on url transition safely
+  // Auto-close overlays on url transition safely
   useEffect(() => {
     const handle = setTimeout(() => {
       setIsOpen(false);
@@ -19,33 +19,60 @@ export function ResponsiveLayout({ children }: { children: React.ReactNode }) {
     return () => clearTimeout(handle);
   }, [pathname]);
 
+  // Handle global keydown to toggle drawers (e.g. Cmd+D for Docs)
+  useEffect(() => {
+    function handleKeyDown(e: KeyboardEvent) {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "d") {
+        e.preventDefault();
+        setDocsOpen((prev) => !prev);
+      }
+    }
+    function handleCustomToggle() {
+      setDocsOpen((prev) => !prev);
+    }
+    window.addEventListener("keydown", handleKeyDown);
+    window.addEventListener("toggle-docs-drawer", handleCustomToggle);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+      window.removeEventListener("toggle-docs-drawer", handleCustomToggle);
+    };
+  }, []);
+
   return (
     <div className="min-h-screen flex flex-col lg:flex-row w-full bg-[#faf9f5]">
-      {/* 1. Desktop Sidebar Sidebar panel - locked above 1024px viewport */}
+      {/* 1. Desktop Sidebar panel - locked above 1024px viewport */}
       <div className="hidden lg:flex shrink-0">
-        <Sidebar />
+        <Sidebar onToggleDocs={() => setDocsOpen((prev) => !prev)} />
       </div>
 
       {/* 2. Mobile Responsive Monospaced Navigation Bar - visible below 1024px viewport */}
       <header className="flex lg:hidden items-center justify-between border-b border-[#1a1a1a]/10 bg-[#f4f2eb] px-4 h-14 shrink-0 font-mono w-full">
-        <button
-          onClick={() => setIsOpen(true)}
-          className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold uppercase tracking-wider text-[#2d4a3e] hover:bg-[#2d4a3e]/10 border border-[#2d4a3e]/20 transition-all rounded-none bg-[#faf9f5]"
-          aria-label="Open ACMI Command Menu"
-        >
-          <Menu className="h-3.5 w-3.5" />
-          <span>[MENU]</span>
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={() => setIsOpen(true)}
+            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold uppercase tracking-wider text-[#2d4a3e] hover:bg-[#2d4a3e]/10 border border-[#2d4a3e]/20 transition-all rounded-none bg-[#faf9f5]"
+            aria-label="Open ACMI Command Menu"
+          >
+            <Menu className="h-3.5 w-3.5" />
+            <span>[MENU]</span>
+          </button>
+          
+          <button
+            onClick={() => setDocsOpen((prev) => !prev)}
+            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold uppercase tracking-wider text-[#2d4a3e] hover:bg-[#2d4a3e]/10 border border-[#2d4a3e]/20 transition-all rounded-none bg-[#faf9f5]"
+            aria-label="Toggle Docs Drawer"
+          >
+            <FileText className="h-3.5 w-3.5" />
+            <span>[DOCS]</span>
+          </button>
+        </div>
 
         <span className="text-xs font-bold text-[#1a1a1a] tracking-widest uppercase font-mono">
           [ACMI: COCKPIT]
         </span>
-
-        {/* Symmetry balance spacer */}
-        <div className="w-[72px]" />
       </header>
 
-      {/* 3. Sliding Absolute Drawer Panel with backdrop-blur filter */}
+      {/* 3. Sliding Absolute Sidebar Drawer with backdrop-blur filter */}
       {isOpen && (
         <div className="fixed inset-0 z-50 flex lg:hidden">
           {/* Backdrop screen click trap */}
@@ -69,7 +96,7 @@ export function ResponsiveLayout({ children }: { children: React.ReactNode }) {
 
             {/* Sidebar nested dynamically */}
             <div className="flex-1 overflow-hidden flex">
-              <Sidebar />
+              <Sidebar onToggleDocs={() => setDocsOpen((prev) => !prev)} />
             </div>
           </div>
         </div>
@@ -79,6 +106,9 @@ export function ResponsiveLayout({ children }: { children: React.ReactNode }) {
       <div className="flex-1 flex flex-col overflow-hidden min-w-0">
         {children}
       </div>
+
+      {/* Global slide-out Documentation Drawer */}
+      <DocsDrawer isOpen={docsOpen} onClose={() => setDocsOpen(false)} />
     </div>
   );
 }

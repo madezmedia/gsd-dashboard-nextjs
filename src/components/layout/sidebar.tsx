@@ -138,7 +138,7 @@ const navItems = [
   },
 ];
 
-export function Sidebar() {
+export function Sidebar({ onToggleDocs }: { onToggleDocs?: () => void }) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const [collapsed, setCollapsed] = useState(false);
@@ -220,6 +220,17 @@ export function Sidebar() {
           <span className="text-[9px] font-mono text-sidebar-foreground/50 px-2 uppercase">ACMI v1.3</span>
         )}
         <div className="flex items-center gap-1">
+          {onToggleDocs && (
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 hover:bg-sidebar-accent rounded-none text-sidebar-foreground/75"
+              onClick={onToggleDocs}
+              title="Toggle Docs & Notes (Cmd+D)"
+            >
+              <FileCode className="h-4 w-4" />
+            </Button>
+          )}
           {!collapsed && <ThemeToggle />}
           <Button
             variant="ghost"

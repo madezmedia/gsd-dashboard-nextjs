@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { Bot, Send, X } from "lucide-react";
+import { Bot, Send, X, RefreshCw, Radio, HardDrive, Cpu, Settings } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
@@ -13,14 +13,16 @@ interface Message {
 
 export function CopilotPanel() {
   const [open, setOpen] = useState(false);
+  const [activeAgent, setActiveAgent] = useState("opencode");
   const [messages, setMessages] = useState<Message[]>([
     {
       role: "assistant",
-      content: "Hi! I'm the ACMI Fleet Copilot. Ask me about fleet status, agent activity, or workflows.",
+      content: "System online. I am the ACMI Fleet Copilot. I can inspect workflows, audit databases, and execute VM commands.",
     },
   ]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
+  const [signalEmitting, setSignalEmitting] = useState<string | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -28,6 +30,34 @@ export function CopilotPanel() {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
   }, [messages]);
+
+  async function triggerBusSignal(kind: string, summary: string) {
+    setSignalEmitting(kind);
+    try {
+      const res = await fetch("/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          messages: [
+            {
+              role: "user",
+              content: `Triggering a system signal from the Command Center UI: emit ${kind} event. ${summary}`
+            }
+          ]
+        })
+      });
+      if (res.ok) {
+        setMessages((prev) => [
+          ...prev,
+          { role: "assistant", content: `✓ ACMI bus signal emitted: \`[${kind}]\` - ${summary}` }
+        ]);
+      }
+    } catch (err: any) {
+      console.error("Signal emit failed:", err);
+    } finally {
+      setSignalEmitting(null);
+    }
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -50,6 +80,7 @@ export function CopilotPanel() {
         headers,
         body: JSON.stringify({
           messages: [...messages, userMsg].map(({ role, content }) => ({ role, content })),
+          agentId: activeAgent
         }),
       });
 
@@ -78,7 +109,7 @@ export function CopilotPanel() {
     } catch {
       setMessages((prev) => [
         ...prev,
-        { role: "assistant", content: "Sorry, I couldn't process that request. Please try again." },
+        { role: "assistant", content: "Error communicating with the fleet agent network. Verify credentials or model availability." },
       ]);
     } finally {
       setLoading(false);
@@ -87,77 +118,146 @@ export function CopilotPanel() {
 
   return (
     <>
-      {/* Toggle button */}
+      {/* Sidebar toggle badge */}
       {!open && (
-        <Button
-          className="fixed bottom-6 right-6 z-50 rounded-full shadow-lg h-12 w-12"
+        <button
           onClick={() => setOpen(true)}
+          className="fixed bottom-6 right-6 z-40 flex items-center gap-1.5 px-4 py-2.5 text-xs font-mono font-bold uppercase tracking-wider text-[#2d4a3e] dark:text-[#5EF2C6] bg-[#faf9f5] dark:bg-[#121314] hover:bg-[#2d4a3e]/10 border border-[#2d4a3e]/30 dark:border-[#5EF2C6]/30 shadow-2xl transition-all rounded-none"
         >
-          <Bot className="h-5 w-5" />
-        </Button>
+          <Bot className="h-4 w-4" />
+          <span>[COPILOT]</span>
+        </button>
       )}
 
-      {/* Panel */}
+      {/* Full height slide panel */}
       {open && (
-        <div className="fixed bottom-6 right-6 z-50 w-80 sm:w-96 rounded-xl border bg-card shadow-xl flex flex-col">
+        <div className="fixed inset-y-0 right-0 w-full sm:w-[420px] bg-[#faf9f5] dark:bg-[#121314] border-l border-[#1a1a1a]/20 dark:border-[#e3e4e6]/20 shadow-2xl flex flex-col z-50 animate-in slide-in-from-right duration-200">
           {/* Header */}
-          <div className="flex items-center justify-between border-b px-4 py-3">
-            <div className="flex items-center gap-2">
-              <Bot className="h-4 w-4 text-primary" />
-              <span className="text-sm font-semibold">Fleet Copilot</span>
+          <div className="flex items-center justify-between p-4 border-b border-[#1a1a1a]/10 dark:border-[#e3e4e6]/10 shrink-0">
+            <div>
+              <h3 className="text-sm font-bold font-mono text-[#2d4a3e] dark:text-[#5EF2C6] uppercase flex items-center gap-1.5">
+                <Bot className="h-4 w-4" />
+                ACMI Swarm Copilot
+              </h3>
+              <p className="text-[9px] font-mono text-muted-foreground uppercase">
+                Active execution bridge · {activeAgent} channel
+              </p>
             </div>
-            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setOpen(false)}>
-              <X className="h-4 w-4" />
-            </Button>
+            <button
+              onClick={() => setOpen(false)}
+              className="p-1.5 hover:bg-[#1a1a1a]/5 dark:hover:bg-white/5 text-[#1a1a1a]/60 dark:text-white/60 hover:text-[#1a1a1a] dark:hover:text-white border border-[#1a1a1a]/10 dark:border-white/10 rounded-none bg-[#f4f2eb] dark:bg-[#1a1b1d]"
+            >
+              <X className="h-3.5 w-3.5" />
+            </button>
+          </div>
+
+          {/* Active Agent Context Selection */}
+          <div className="px-4 py-2 border-b border-[#1a1a1a]/5 bg-[#f4f2eb]/40 dark:bg-white/5 flex items-center justify-between gap-2 shrink-0">
+            <span className="text-[9px] font-mono text-muted-foreground uppercase">Target Agent:</span>
+            <div className="flex gap-1">
+              {["opencode", "codex", "hermes"].map((agent) => (
+                <button
+                  key={agent}
+                  onClick={() => setActiveAgent(agent)}
+                  className={cn(
+                    "px-2 py-0.5 text-[9px] font-mono border transition-all rounded-none uppercase",
+                    activeAgent === agent
+                      ? "border-primary text-primary bg-primary/5 font-bold"
+                      : "border-transparent text-muted-foreground hover:text-foreground"
+                  )}
+                >
+                  {agent}
+                </button>
+              ))}
+            </div>
           </div>
 
           {/* Messages */}
-          <ScrollArea ref={scrollRef} className="flex-1 max-h-96 p-4 space-y-3">
-            {messages.map((msg, i) => (
-              <div
-                key={i}
-                className={cn(
-                  "flex",
-                  msg.role === "user" ? "justify-end" : "justify-start"
-                )}
-              >
+          <div className="flex-1 overflow-hidden flex flex-col min-h-0">
+            <ScrollArea ref={scrollRef} className="flex-1 p-4 space-y-3">
+              {/* Quick Action Chips */}
+              <div className="border border-dashed border-[#1a1a1a]/15 dark:border-white/10 p-3 bg-[#f4f2eb]/20 mb-4 space-y-2">
+                <p className="text-[9px] font-mono uppercase text-muted-foreground font-bold tracking-wider">
+                  Quick Actions (Executes to ACMI Bus)
+                </p>
+                <div className="flex flex-wrap gap-1.5">
+                  <button
+                    disabled={!!signalEmitting}
+                    onClick={() => triggerBusSignal("heartbeat", "Operational state heartbeat emitted via dashboard Copilot.")}
+                    className="flex items-center gap-1 px-2 py-1 text-[8px] font-mono uppercase bg-[#faf9f5] dark:bg-[#1a1b1d] border border-border hover:bg-secondary transition-all"
+                  >
+                    <Radio className="h-2.5 w-2.5" />
+                    <span>[HEARTBEAT]</span>
+                  </button>
+                  <button
+                    disabled={!!signalEmitting}
+                    onClick={() => triggerBusSignal("sync", "Manual sync action triggered from Command Center UI.")}
+                    className="flex items-center gap-1 px-2 py-1 text-[8px] font-mono uppercase bg-[#faf9f5] dark:bg-[#1a1b1d] border border-border hover:bg-secondary transition-all"
+                  >
+                    <RefreshCw className="h-2.5 w-2.5" />
+                    <span>[FORCE SYNC]</span>
+                  </button>
+                  <button
+                    disabled={!!signalEmitting}
+                    onClick={() => triggerBusSignal("rollup", "Recalculating dashboard metric rollups.")}
+                    className="flex items-center gap-1 px-2 py-1 text-[8px] font-mono uppercase bg-[#faf9f5] dark:bg-[#1a1b1d] border border-border hover:bg-secondary transition-all"
+                  >
+                    <HardDrive className="h-2.5 w-2.5" />
+                    <span>[ROLLUP]</span>
+                  </button>
+                </div>
+              </div>
+
+              {messages.map((msg, i) => (
                 <div
+                  key={i}
                   className={cn(
-                    "max-w-[80%] rounded-lg px-3 py-2 text-sm",
-                    msg.role === "user"
-                      ? "bg-primary text-primary-foreground"
-                      : "bg-muted"
+                    "flex flex-col mb-4",
+                    msg.role === "user" ? "items-end" : "items-start"
                   )}
                 >
-                  {msg.content}
+                  <span className="text-[8px] font-mono text-muted-foreground uppercase mb-0.5">
+                    {msg.role === "user" ? "Operator" : `Agent:${activeAgent}`}
+                  </span>
+                  <div
+                    className={cn(
+                      "max-w-[85%] border font-mono text-xs p-3 rounded-none leading-relaxed",
+                      msg.role === "user"
+                        ? "bg-[#2d4a3e] border-[#2d4a3e] text-white"
+                        : "bg-[#f4f2eb] dark:bg-[#1b1c1d] border-[#1a1a1a]/15 dark:border-white/10 text-foreground"
+                    )}
+                  >
+                    {msg.content}
+                  </div>
                 </div>
-              </div>
-            ))}
-            {loading && (
-              <div className="flex justify-start">
-                <div className="bg-muted rounded-lg px-3 py-2 text-sm">
-                  <span className="animate-pulse">Thinking...</span>
+              ))}
+              {loading && (
+                <div className="flex flex-col items-start mb-4">
+                  <span className="text-[8px] font-mono text-muted-foreground uppercase mb-0.5">Agent</span>
+                  <div className="bg-[#f4f2eb] dark:bg-[#1b1c1d] border border-[#1a1a1a]/15 dark:border-white/10 font-mono text-xs p-3 rounded-none text-muted-foreground">
+                    <span className="animate-pulse">Accessing Swarm registry...</span>
+                  </div>
                 </div>
-              </div>
-            )}
-          </ScrollArea>
+              )}
+            </ScrollArea>
 
-            {/* Input */}
-          <form onSubmit={handleSubmit} className="border-t p-3 flex gap-2">
-            <label htmlFor="copilot-query-input" className="sr-only">
-              Ask about fleet status
-            </label>
-            <input
-              id="copilot-query-input"
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              placeholder="Ask about fleet status..."
-              className="flex-1 rounded-md border bg-background px-3 py-1.5 text-sm outline-none focus:ring-2 focus:ring-ring"
-            />
-            <Button type="submit" size="icon" disabled={loading || !input.trim()}>
-              <Send className="h-4 w-4" />
-            </Button>
-          </form>
+            {/* Input Form */}
+            <form onSubmit={handleSubmit} className="border-t border-[#1a1a1a]/10 dark:border-white/10 p-3 flex gap-2 shrink-0 bg-[#faf9f5] dark:bg-card">
+              <label htmlFor="copilot-query" className="sr-only">
+                Enter command query
+              </label>
+              <input
+                id="copilot-query"
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                placeholder={`Instruct ${activeAgent}...`}
+                className="flex-1 rounded-none border border-border bg-[#f4f2eb] dark:bg-[#151617] px-3 py-2 text-xs font-mono outline-none focus:ring-1 focus:ring-primary focus:border-primary text-foreground"
+              />
+              <Button type="submit" size="icon" className="rounded-none h-8 w-8 bg-[#2d4a3e] hover:bg-[#2d4a3e]/90 text-white" disabled={loading || !input.trim()}>
+                <Send className="h-3.5 w-3.5" />
+              </Button>
+            </form>
+          </div>
         </div>
       )}
     </>
