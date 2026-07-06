@@ -11,6 +11,24 @@ interface Message {
   content: string;
 }
 
+const STARTER_PROMPTS: Record<string, string[]> = {
+  opencode: [
+    "Check CPU & memory usage on remote VM",
+    "List running docker services and diagnostic states",
+    "Audit latest error logs from the acmi-bridge container",
+  ],
+  codex: [
+    "Fetch the latest ACMI tasks registered in Redis",
+    "Update ACMI task t_12b6e771 status to completed",
+    "Trigger Composio action to check google tasks sync",
+  ],
+  hermes: [
+    "Emit a manual coordination force-sync event to the bus",
+    "Post a heartbeat signal to the acmi:bus relay",
+    "Summarize all activity logs in the timeline for today",
+  ],
+};
+
 export function CopilotPanel() {
   const [open, setOpen] = useState(false);
   const [activeAgent, setActiveAgent] = useState("opencode");
@@ -23,6 +41,7 @@ export function CopilotPanel() {
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [signalEmitting, setSignalEmitting] = useState<string | null>(null);
+  const [enhancing, setEnhancing] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -56,6 +75,27 @@ export function CopilotPanel() {
       console.error("Signal emit failed:", err);
     } finally {
       setSignalEmitting(null);
+    }
+  }
+  async function handleEnhancePrompt() {
+    if (!input.trim() || enhancing) return;
+    setEnhancing(true);
+    try {
+      const res = await fetch("/api/chat/enhance", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ prompt: input }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.success && data.enhanced) {
+          setInput(data.enhanced);
+        }
+      }
+    } catch (err) {
+      console.error("Failed to enhance prompt:", err);
+    } finally {
+      setEnhancing(false);
     }
   }
 
@@ -172,6 +212,22 @@ export function CopilotPanel() {
             </div>
           </div>
 
+          {/* Starter Prompt Pills */}
+          <div className="px-4 py-2 border-b border-border bg-background/50 space-y-1 shrink-0">
+            <span className="text-[8px] font-mono text-muted-foreground uppercase font-bold tracking-wider">Starter Prompts:</span>
+            <div className="flex flex-col gap-1 mt-1">
+              {(STARTER_PROMPTS[activeAgent] || []).map((promptText, idx) => (
+                <button
+                  key={idx}
+                  onClick={() => setInput(promptText)}
+                  className="text-left text-[9px] font-mono border border-border px-2 py-1 bg-card hover:bg-secondary/40 text-foreground transition-all truncate"
+                >
+                  💡 {promptText}
+                </button>
+              ))}
+            </div>
+          </div>
+
           {/* Messages */}
           <div className="flex-1 overflow-hidden flex flex-col min-h-0">
             <ScrollArea ref={scrollRef} className="flex-1 p-4 space-y-3">
@@ -242,20 +298,36 @@ export function CopilotPanel() {
             </ScrollArea>
 
             {/* Input Form */}
-            <form onSubmit={handleSubmit} className="border-t border-[#1a1a1a]/10 dark:border-white/10 p-3 flex gap-2 shrink-0 bg-[#faf9f5] dark:bg-card">
-              <label htmlFor="copilot-query" className="sr-only">
-                Enter command query
-              </label>
-              <input
-                id="copilot-query"
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                placeholder={`Instruct ${activeAgent}...`}
-                className="flex-1 rounded-none border border-border bg-[#f4f2eb] dark:bg-[#151617] px-3 py-2 text-xs font-mono outline-none focus:ring-1 focus:ring-primary focus:border-primary text-foreground"
-              />
-              <Button type="submit" size="icon" className="rounded-none h-8 w-8 bg-[#2d4a3e] hover:bg-[#2d4a3e]/90 text-white" disabled={loading || !input.trim()}>
-                <Send className="h-3.5 w-3.5" />
-              </Button>
+            <form onSubmit={handleSubmit} className="border-t border-[#1a1a1a]/10 dark:border-white/10 p-3 flex flex-col gap-2 shrink-0 bg-[#faf9f5] dark:bg-card">
+              {enhancing && (
+                <div className="text-[8px] font-mono text-primary animate-pulse uppercase flex items-center gap-1">
+                  <span>Enhancing prompt with Grok...</span>
+                </div>
+              )}
+              <div className="flex gap-2">
+                <label htmlFor="copilot-query" className="sr-only">
+                  Enter command query
+                </label>
+                <input
+                  id="copilot-query"
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  placeholder={`Instruct ${activeAgent}...`}
+                  className="flex-1 rounded-none border border-border bg-[#f4f2eb] dark:bg-[#151617] px-3 py-2 text-xs font-mono outline-none focus:ring-1 focus:ring-primary focus:border-primary text-foreground"
+                />
+                <button
+                  type="button"
+                  disabled={enhancing || !input.trim()}
+                  onClick={handleEnhancePrompt}
+                  title="Enhance prompt with Grok"
+                  className="h-8 px-2.5 border border-border hover:bg-secondary/50 text-foreground font-mono text-[9px] uppercase flex items-center gap-1 transition-all shrink-0 bg-background"
+                >
+                  <span>✨ Grok</span>
+                </button>
+                <Button type="submit" size="icon" className="rounded-none h-8 w-8 bg-[#2d4a3e] hover:bg-[#2d4a3e]/90 text-white shrink-0" disabled={loading || !input.trim()}>
+                  <Send className="h-3.5 w-3.5" />
+                </Button>
+              </div>
             </form>
           </div>
         </div>
