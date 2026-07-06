@@ -84,9 +84,9 @@ YOUR CAPABILITIES:
       getACMITasks: {
         description: "Fetch all ACMI work items / tasks currently registered in the database.",
         parameters: z.object({
-          limit: z.number().optional().describe("Optional limit of tasks to fetch"),
+          limit: z.string().optional().describe("Optional limit of tasks to fetch (numeric string)"),
         }),
-        execute: async ({ limit }: { limit?: number }) => {
+        execute: async ({ limit }: { limit?: string }) => {
           try {
             const keys1 = await callRedis(["KEYS", "acmi:work:*:profile"]) || [];
             const keys2 = await callRedis(["KEYS", "acmi:madez:work:*:profile"]) || [];
@@ -97,7 +97,7 @@ YOUR CAPABILITIES:
             }
 
             const values = await callRedis(["MGET", ...allKeys]) || [];
-            const tasks = [];
+            let tasks = [];
             
             for (let i = 0; i < allKeys.length; i++) {
               const raw = values[i];
@@ -112,6 +112,14 @@ YOUR CAPABILITIES:
                 }
               }
             }
+
+            if (limit) {
+              const parsedLimit = parseInt(limit, 10);
+              if (!isNaN(parsedLimit)) {
+                tasks = tasks.slice(0, parsedLimit);
+              }
+            }
+
             return { success: true, tasks };
           } catch (e: any) {
             return { success: false, error: e.message };
@@ -124,12 +132,12 @@ YOUR CAPABILITIES:
         parameters: z.object({
           taskId: z.string().describe("Unique identifier of the task (e.g. 't_12b6e771')"),
           title: z.string().describe("Title of the task"),
-          status: z.enum(["todo", "ready", "in_progress", "blocked", "done", "pending", "active", "stalled", "completed"]).describe("State of the task"),
+          status: z.string().describe("State of the task (e.g. 'todo', 'in_progress', 'done')"),
           assignee: z.string().optional().describe("Who is assigned (e.g. 'user' or 'agent:bentley')"),
           workspace_kind: z.string().optional().describe("Folder/scope workspace kind (e.g. 'scratch')"),
           description: z.string().optional().describe("Optional task details / description"),
           priority: z.string().optional().describe("Optional task priority, e.g. 'P0', 'P1', 'P2'"),
-          deliverables: z.array(z.string()).optional().describe("Optional deliverables array"),
+          deliverables: z.string().optional().describe("Optional comma-separated deliverables list"),
         }),
         execute: async ({ taskId, title, status, assignee, workspace_kind, description, priority, deliverables }: any) => {
           try {
@@ -144,7 +152,7 @@ YOUR CAPABILITIES:
               workspace_kind: workspace_kind || "scratch",
               description,
               priority,
-              deliverables
+              deliverables: deliverables ? deliverables.split(",").map((d: string) => d.trim()) : undefined
             };
             await callRedis(["SET", profileKey, JSON.stringify(profile)]);
             return { success: true, taskId, message: "Task profile successfully updated in Redis." };
