@@ -69,6 +69,9 @@ YOUR CAPABILITIES:
 - If a user asks to add or change a task, write it to Redis or trigger Composio.
 - If a user asks about VM health or sync status, query the VM using SSH command tools.`,
     messages,
+    onError: ({ error }: { error: any }) => {
+      console.error("[route.ts] Stream failed asynchronously:", error);
+    },
     tools: {
       getACMITasks: {
         description: "Fetch all ACMI work items / tasks currently registered in the database.",
