@@ -7,6 +7,7 @@ import { promisify } from "util";
 const execAsync = promisify(exec);
 
 export const maxDuration = 60;
+export const dynamic = "force-dynamic";
 
 // Helper to run Redis commands
 async function callRedis(command: any[]) {
@@ -243,7 +244,12 @@ YOUR CAPABILITIES:
     }
   } as any);
 
-  return result.toTextStreamResponse();
+  return result.toTextStreamResponse({
+    headers: {
+      "X-Accel-Buffering": "no",
+      "Cache-Control": "no-cache, no-transform",
+    }
+  });
   } catch (err: any) {
     console.error("API Chat route error in detail:", err);
     return new Response(JSON.stringify({ error: err.message, stack: err.stack }), {
