@@ -1,0 +1,1 @@
+{"version":3,"file":"SessionList.d.ts","sourceRoot":"","sources":["../../../src/components/session-list/SessionList.tsx"],"names":[],"mappings":"AAiBA,MAAM,WAAW,gBAAgB;IAC/B,QAAQ,CAAC,EAAE,MAAM,OAAO,CAAC,MAAM,GAAG,IAAI,CAAC,CAAC;IACxC,WAAW,CAAC,EAAE,CAAC,GAAG,EAAE,MAAM,KAAK,IAAI,CAAC;CACrC;AAwSD,wBAAgB,WAAW,CAAC,EAAE,QAAQ,EAAE,WAAW,EAAE,EAAE,gBAAgB,2CAkGtE"}

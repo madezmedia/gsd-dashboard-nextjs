@@ -1,0 +1,1 @@
+{"version":3,"file":"SessionConfigPanel.d.ts","sourceRoot":"","sources":["../../../src/components/session-config-panel/SessionConfigPanel.tsx"],"names":[],"mappings":"AAIA,OAAO,KAAK,EAAE,SAAS,EAA6E,MAAM,sBAAsB,CAAC;AAKjI,MAAM,WAAW,uBAAuB;IACtC,SAAS,EAAE,SAAS,GAAG,IAAI,CAAC;CAC7B;AAgBD,wBAAgB,kBAAkB,CAAC,EAAE,SAAS,EAAE,EAAE,uBAAuB,kDAqDxE"}

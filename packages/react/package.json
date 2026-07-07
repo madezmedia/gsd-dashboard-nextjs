@@ -1,0 +1,45 @@
+{
+  "name": "@acp-components/react",
+  "version": "0.1.0",
+  "type": "module",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.cjs",
+      "types": "./dist/index.d.ts"
+    },
+    "./styles.css": "./dist/react.css"
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "vite build && tsc --emitDeclarationOnly",
+    "dev": "vite build --watch",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "@acp-components/core": "file:../core",
+    "@ant-design/icons": "^6.2.5",
+    "i18next": "^26.1.0",
+    "react-i18next": "^17.0.7",
+    "react-markdown": "^10.1.0",
+    "react-virtuoso": "^4.18.7",
+    "remark-gfm": "^4.0.1",
+    "zustand": "^5.0.0"
+  },
+  "peerDependencies": {
+    "monaco-editor": "^0.52.0",
+    "react": "^18.0.0 || ^19.0.0",
+    "react-dom": "^18.0.0 || ^19.0.0"
+  },
+  "peerDependenciesMeta": {
+    "monaco-editor": {
+      "optional": true
+    }
+  }
+}

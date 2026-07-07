@@ -1,0 +1,1 @@
+{"version":3,"file":"useFileTree.d.ts","sourceRoot":"","sources":["../../src/hooks/useFileTree.ts"],"names":[],"mappings":"AAGA,OAAO,KAAK,EAAE,YAAY,EAAE,MAAM,sBAAsB,CAAC;AAEzD,MAAM,WAAW,kBAAkB;IACjC,GAAG,EAAE,MAAM,CAAC;CACb;AAED,wBAAgB,WAAW,CAAC,EAAE,GAAG,EAAE,EAAE,kBAAkB;;;;;qBAc5C,MAAM;uBAON,MAAM;EAchB"}

@@ -1,0 +1,1 @@
+{"version":3,"file":"TerminalView.d.ts","sourceRoot":"","sources":["../../../src/components/terminal-view/TerminalView.tsx"],"names":[],"mappings":"AAGA,OAAO,KAAK,EAAE,SAAS,EAAiB,MAAM,sBAAsB,CAAC;AAMrE,MAAM,WAAW,iBAAiB;IAChC,SAAS,CAAC,EAAE,SAAS,GAAG,IAAI,CAAC;IAC7B,wEAAwE;IACxE,UAAU,CAAC,EAAE,MAAM,CAAC;CACrB;AAED,wBAAgB,YAAY,CAAC,EAAE,SAAS,EAAE,UAAU,EAAE,EAAE,iBAAiB,2CA4CxE"}

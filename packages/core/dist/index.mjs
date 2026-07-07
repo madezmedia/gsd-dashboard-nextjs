@@ -1,0 +1,1445 @@
+var te = Object.defineProperty;
+var se = (r, e, t) => e in r ? te(r, e, { enumerable: !0, configurable: !0, writable: !0, value: t }) : r[e] = t;
+var h = (r, e, t) => se(r, typeof e != "symbol" ? e + "" : e, t);
+import { ndJsonStream as ne, ClientSideConnection as oe } from "@agentclientprotocol/sdk";
+import { RequestError as Ue } from "@agentclientprotocol/sdk";
+import { createStore as $ } from "zustand/vanilla";
+class re {
+  constructor(e) {
+    h(this, "process", null);
+    h(this, "closeHandlers", []);
+    h(this, "errorHandlers", []);
+    this.options = e;
+  }
+  async connect() {
+    const { spawn: e } = await import("./__vite-browser-external-l0sNRNKZ.js");
+    this.process = e(this.options.command, this.options.args ?? [], {
+      stdio: ["pipe", "pipe", "pipe"],
+      env: { ...process.env, ...this.options.env }
+    }), this.process.on("error", (i) => {
+      for (const c of this.errorHandlers) c(i);
+    }), this.process.on("close", () => {
+      for (const i of this.closeHandlers) i();
+    });
+    const t = this.process.stdin, s = this.process.stdout, n = new WritableStream({
+      write: (i) => {
+        t.write(i);
+      },
+      close: () => {
+        t.end();
+      }
+    }), o = new ReadableStream({
+      start: (i) => {
+        s.on("data", (c) => {
+          i.enqueue(c);
+        }), s.on("end", () => i.close()), s.on("error", (c) => i.error(c));
+      },
+      cancel: () => {
+        s.destroy();
+      }
+    });
+    return ne(n, o);
+  }
+  disconnect() {
+    var e;
+    (e = this.process) == null || e.kill(), this.process = null;
+  }
+  onClose(e) {
+    return this.closeHandlers.push(e), () => {
+      this.closeHandlers = this.closeHandlers.filter((t) => t !== e);
+    };
+  }
+  onError(e) {
+    return this.errorHandlers.push(e), () => {
+      this.errorHandlers = this.errorHandlers.filter((t) => t !== e);
+    };
+  }
+}
+class ie {
+  constructor(e) {
+    h(this, "abortController", null);
+    h(this, "closeHandlers", []);
+    h(this, "errorHandlers", []);
+    this.options = e;
+  }
+  async connect() {
+    this.abortController = new AbortController();
+    const { url: e, headers: t } = this.options, s = new WritableStream({
+      write: async (o) => {
+        try {
+          const i = await fetch(e, {
+            method: "POST",
+            headers: { "Content-Type": "application/json", ...t },
+            body: JSON.stringify(o),
+            signal: this.abortController.signal
+          });
+          if (!i.ok)
+            throw new Error(`HTTP ${i.status}: ${i.statusText}`);
+        } catch (i) {
+          if (i.name !== "AbortError")
+            for (const c of this.errorHandlers) c(i);
+        }
+      }
+    }), n = new ReadableStream({
+      start: () => {
+      },
+      cancel: () => {
+        var o;
+        (o = this.abortController) == null || o.abort();
+      }
+    });
+    return { writable: s, readable: n };
+  }
+  disconnect() {
+    var e;
+    (e = this.abortController) == null || e.abort();
+    for (const t of this.closeHandlers) t();
+  }
+  onClose(e) {
+    return this.closeHandlers.push(e), () => {
+      this.closeHandlers = this.closeHandlers.filter((t) => t !== e);
+    };
+  }
+  onError(e) {
+    return this.errorHandlers.push(e), () => {
+      this.errorHandlers = this.errorHandlers.filter((t) => t !== e);
+    };
+  }
+}
+class ae {
+  constructor(e) {
+    h(this, "ws", null);
+    h(this, "closeHandlers", []);
+    h(this, "errorHandlers", []);
+    this.options = e;
+  }
+  async connect() {
+    const e = new WebSocket(this.options.url);
+    this.ws = e, await new Promise((n, o) => {
+      e.onopen = () => n(), e.onerror = () => o(new Error("WebSocket connection failed"));
+    });
+    const t = new WritableStream({
+      write: (n) => {
+        e.send(JSON.stringify(n));
+      }
+    }), s = new ReadableStream({
+      start: (n) => {
+        e.onmessage = (o) => {
+          try {
+            const i = JSON.parse(o.data);
+            n.enqueue(i);
+          } catch (i) {
+            n.error(i);
+          }
+        }, e.onerror = () => {
+          for (const o of this.errorHandlers) o(new Error("WebSocket error"));
+        }, e.onclose = () => {
+          n.close();
+          for (const o of this.closeHandlers) o();
+        };
+      },
+      cancel: () => {
+        e.close();
+      }
+    });
+    return { writable: t, readable: s };
+  }
+  disconnect() {
+    var e;
+    (e = this.ws) == null || e.close(), this.ws = null;
+  }
+  onClose(e) {
+    return this.closeHandlers.push(e), () => {
+      this.closeHandlers = this.closeHandlers.filter((t) => t !== e);
+    };
+  }
+  onError(e) {
+    return this.errorHandlers.push(e), () => {
+      this.errorHandlers = this.errorHandlers.filter((t) => t !== e);
+    };
+  }
+}
+function ce(r) {
+  switch (r.type) {
+    case "stdio":
+      return new re({ command: r.command, args: r.args, env: r.env });
+    case "http":
+      return new ie({ url: r.url, headers: r.headers });
+    case "websocket":
+      return new ae({ url: r.url });
+    case "custom":
+      return r.transport;
+    default:
+      throw new Error(`Unsupported transport type: ${r.type}`);
+  }
+}
+class le {
+  constructor() {
+    h(this, "connection", null);
+    h(this, "transport", null);
+    h(this, "_transportConfig", null);
+    h(this, "_status", "disconnected");
+    h(this, "_agentInfo", null);
+    h(this, "_capabilities", null);
+    h(this, "_clientInfo");
+    h(this, "_clientCapabilities");
+    h(this, "sessionUpdateHandlers", /* @__PURE__ */ new Set());
+    h(this, "permissionHandler", null);
+    h(this, "fileReadHandler", null);
+    h(this, "fileWriteHandler", null);
+    h(this, "terminalHandler", null);
+    h(this, "terminalHandles", /* @__PURE__ */ new Map());
+    h(this, "extMethodHandler", null);
+    h(this, "extNotificationHandler", null);
+    h(this, "statusHandlers", /* @__PURE__ */ new Set());
+    h(this, "closeHandlers", /* @__PURE__ */ new Set());
+  }
+  get status() {
+    return this._status;
+  }
+  get agentInfo() {
+    return this._agentInfo;
+  }
+  get capabilities() {
+    return this._capabilities;
+  }
+  get signal() {
+    var e;
+    return (e = this.connection) == null ? void 0 : e.signal;
+  }
+  setStatus(e) {
+    this._status = e;
+    for (const t of this.statusHandlers) t(e);
+  }
+  onStatusChange(e) {
+    return this.statusHandlers.add(e), () => this.statusHandlers.delete(e);
+  }
+  onClose(e) {
+    return this.closeHandlers.add(e), () => this.closeHandlers.delete(e);
+  }
+  onSessionUpdate(e) {
+    return this.sessionUpdateHandlers.add(e), () => this.sessionUpdateHandlers.delete(e);
+  }
+  setPermissionHandler(e) {
+    this.permissionHandler = e;
+  }
+  setFileReadHandler(e) {
+    this.fileReadHandler = e;
+  }
+  setFileWriteHandler(e) {
+    this.fileWriteHandler = e;
+  }
+  setTerminalHandler(e) {
+    this.terminalHandler = e;
+  }
+  setExtMethodHandler(e) {
+    this.extMethodHandler = e;
+  }
+  setExtNotificationHandler(e) {
+    this.extNotificationHandler = e;
+  }
+  async connect(e) {
+    var n, o, i, c;
+    if (this._status === "connecting")
+      return;
+    (this.transport || this.connection) && this.disconnect(), this._transportConfig = e, this.transport = ce(e), this.setStatus("connecting"), (o = (n = this.transport).onClose) == null || o.call(n, () => {
+      this.setStatus("disconnected");
+    }), (c = (i = this.transport).onError) == null || c.call(i, (a) => {
+      this.setStatus("error");
+    });
+    let t;
+    try {
+      t = await this.transport.connect();
+    } catch (a) {
+      throw this.setStatus("error"), this.transport = null, a;
+    }
+    const s = {
+      sessionUpdate: (a) => {
+        for (const l of this.sessionUpdateHandlers) l(a);
+        return Promise.resolve();
+      },
+      requestPermission: (a) => {
+        var l;
+        return this.permissionHandler ? this.permissionHandler(a) : Promise.resolve({
+          outcome: { outcome: "selected", optionId: ((l = a.options[0]) == null ? void 0 : l.optionId) ?? "" }
+        });
+      },
+      readTextFile: (a) => this.fileReadHandler ? this.fileReadHandler(a) : Promise.reject(new Error("readTextFile not supported")),
+      writeTextFile: (a) => this.fileWriteHandler ? this.fileWriteHandler(a) : Promise.reject(new Error("writeTextFile not supported")),
+      createTerminal: (a) => this.terminalHandler ? this.terminalHandler.create(a).then((l) => (this.terminalHandles.set(l.terminalId, l), { terminalId: l.terminalId })) : Promise.reject(new Error("terminal not supported")),
+      terminalOutput: (a) => {
+        const l = this.terminalHandles.get(a.terminalId);
+        return l ? l.getOutput() : Promise.reject(new Error(`terminal ${a.terminalId} not found`));
+      },
+      releaseTerminal: (a) => {
+        const l = this.terminalHandles.get(a.terminalId);
+        return l ? l.release().then(() => (this.terminalHandles.delete(a.terminalId), {})) : Promise.resolve({});
+      },
+      waitForTerminalExit: (a) => {
+        const l = this.terminalHandles.get(a.terminalId);
+        return l ? l.waitForExit() : Promise.reject(new Error(`terminal ${a.terminalId} not found`));
+      },
+      killTerminal: (a) => {
+        const l = this.terminalHandles.get(a.terminalId);
+        return l ? l.kill().then(() => ({})) : Promise.reject(new Error(`terminal ${a.terminalId} not found`));
+      },
+      extMethod: (a, l) => this.extMethodHandler ? this.extMethodHandler(a, l) : Promise.reject(new Error(`extension method ${a} not supported`)),
+      extNotification: (a, l) => (this.extNotificationHandler && this.extNotificationHandler(a, l), Promise.resolve())
+    };
+    this.connection = new oe(
+      (a) => s,
+      t
+    ), this.connection.closed.then(() => {
+      this.setStatus("disconnected");
+      for (const a of this.closeHandlers) a();
+      this.closeHandlers.clear();
+    }).catch(() => {
+      this.setStatus("disconnected");
+      for (const a of this.closeHandlers) a();
+      this.closeHandlers.clear();
+    });
+  }
+  async initialize(e, t) {
+    if (!this.connection) throw new Error("Not connected");
+    this._clientInfo = e, this._clientCapabilities = t;
+    const s = {
+      protocolVersion: 1,
+      clientInfo: e ?? null,
+      clientCapabilities: t ?? void 0
+    }, n = await this.connection.initialize(s);
+    return this._agentInfo = n.agentInfo ?? null, this._capabilities = n.agentCapabilities ?? null, this.setStatus("connected"), n;
+  }
+  async newSession(e, t = []) {
+    if (!this.connection) throw new Error("Not connected");
+    return this.connection.newSession({ cwd: e, mcpServers: t });
+  }
+  async forkSession(e, t, s = []) {
+    if (!this.connection) throw new Error("Not connected");
+    return this.connection.unstable_forkSession({ sessionId: e, cwd: t, mcpServers: s });
+  }
+  async prompt(e, t) {
+    if (!this.connection) throw new Error("Not connected");
+    return this.connection.prompt({ sessionId: e, prompt: t });
+  }
+  async cancel(e) {
+    if (!this.connection) throw new Error("Not connected");
+    const t = { sessionId: e };
+    await this.connection.cancel(t);
+  }
+  async listSessions(e, t) {
+    if (!this.connection) throw new Error("Not connected");
+    const s = {};
+    return e && (s.cursor = e), t && (s.cwd = t), this.connection.listSessions(s);
+  }
+  async loadSession(e, t, s = []) {
+    if (!this.connection) throw new Error("Not connected");
+    return this.connection.loadSession({ sessionId: e, cwd: t, mcpServers: s });
+  }
+  async setSessionConfigOption(e, t, s) {
+    if (!this.connection) throw new Error("Not connected");
+    const n = { sessionId: e, configId: t };
+    return typeof s == "boolean" && (n.type = "boolean"), n.value = s, this.connection.setSessionConfigOption(n);
+  }
+  async closeSession(e) {
+    if (!this.connection) throw new Error("Not connected");
+    const t = { sessionId: e };
+    return this.connection.closeSession(t);
+  }
+  async deleteSession(e) {
+    if (!this.connection) throw new Error("Not connected");
+    const t = { sessionId: e };
+    return this.connection.deleteSession(t);
+  }
+  async authenticate(e) {
+    if (!this.connection) throw new Error("Not connected");
+    const t = { methodId: e };
+    return this.connection.authenticate(t);
+  }
+  async extMethod(e, t) {
+    if (!this.connection) throw new Error("Not connected");
+    return this.connection.extMethod(e, t);
+  }
+  async extNotification(e, t) {
+    if (!this.connection) throw new Error("Not connected");
+    return this.connection.extNotification(e, t);
+  }
+  disconnect() {
+    var e;
+    for (const [, t] of this.terminalHandles)
+      try {
+        t.release();
+      } catch {
+      }
+    this.terminalHandles.clear(), (e = this.transport) == null || e.disconnect(), this.connection = null, this.transport = null;
+  }
+  async reconnectWithEnv(e) {
+    if (!this._transportConfig) throw new Error("Not connected");
+    this.disconnect(), this._status = "disconnected";
+    const t = { ...this._transportConfig };
+    return t.type === "stdio" && (t.env = { ...t.env, ...e }), this._transportConfig = t, await this.connect(t), this.initialize(this._clientInfo, this._clientCapabilities);
+  }
+}
+function R(r, e) {
+  for (const [t, s] of r)
+    if (s.sessions.has(e)) return t;
+  return null;
+}
+function de(r) {
+  return { cwd: r, sessions: /* @__PURE__ */ new Map(), sessionListCursors: /* @__PURE__ */ new Map() };
+}
+const g = $((r) => ({
+  agents: /* @__PURE__ */ new Map(),
+  workspaces: /* @__PURE__ */ new Map(),
+  activeSessionId: null,
+  pendingAuth: null,
+  // --- Workspace management ---
+  addWorkspace: (e) => r((t) => {
+    if (t.workspaces.has(e)) return t;
+    const s = new Map(t.workspaces);
+    return s.set(e, de(e)), { workspaces: s };
+  }),
+  removeWorkspace: (e) => r((t) => {
+    const s = t.workspaces.get(e);
+    if (!s) return t;
+    let n = t.activeSessionId;
+    n && s.sessions.has(n) && (n = null);
+    const o = new Map(t.workspaces);
+    return o.delete(e), n !== t.activeSessionId ? { workspaces: o, activeSessionId: null } : { workspaces: o };
+  }),
+  // --- Agent management ---
+  addAgent: (e) => r((t) => {
+    const s = new Map(t.agents);
+    return s.set(e.id, e), { agents: s };
+  }),
+  removeAgent: (e) => r((t) => {
+    const s = new Map(t.agents);
+    s.delete(e);
+    const n = new Map(t.workspaces);
+    for (const [i, c] of t.workspaces) {
+      const a = new Map(c.sessions);
+      let l = !1;
+      for (const [u, p] of c.sessions)
+        p.agentId === e && (a.delete(u), l = !0);
+      l && n.set(i, { ...c, sessions: a });
+    }
+    let o = t.activeSessionId;
+    if (o) {
+      let i = !1;
+      for (const [, c] of n)
+        if (c.sessions.has(o)) {
+          i = !0;
+          break;
+        }
+      i || (o = null);
+    }
+    return {
+      agents: s,
+      workspaces: n,
+      ...o !== t.activeSessionId ? { activeSessionId: null } : {}
+    };
+  }),
+  updateAgent: (e, t) => r((s) => {
+    const n = s.agents.get(e);
+    if (!n) return s;
+    const o = new Map(s.agents);
+    return o.set(e, { ...n, ...t }), { agents: o };
+  }),
+  // --- Session management ---
+  setSessions: (e, t, s) => r((n) => {
+    const o = new Map(n.workspaces), i = o.get(s);
+    if (!i) return n;
+    const c = new Map(i.sessions);
+    for (const [l, u] of i.sessions)
+      u.agentId === t && c.delete(l);
+    for (const l of e)
+      c.set(l.sessionId, {
+        id: l.sessionId,
+        title: l.title ?? void 0,
+        cwd: l.cwd,
+        updatedAt: l.updatedAt ?? void 0,
+        agentId: t,
+        loaded: !1
+      });
+    const a = new Map(i.sessionListCursors);
+    return a.delete(t), o.set(s, { ...i, sessions: c, sessionListCursors: a }), { workspaces: o };
+  }),
+  appendSessions: (e, t, s, n) => r((o) => {
+    const i = new Map(o.workspaces), c = i.get(s);
+    if (!c) return o;
+    const a = new Map(c.sessions);
+    for (const u of e)
+      a.set(u.sessionId, {
+        id: u.sessionId,
+        title: u.title ?? void 0,
+        cwd: u.cwd,
+        updatedAt: u.updatedAt ?? void 0,
+        agentId: t,
+        loaded: !1
+      });
+    const l = new Map(c.sessionListCursors);
+    return n ? l.set(t, n) : l.delete(t), i.set(s, { ...c, sessions: a, sessionListCursors: l }), { workspaces: i };
+  }),
+  addSession: (e) => r((t) => {
+    const s = new Map(t.workspaces), n = s.get(e.cwd);
+    if (!n) return t;
+    const o = new Map(n.sessions);
+    return o.set(e.id, e), s.set(e.cwd, { ...n, sessions: o }), { workspaces: s };
+  }),
+  removeSession: (e) => r((t) => {
+    const s = R(t.workspaces, e);
+    if (!s) return t;
+    const n = new Map(t.workspaces), o = n.get(s), i = new Map(o.sessions);
+    return i.delete(e), n.set(s, { ...o, sessions: i }), t.activeSessionId === e ? { workspaces: n, activeSessionId: null } : { workspaces: n };
+  }),
+  updateSession: (e, t) => r((s) => {
+    const n = R(s.workspaces, e);
+    if (!n) return s;
+    const o = new Map(s.workspaces), i = o.get(n), c = i.sessions.get(e);
+    if (!c) return s;
+    const a = new Map(i.sessions);
+    return a.set(e, { ...c, ...t }), o.set(n, { ...i, sessions: a }), { workspaces: o };
+  }),
+  setActiveSession: (e) => r((t) => t.activeSessionId === e ? t : e === null ? { activeSessionId: null } : R(t.workspaces, e) ? { activeSessionId: e } : t),
+  setAuthRequired: (e) => r({ pendingAuth: { agentId: e } }),
+  clearAuthRequired: () => r({ pendingAuth: null })
+}));
+let ue = 0;
+function O(r) {
+  return `${r}_${Date.now()}_${++ue}`;
+}
+function U() {
+  return {
+    messages: [],
+    isStreaming: !1,
+    pendingToolCalls: /* @__PURE__ */ new Map(),
+    pendingPermissions: [],
+    plan: [],
+    usage: null,
+    configOptions: [],
+    availableCommands: [],
+    terminals: /* @__PURE__ */ new Map()
+  };
+}
+function j(r, e) {
+  const t = r.parts, s = t[t.length - 1];
+  if ((s == null ? void 0 : s.type) === "content") {
+    const n = s.content;
+    if (n.length > 0) {
+      const o = n[n.length - 1];
+      if (o.type === "text" && e.type === "text" && !("annotations" in e && e.annotations != null))
+        return {
+          ...r,
+          parts: [
+            ...t.slice(0, -1),
+            { ...s, content: [...n.slice(0, -1), { ...o, text: o.text + e.text }] }
+          ]
+        };
+    }
+    return {
+      ...r,
+      parts: [...t.slice(0, -1), { ...s, content: [...n, e] }]
+    };
+  }
+  return { ...r, parts: [...t, { type: "content", content: [e] }] };
+}
+function L(r, e) {
+  const t = r.parts, s = t[t.length - 1];
+  if ((s == null ? void 0 : s.type) === "thought") {
+    const n = s.thought;
+    if (n.length > 0) {
+      const o = n[n.length - 1];
+      if (o.type === "text" && e.type === "text" && !("annotations" in e && e.annotations != null))
+        return {
+          ...r,
+          parts: [
+            ...t.slice(0, -1),
+            { ...s, thought: [...n.slice(0, -1), { ...o, text: o.text + e.text }] }
+          ]
+        };
+    }
+    return {
+      ...r,
+      parts: [...t.slice(0, -1), { ...s, thought: [...n, e] }]
+    };
+  }
+  return { ...r, parts: [...t, { type: "thought", thought: [e] }] };
+}
+const m = $((r) => ({
+  sessions: /* @__PURE__ */ new Map(),
+  ensureSession: (e) => r((t) => {
+    if (t.sessions.has(e)) return t;
+    const s = new Map(t.sessions);
+    return s.set(e, U()), { sessions: s };
+  }),
+  removeSession: (e) => r((t) => {
+    const s = new Map(t.sessions);
+    return s.delete(e), { sessions: s };
+  }),
+  resetSession: (e) => r((t) => {
+    const s = new Map(t.sessions);
+    return s.set(e, U()), { sessions: s };
+  }),
+  addMessage: (e, t) => r((s) => {
+    const n = s.sessions.get(e);
+    if (!n) return s;
+    const o = new Map(s.sessions);
+    return o.set(e, { ...n, messages: [...n.messages, t] }), { sessions: o };
+  }),
+  updateMessage: (e, t, s) => r((n) => {
+    const o = n.sessions.get(e);
+    if (!o) return n;
+    const i = new Map(n.sessions);
+    return i.set(e, {
+      ...o,
+      messages: o.messages.map((c) => c.id === t ? { ...c, ...s } : c)
+    }), { sessions: i };
+  }),
+  appendContent: (e, t, s, n) => r((o) => {
+    const i = o.sessions.get(e);
+    if (!i) return o;
+    const c = i.messages, a = c.length - 1;
+    let l;
+    if (a >= 0 && c[a].id === t) {
+      const p = j(c[a], n);
+      l = [...c.slice(0, a), p];
+    } else {
+      const p = c.findIndex((w) => w.id === t);
+      if (p >= 0) {
+        const w = j(c[p], n);
+        l = [...c.slice(0, p), w, ...c.slice(p + 1)];
+      } else {
+        const w = {
+          id: t,
+          role: s,
+          parts: [{ type: "content", content: [n] }],
+          timestamp: Date.now()
+        };
+        l = [...c, w];
+      }
+    }
+    const u = new Map(o.sessions);
+    return u.set(e, { ...i, messages: l }), { sessions: u };
+  }),
+  appendThought: (e, t, s, n) => r((o) => {
+    const i = o.sessions.get(e);
+    if (!i) return o;
+    const c = i.messages, a = c.length - 1;
+    let l;
+    if (a >= 0 && c[a].id === t) {
+      const p = L(c[a], n);
+      l = [...c.slice(0, a), p];
+    } else {
+      const p = c.findIndex((w) => w.id === t);
+      if (p >= 0) {
+        const w = L(c[p], n);
+        l = [...c.slice(0, p), w, ...c.slice(p + 1)];
+      } else {
+        const w = {
+          id: t,
+          role: s,
+          parts: [{ type: "thought", thought: [n] }],
+          timestamp: Date.now()
+        };
+        l = [...c, w];
+      }
+    }
+    const u = new Map(o.sessions);
+    return u.set(e, { ...i, messages: l }), { sessions: u };
+  }),
+  setIsStreaming: (e, t) => r((s) => {
+    const n = s.sessions.get(e);
+    if (!n) return s;
+    const o = new Map(s.sessions);
+    return o.set(e, { ...n, isStreaming: t }), { sessions: o };
+  }),
+  setStopReason: (e, t) => r((s) => {
+    const n = s.sessions.get(e);
+    if (!n || n.messages.length === 0) return s;
+    const o = new Map(s.sessions), i = [...n.messages], c = i.length - 1;
+    return i[c] = { ...i[c], stopReason: t }, o.set(e, { ...n, messages: i }), { sessions: o };
+  }),
+  upsertToolCall: (e, t) => r((s) => {
+    const n = s.sessions.get(e);
+    if (!n) return s;
+    const o = new Map(s.sessions), i = new Map(n.pendingToolCalls), c = i.get(t.toolCallId);
+    i.set(t.toolCallId, c ? { ...c, ...t } : t);
+    const a = n.messages[n.messages.length - 1];
+    let l;
+    if (a && a.role === "agent") {
+      const u = a.parts, p = u[u.length - 1];
+      if ((p == null ? void 0 : p.type) === "tool_calls") {
+        const w = p.toolCalls, x = w.findIndex((S) => S.toolCallId === t.toolCallId);
+        if (x >= 0) {
+          const S = [...w];
+          S[x] = { ...S[x], ...t }, l = [
+            ...n.messages.slice(0, -1),
+            { ...a, parts: [...u.slice(0, -1), { ...p, toolCalls: S }] }
+          ];
+        } else
+          l = [
+            ...n.messages.slice(0, -1),
+            { ...a, parts: [...u.slice(0, -1), { ...p, toolCalls: [...w, t] }] }
+          ];
+      } else
+        l = [
+          ...n.messages.slice(0, -1),
+          { ...a, parts: [...u, { type: "tool_calls", toolCalls: [t] }] }
+        ];
+    } else
+      l = [
+        ...n.messages,
+        {
+          id: O("msg"),
+          role: "agent",
+          parts: [{ type: "tool_calls", toolCalls: [t] }],
+          timestamp: Date.now()
+        }
+      ];
+    return o.set(e, { ...n, pendingToolCalls: i, messages: l }), { sessions: o };
+  }),
+  updateToolCall: (e, t, s) => r((n) => {
+    const o = n.sessions.get(e);
+    if (!o) return n;
+    const i = o.pendingToolCalls.get(t);
+    if (!i) return n;
+    const c = new Map(o.pendingToolCalls), a = {
+      ...i,
+      ...s,
+      content: "content" in s ? s.content ?? [] : i.content,
+      locations: "locations" in s ? s.locations ?? [] : i.locations
+    };
+    c.set(t, a);
+    const l = o.messages.map((p) => {
+      const w = p.parts.findIndex((x) => x.type === "tool_calls" && x.toolCalls.some((S) => S.toolCallId === t));
+      if (w >= 0) {
+        const x = p.parts[w];
+        if (x.type === "tool_calls") {
+          const S = [...p.parts];
+          return S[w] = {
+            ...x,
+            toolCalls: x.toolCalls.map((b) => b.toolCallId === t ? a : b)
+          }, { ...p, parts: S };
+        }
+      }
+      return p;
+    }), u = new Map(n.sessions);
+    return u.set(e, { ...o, pendingToolCalls: c, messages: l }), { sessions: u };
+  }),
+  addPermissionRequest: (e, t) => r((s) => {
+    const n = s.sessions.get(e);
+    if (!n) return s;
+    const o = new Map(s.sessions);
+    return o.set(e, {
+      ...n,
+      pendingPermissions: [...n.pendingPermissions, t]
+    }), { sessions: o };
+  }),
+  removePermissionRequest: (e, t) => r((s) => {
+    const n = s.sessions.get(e);
+    if (!n) return s;
+    const o = new Map(s.sessions);
+    return o.set(e, {
+      ...n,
+      pendingPermissions: n.pendingPermissions.filter((i) => i.id !== t)
+    }), { sessions: o };
+  }),
+  setPlan: (e, t) => r((s) => {
+    const n = s.sessions.get(e);
+    if (!n) return s;
+    const o = [
+      ...n.messages,
+      {
+        id: O("plan"),
+        role: "agent",
+        parts: [{ type: "plan", plan: t }],
+        timestamp: Date.now()
+      }
+    ], i = new Map(s.sessions);
+    return i.set(e, { ...n, plan: t, messages: o }), { sessions: i };
+  }),
+  setUsage: (e, t) => r((s) => {
+    const n = s.sessions.get(e);
+    if (!n) return s;
+    const o = new Map(s.sessions);
+    return o.set(e, { ...n, usage: t }), { sessions: o };
+  }),
+  setConfigOptions: (e, t) => r((s) => {
+    const n = s.sessions.get(e);
+    if (!n) return s;
+    const o = new Map(s.sessions);
+    return o.set(e, { ...n, configOptions: t }), { sessions: o };
+  }),
+  setAvailableCommands: (e, t) => r((s) => {
+    const n = s.sessions.get(e);
+    if (!n) return s;
+    const o = new Map(s.sessions);
+    return o.set(e, { ...n, availableCommands: t }), { sessions: o };
+  }),
+  setPartExpanded: (e, t, s, n) => r((o) => {
+    const i = o.sessions.get(e);
+    if (!i) return o;
+    const c = i.messages.map((l) => {
+      if (l.id !== t) return l;
+      const u = l.parts[s];
+      if (!u || u.type !== "thought" && u.type !== "tool_calls") return l;
+      const p = { ...u, expanded: n }, w = [...l.parts];
+      return w[s] = p, { ...l, parts: w };
+    }), a = new Map(o.sessions);
+    return a.set(e, { ...i, messages: c }), { sessions: a };
+  }),
+  addTerminal: (e, t) => r((s) => {
+    const n = s.sessions.get(e);
+    if (!n) return s;
+    const o = new Map(n.terminals);
+    o.set(t.terminalId, t);
+    const i = new Map(s.sessions);
+    return i.set(e, { ...n, terminals: o }), { sessions: i };
+  }),
+  updateTerminalOutput: (e, t, s, n) => r((o) => {
+    const i = o.sessions.get(e);
+    if (!i) return o;
+    const c = i.terminals.get(t);
+    if (!c) return o;
+    const a = new Map(i.terminals);
+    a.set(t, { ...c, output: s, truncated: n });
+    const l = new Map(o.sessions);
+    return l.set(e, { ...i, terminals: a }), { sessions: l };
+  }),
+  updateTerminalExit: (e, t, s) => r((n) => {
+    const o = n.sessions.get(e);
+    if (!o) return n;
+    const i = o.terminals.get(t);
+    if (!i) return n;
+    const c = new Map(o.terminals);
+    c.set(t, { ...i, exitStatus: s });
+    const a = new Map(n.sessions);
+    return a.set(e, { ...o, terminals: c }), { sessions: a };
+  }),
+  removeTerminal: (e, t) => r((s) => {
+    const n = s.sessions.get(e);
+    if (!n || !n.terminals.has(t)) return s;
+    const o = new Map(n.terminals);
+    o.delete(t);
+    const i = new Map(s.sessions);
+    return i.set(e, { ...n, terminals: o }), { sessions: i };
+  })
+}));
+function E(r, e, t) {
+  let s = r.get(e);
+  return s ? t && !s.directoryReader && (s = { ...s, directoryReader: t }, r.set(e, s)) : (s = { rootNodes: [], loading: !1, error: null, directoryReader: t ?? null }, r.set(e, s)), s;
+}
+function K(r, e) {
+  if (!e.startsWith(r)) return !1;
+  if (e.length === r.length) return !0;
+  const t = e[r.length];
+  return t === "/" || t === "\\";
+}
+function F(r, e, t) {
+  let s = !1;
+  const n = r.map((o) => {
+    if (o.path === e)
+      return s = !0, t(o);
+    if (!o.children || !K(o.path, e))
+      return o;
+    const i = F(o.children, e, t);
+    return i === o.children ? o : (s = !0, { ...o, children: i });
+  });
+  return s ? n : r;
+}
+function D(r, e) {
+  for (const t of r) {
+    if (t.path === e) return t;
+    if (t.children && K(t.path, e)) {
+      const s = D(t.children, e);
+      if (s) return s;
+    }
+  }
+  return null;
+}
+const y = $((r) => ({
+  workspaces: /* @__PURE__ */ new Map(),
+  initWorkspace: (e, t) => {
+    r((s) => {
+      const n = new Map(s.workspaces);
+      return E(n, e, t), { workspaces: n };
+    });
+  },
+  removeWorkspace: (e) => {
+    r((t) => {
+      const s = new Map(t.workspaces);
+      return s.delete(e), { workspaces: s };
+    });
+  },
+  setReader: (e, t) => {
+    r((s) => {
+      const n = new Map(s.workspaces), o = E(n, e);
+      return n.set(e, { ...o, directoryReader: t }), { workspaces: n };
+    });
+  },
+  setLoading: (e, t) => {
+    r((s) => {
+      const n = new Map(s.workspaces), o = E(n, e);
+      return n.set(e, { ...o, loading: t }), { workspaces: n };
+    });
+  },
+  setError: (e, t) => {
+    r((s) => {
+      const n = new Map(s.workspaces), o = E(n, e);
+      return n.set(e, { ...o, error: t }), { workspaces: n };
+    });
+  },
+  setRootNodes: (e, t) => {
+    r((s) => {
+      const n = new Map(s.workspaces), o = E(n, e);
+      return n.set(e, {
+        ...o,
+        rootNodes: t,
+        loading: !1,
+        error: null
+      }), { workspaces: n };
+    });
+  },
+  updateNode: (e, t, s) => {
+    r((n) => {
+      const o = new Map(n.workspaces), i = E(o, e), c = F(i.rootNodes, t, (a) => ({
+        ...a,
+        ...s
+      }));
+      return o.set(e, { ...i, rootNodes: c }), { workspaces: o };
+    });
+  },
+  replaceChildren: (e, t, s) => {
+    r((n) => {
+      const o = new Map(n.workspaces), i = E(o, e), c = F(i.rootNodes, t, (a) => ({
+        ...a,
+        children: s,
+        loaded: !0
+      }));
+      return o.set(e, { ...i, rootNodes: c }), { workspaces: o };
+    });
+  }
+}));
+function pe() {
+  return typeof crypto < "u" && crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+}
+function fe(r) {
+  const e = /* @__PURE__ */ new Map();
+  function t(n, o, i) {
+    var l;
+    if (i)
+      return e.has(n) || e.set(n, {}), e.get(n)[o] = i, i;
+    const c = (l = e.get(n)) == null ? void 0 : l[o];
+    if (c) return c;
+    const a = pe();
+    return e.has(n) || e.set(n, {}), e.get(n)[o] = a, a;
+  }
+  function s(n, ...o) {
+    const i = e.get(n);
+    if (i) {
+      for (const c of o) delete i[c];
+      Object.keys(i).length === 0 && e.delete(n);
+    }
+  }
+  return r.onSessionUpdate((n) => {
+    const { sessionId: o, update: i } = n, c = m.getState();
+    switch (c.ensureSession(o), i.sessionUpdate) {
+      case "agent_message_chunk":
+        if (s(o, "user", "thought"), "content" in i && i.content) {
+          const a = t(o, "agent", i.messageId);
+          c.appendContent(o, a, "agent", i.content);
+        }
+        break;
+      case "user_message_chunk":
+        if (s(o, "agent", "thought"), "content" in i && i.content) {
+          const a = t(o, "user", i.messageId);
+          c.appendContent(o, a, "user", i.content);
+        }
+        break;
+      case "agent_thought_chunk":
+        if (s(o, "user", "agent"), "content" in i && i.content) {
+          const a = t(o, "thought", i.messageId);
+          c.appendThought(o, a, "agent", i.content);
+        }
+        break;
+      case "tool_call":
+        s(o, "user", "agent", "thought"), c.upsertToolCall(o, {
+          toolCallId: i.toolCallId,
+          title: i.title,
+          content: i.content || [],
+          locations: i.locations,
+          status: i.status,
+          kind: i.kind,
+          rawInput: i.rawInput,
+          rawOutput: i.rawOutput
+        });
+        break;
+      case "tool_call_update":
+        s(o, "user", "agent", "thought");
+        {
+          const a = {};
+          i.content !== void 0 && (a.content = i.content), i.status !== void 0 && (a.status = i.status), i.rawOutput !== void 0 && (a.rawOutput = i.rawOutput), i.title && (a.title = i.title), i.locations !== void 0 && (a.locations = i.locations), i.kind !== void 0 && (a.kind = i.kind), i.rawInput !== void 0 && (a.rawInput = i.rawInput), c.updateToolCall(o, i.toolCallId, a);
+        }
+        break;
+      case "plan":
+        s(o, "user", "agent", "thought"), c.setPlan(o, i.entries);
+        break;
+      case "session_info_update": {
+        const a = {};
+        "title" in i && (a.title = i.title ?? void 0), "updatedAt" in i && (a.updatedAt = i.updatedAt ?? void 0), g.getState().updateSession(o, a);
+        break;
+      }
+      case "usage_update":
+        c.setUsage(o, i);
+        break;
+      case "config_option_update":
+        c.setConfigOptions(o, i.configOptions);
+        break;
+      case "available_commands_update":
+        c.setAvailableCommands(o, i.availableCommands);
+        break;
+    }
+  });
+}
+function he(r, e, t, s) {
+  var i, c, a;
+  const n = {
+    ...r,
+    fs: {
+      ...r == null ? void 0 : r.fs,
+      ...e ? { readTextFile: !0 } : {},
+      ...t ? { writeTextFile: !0 } : {}
+    },
+    ...s ? { terminal: !0 } : {},
+    auth: {
+      ...r == null ? void 0 : r.auth,
+      ...s ? { terminal: !0 } : {}
+    }
+  };
+  return ((i = n.fs) == null ? void 0 : i.readTextFile) || ((c = n.fs) == null ? void 0 : c.writeTextFile) || n.terminal || (a = n.auth) != null && a.terminal ? n : void 0;
+}
+function xe({ agents: r, onTerminal: e, onExtMethod: t, onExtNotification: s, fileSystem: n }) {
+  const o = n == null ? void 0 : n.onFileRead, i = n == null ? void 0 : n.onFileWrite, c = e, a = t, l = s, u = /* @__PURE__ */ new Map(), p = /* @__PURE__ */ new Map();
+  let w = 0;
+  function x(d) {
+    d.setPermissionHandler((f) => {
+      const k = m.getState();
+      return new Promise((C) => {
+        const v = {
+          id: `perm_${++w}`,
+          sessionId: f.sessionId,
+          toolCall: f.toolCall,
+          options: f.options,
+          resolve: (T) => {
+            C({ outcome: { outcome: "selected", optionId: T } });
+          },
+          reject: () => {
+            C({ outcome: { outcome: "cancelled" } });
+          }
+        };
+        k.ensureSession(f.sessionId), k.addPermissionRequest(f.sessionId, v);
+      });
+    });
+  }
+  async function S(d) {
+    const f = new le();
+    u.set(d.id, f);
+    const k = f.onStatusChange((M) => {
+      g.getState().updateAgent(d.id, { status: M });
+    }), C = fe(f);
+    if (x(f), c) {
+      const M = {
+        create: async (H) => {
+          const _ = await c.create(H), ee = {
+            terminalId: _.terminalId,
+            command: H.command,
+            args: H.args,
+            cwd: H.cwd,
+            output: "",
+            exitStatus: null,
+            truncated: !1
+          };
+          return m.getState().addTerminal(H.sessionId, ee), _.onOutputChange((A) => {
+            m.getState().updateTerminalOutput(H.sessionId, _.terminalId, A, !1);
+          }), _.onExit((A) => {
+            m.getState().updateTerminalExit(H.sessionId, _.terminalId, A);
+          }), _;
+        }
+      };
+      f.setTerminalHandler(M);
+    }
+    o && f.setFileReadHandler(o), i && f.setFileWriteHandler(i), a && f.setExtMethodHandler(a), l && f.setExtNotificationHandler(l), p.set(d.id, () => {
+      k(), C();
+    }), await f.connect(d.transport);
+    const v = he(d.clientCapabilities, o, i, c), T = await f.initialize(d.clientInfo, v);
+    g.getState().updateAgent(d.id, {
+      agentInfo: f.agentInfo,
+      capabilities: f.capabilities,
+      status: "connected",
+      authMethods: T.authMethods ?? []
+    }), console.log(`Agent ${d.id} connected successfully.`);
+  }
+  let b = !1;
+  const P = /* @__PURE__ */ new Set();
+  function Q() {
+    for (const d of P) d();
+  }
+  const N = /* @__PURE__ */ new Set();
+  function q(d) {
+    var k, C;
+    const f = g.getState().workspaces.get(d);
+    for (const [v, T] of u)
+      if ((C = (k = T.capabilities) == null ? void 0 : k.sessionCapabilities) != null && C.list) {
+        if (f) {
+          let M = !1;
+          for (const H of f.sessions.values())
+            if (H.agentId === v) {
+              M = !0;
+              break;
+            }
+          if (M) continue;
+        }
+        T.listSessions(void 0, d).then((M) => {
+          g.getState().setSessions(M.sessions, v, d), M.nextCursor && g.getState().appendSessions([], v, d, M.nextCursor);
+        }).catch(() => {
+        });
+      }
+  }
+  for (const d of r)
+    g.getState().addAgent({
+      id: d.id,
+      name: d.name,
+      status: "connecting",
+      agentInfo: null,
+      capabilities: null,
+      authMethods: []
+    });
+  Promise.allSettled(r.map(
+    (d) => S(d).catch((f) => {
+      console.error(`Agent ${d.id} connection failed:`, f), g.getState().updateAgent(d.id, { status: "error" });
+    })
+  )).then(() => {
+    b = !0, Q();
+    for (const d of N)
+      q(d);
+  }).catch((d) => {
+    console.error("Error during agents connection:", d);
+  });
+  const X = g.subscribe((d) => {
+    for (const [f] of d.workspaces)
+      N.has(f) || (N.add(f), b && q(f));
+    for (const f of N)
+      d.workspaces.has(f) || N.delete(f);
+  });
+  async function Y(d) {
+    g.getState().addAgent({
+      id: d.id,
+      name: d.name,
+      status: "connecting",
+      agentInfo: null,
+      capabilities: null,
+      authMethods: []
+    }), await S(d);
+  }
+  async function Z(d) {
+    const f = u.get(d);
+    f && (f.disconnect(), u.delete(d));
+    const k = p.get(d);
+    k && (k(), p.delete(d)), g.getState().removeAgent(d);
+  }
+  return {
+    get ready() {
+      return b;
+    },
+    subscribe(d) {
+      return P.add(d), () => {
+        P.delete(d);
+      };
+    },
+    destroy() {
+      X();
+      for (const [, d] of p) d();
+      p.clear();
+      for (const [, d] of u) d.disconnect();
+      u.clear(), P.clear();
+    },
+    getClient: (d) => u.get(d) ?? null,
+    addAgent: Y,
+    removeAgent: Z
+  };
+}
+const W = /* @__PURE__ */ new Set();
+function I(r) {
+  var t;
+  const e = (t = y.getState().workspaces.get(r)) == null ? void 0 : t.directoryReader;
+  if (!e)
+    throw new Error(
+      `DirectoryReadHandler not registered for workspace "${r}". Pass onDirectoryRead to createFileSystemProvider options.`
+    );
+  return e;
+}
+function V(r) {
+  const e = [];
+  for (const t of r)
+    t.kind === "directory" && t.expanded && t.children && (e.push(t.path), e.push(...V(t.children)));
+  return e;
+}
+async function G(r, e, t) {
+  if (t.size === 0) return e;
+  const s = [];
+  for (let c = 0; c < e.length; c++)
+    t.has(e[c].path) && e[c].kind === "directory" && s.push({ index: c, node: e[c] });
+  if (s.length === 0) return e;
+  const n = await Promise.allSettled(
+    s.map(({ node: c }) => r(c.path))
+  );
+  let o = e, i = !1;
+  for (let c = 0; c < s.length; c++) {
+    const { index: a, node: l } = s[c], u = n[c];
+    if (u.status === "fulfilled") {
+      i || (o = [...e], i = !0);
+      const p = await G(r, u.value, t);
+      o[a] = {
+        ...l,
+        children: p,
+        expanded: !0,
+        loaded: !0
+      };
+    }
+  }
+  return o;
+}
+async function B(r) {
+  const e = I(r), t = y.getState();
+  t.setLoading(r, !0), t.setError(r, null);
+  try {
+    const s = await e(r);
+    t.setRootNodes(r, s);
+  } catch (s) {
+    t.setLoading(r, !1), t.setError(r, s instanceof Error ? s.message : "Failed to load file tree");
+  }
+}
+async function ye(r, e) {
+  const t = I(r), s = y.getState(), n = s.workspaces.get(r);
+  if (!n) return;
+  const o = D(n.rootNodes, e);
+  if (o != null && o.loaded) {
+    s.updateNode(r, e, { expanded: !0 });
+    return;
+  }
+  const i = `${r}::${e}`;
+  if (!W.has(i)) {
+    s.updateNode(r, e, { expanded: !0 }), W.add(i);
+    try {
+      const c = await t(e), a = y.getState().workspaces.get(r), l = a ? D(a.rootNodes, e) : null;
+      l != null && l.loaded || s.replaceChildren(r, e, c);
+    } catch {
+    } finally {
+      W.delete(i);
+    }
+  }
+}
+function ke(r, e) {
+  y.getState().updateNode(r, e, { expanded: !1 });
+}
+async function z(r) {
+  const e = I(r), t = y.getState(), s = t.workspaces.get(r);
+  if (!s) return;
+  const n = new Set(V(s.rootNodes));
+  t.setLoading(r, !0), t.setError(r, null);
+  try {
+    const o = await e(r), i = await G(e, o, n);
+    t.setRootNodes(r, i);
+  } catch (o) {
+    t.setLoading(r, !1), t.setError(r, o instanceof Error ? o.message : "Failed to refresh file tree");
+  }
+}
+async function J(r, e) {
+  const t = I(r), s = y.getState();
+  if (s.workspaces.get(r))
+    try {
+      const o = await t(e);
+      s.replaceChildren(r, e, o);
+    } catch (o) {
+      const i = o instanceof Error ? o.message : String(o);
+      s.setError(r, `Failed to refresh "${e}": ${i}`);
+    }
+}
+function Me(r) {
+  const {
+    onDirectoryRead: e,
+    onFileTreeWatch: t,
+    autoLoad: s = "onWorkspaceAdd"
+  } = r;
+  let n = null;
+  if (t) {
+    const a = t({
+      onDirectoryChanged: (l, u) => {
+        J(l, u).catch(() => {
+        });
+      },
+      onWorkspaceChanged: (l) => {
+        z(l).catch(() => {
+        });
+      }
+    });
+    typeof a == "function" && (n = a);
+  }
+  const o = /* @__PURE__ */ new Set(), i = e && s === "onWorkspaceAdd" ? g.subscribe((c) => {
+    for (const [a] of c.workspaces)
+      o.has(a) || (o.add(a), y.getState().initWorkspace(a, e), B(a).catch(() => {
+      }));
+    for (const a of o)
+      c.workspaces.has(a) || (o.delete(a), y.getState().removeWorkspace(a));
+  }) : () => {
+  };
+  return {
+    loadFileTree: (c) => {
+      if (!e) throw new Error("onDirectoryRead is required for loadFileTree");
+      return y.getState().initWorkspace(c, e), B(c);
+    },
+    refreshFileTree: (c) => z(c),
+    refreshNode: (c, a) => J(c, a),
+    setDirectoryReader: (c, a) => y.getState().setReader(c, a),
+    destroy() {
+      i(), n && n();
+      for (const c of o)
+        y.getState().removeWorkspace(c);
+    }
+  };
+}
+async function He(r, e, t) {
+  const s = await r.newSession(t), n = { id: s.sessionId, cwd: t, agentId: e, loaded: !0 };
+  return g.getState().addSession(n), m.getState().ensureSession(s.sessionId), s.configOptions && m.getState().setConfigOptions(s.sessionId, s.configOptions), s.sessionId;
+}
+async function Ce(r, e) {
+  const t = R(g.getState().workspaces, e);
+  if (!t) throw new Error(`Source session ${e} not found in any workspace`);
+  const s = g.getState().workspaces.get(t), n = s == null ? void 0 : s.sessions.get(e);
+  if (!n) throw new Error(`Source session ${e} not found`);
+  const o = await r.forkSession(e, t), i = { id: o.sessionId, cwd: t, agentId: n.agentId, loaded: !0 };
+  return g.getState().addSession(i), m.getState().ensureSession(o.sessionId), o.configOptions && m.getState().setConfigOptions(o.sessionId, o.configOptions), o.sessionId;
+}
+async function ge(r, e, t) {
+  m.getState().resetSession(e);
+  const s = await r.loadSession(e, t);
+  s.configOptions && m.getState().setConfigOptions(e, s.configOptions), g.getState().updateSession(e, { loaded: !0 });
+}
+async function ve(r, e) {
+  const t = g.getState(), s = R(t.workspaces, e);
+  if (!s) return;
+  const n = t.workspaces.get(s), o = n == null ? void 0 : n.sessions.get(e);
+  if (o && (g.getState().setActiveSession(e), !o.loaded))
+    try {
+      await ge(r, e, o.cwd);
+    } catch {
+    }
+}
+async function Ee(r, e) {
+  await r.closeSession(e), g.getState().removeSession(e), m.getState().removeSession(e);
+}
+async function be(r, e) {
+  await r.deleteSession(e), g.getState().removeSession(e), m.getState().removeSession(e);
+}
+async function Te(r, e, t) {
+  const s = await r.listSessions(void 0, t);
+  g.getState().setSessions(s.sessions, e, t), s.nextCursor && g.getState().appendSessions([], e, t, s.nextCursor);
+}
+async function _e(r, e, t, s) {
+  const n = await r.listSessions(s, t);
+  g.getState().appendSessions(n.sessions, e, t, n.nextCursor ?? null);
+}
+async function Ne(r, e, t, s) {
+  var o;
+  const n = (o = m.getState().sessions.get(e)) == null ? void 0 : o.configOptions;
+  try {
+    const i = await r.setSessionConfigOption(e, t, s);
+    m.getState().setConfigOptions(e, i.configOptions);
+  } catch {
+    n && m.getState().setConfigOptions(e, n);
+  }
+}
+async function Re(r, e) {
+  await r.authenticate(e), g.getState().clearAuthRequired();
+}
+async function Pe(r, e, t, s) {
+  const n = await r.reconnectWithEnv(s);
+  g.getState().updateAgent(e, {
+    status: "connected",
+    agentInfo: r.agentInfo,
+    capabilities: r.capabilities,
+    authMethods: n.authMethods ?? []
+  }), await r.authenticate(t), g.getState().clearAuthRequired();
+}
+async function Ie(r, e, t) {
+  const s = m.getState();
+  s.ensureSession(e);
+  const n = {
+    id: O("user"),
+    role: "user",
+    parts: [{ type: "content", content: t }],
+    timestamp: Date.now()
+  };
+  s.addMessage(e, n), s.setIsStreaming(e, !0);
+  try {
+    const o = await r.prompt(e, t);
+    return o.stopReason && o.stopReason !== "end_turn" && s.setStopReason(e, o.stopReason), o;
+  } catch (o) {
+    throw o;
+  } finally {
+    s.setIsStreaming(e, !1);
+  }
+}
+async function Ae(r, e) {
+  await r.cancel(e);
+}
+function We(r, e) {
+  var n;
+  const s = (((n = m.getState().sessions.get(r)) == null ? void 0 : n.pendingPermissions) ?? [])[0];
+  s && (s.resolve(e), m.getState().removePermissionRequest(r, s.id));
+}
+function Oe(r) {
+  var s;
+  const t = (((s = m.getState().sessions.get(r)) == null ? void 0 : s.pendingPermissions) ?? [])[0];
+  t && (t.reject(), m.getState().removePermissionRequest(r, t.id));
+}
+async function Fe(r, e, t) {
+  return r.extMethod(e, t);
+}
+async function De(r, e, t) {
+  return r.extNotification(e, t);
+}
+export {
+  le as AcpClient,
+  ie as HttpTransport,
+  Ue as RequestError,
+  re as StdioTransport,
+  ae as WebSocketTransport,
+  g as acpStore,
+  Re as authenticate,
+  Pe as authenticateWithEnv,
+  Fe as callExtMethod,
+  Ae as cancelPrompt,
+  Ee as closeSession,
+  ke as collapseDirectory,
+  xe as createAcpProvider,
+  Me as createFileSystemProvider,
+  He as createSession,
+  be as deleteSession,
+  Oe as denyPermission,
+  ye as expandDirectory,
+  y as fileTreeStore,
+  D as findNodeByPath,
+  Ce as forkSession,
+  B as loadFileTree,
+  _e as loadMoreSessions,
+  ge as loadSession,
+  z as refreshFileTree,
+  J as refreshNode,
+  Te as refreshSessions,
+  We as respondToPermission,
+  ve as selectSession,
+  De as sendExtNotification,
+  Ie as sendPrompt,
+  m as sessionStore,
+  Ne as setSessionConfigOption
+};

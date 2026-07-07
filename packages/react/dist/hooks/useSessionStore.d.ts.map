@@ -1,0 +1,1 @@
+{"version":3,"file":"useSessionStore.d.ts","sourceRoot":"","sources":["../../src/hooks/useSessionStore.ts"],"names":[],"mappings":"AACA,OAAO,EAAE,YAAY,EAAE,MAAM,sBAAsB,CAAC;AAEpD,KAAK,iBAAiB,GAAG,UAAU,CAAC,OAAO,YAAY,CAAC,QAAQ,CAAC,CAAC;AAElE,wBAAgB,eAAe,IAAI,iBAAiB,CAAC;AACrD,wBAAgB,eAAe,CAAC,CAAC,EAAE,QAAQ,EAAE,CAAC,KAAK,EAAE,iBAAiB,KAAK,CAAC,GAAG,CAAC,CAAC"}

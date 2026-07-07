@@ -1,0 +1,1 @@
+{"version":3,"file":"useSessions.d.ts","sourceRoot":"","sources":["../../src/hooks/useSessions.ts"],"names":[],"mappings":"AAeA,OAAO,KAAK,EAAE,SAAS,EAAE,MAAM,sBAAsB,CAAC;AAEtD,OAAO,KAAK,EAAa,WAAW,EAAE,MAAM,sBAAsB,CAAC;AAEnE,wBAAgB,WAAW;;;;;+BA6C2B,SAAS;6BAnBX,MAAM,OAAO,MAAM;6BAanB,SAAS,OAAO,MAAM;8BAYrB,SAAS;+BAMR,SAAS;mCAML,SAAS;+BAMb,MAAM,OAAO,MAAM;gCAMlB,MAAM,OAAO,MAAM;EAkCzE"}

@@ -1,0 +1,1 @@
+{"version":3,"file":"SettingsContext.d.ts","sourceRoot":"","sources":["../../src/context/SettingsContext.ts"],"names":[],"mappings":"AAEA,MAAM,WAAW,oBAAoB;IACnC,KAAK,EAAE,MAAM,GAAG,OAAO,CAAC;IACxB,QAAQ,EAAE,CAAC,KAAK,EAAE,MAAM,GAAG,OAAO,KAAK,IAAI,CAAC;CAC7C;AAED,eAAO,MAAM,eAAe,sDAAmD,CAAC;AAEhF,wBAAgB,WAAW,IAAI,oBAAoB,CAMlD"}

@@ -1,0 +1,1 @@
+{"version":3,"file":"useExtensions.d.ts","sourceRoot":"","sources":["../../src/hooks/useExtensions.ts"],"names":[],"mappings":"AAKA,wBAAgB,aAAa;6BAQhB,MAAM,UACP,MAAM,UACN,MAAM,CAAC,MAAM,EAAE,OAAO,CAAC,KAC9B,OAAO,CAAC,MAAM,CAAC,MAAM,EAAE,OAAO,CAAC,CAAC;mCAOxB,MAAM,UACP,MAAM,UACN,MAAM,CAAC,MAAM,EAAE,OAAO,CAAC,KAC9B,OAAO,CAAC,IAAI,CAAC;EAOjB"}

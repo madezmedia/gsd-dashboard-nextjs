@@ -1,0 +1,1 @@
+{"version":3,"file":"UserMessageActions.d.ts","sourceRoot":"","sources":["../../../src/components/chat-view/UserMessageActions.tsx"],"names":[],"mappings":"AAKA,MAAM,WAAW,uBAAuB;IACtC,WAAW,EAAE,MAAM,CAAC;IACpB,MAAM,EAAE,CAAC,IAAI,EAAE,MAAM,KAAK,IAAI,CAAC;CAChC;AAED,wBAAgB,kBAAkB,CAAC,EAAE,WAAW,EAAE,MAAM,EAAE,EAAE,uBAAuB,2CA2ClF"}

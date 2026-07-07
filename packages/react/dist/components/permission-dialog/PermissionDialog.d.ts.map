@@ -1,0 +1,1 @@
+{"version":3,"file":"PermissionDialog.d.ts","sourceRoot":"","sources":["../../../src/components/permission-dialog/PermissionDialog.tsx"],"names":[],"mappings":"AAEA,OAAO,KAAK,EAAE,SAAS,EAAE,MAAM,sBAAsB,CAAC;AAItD,MAAM,WAAW,qBAAqB;IACpC,SAAS,EAAE,SAAS,GAAG,IAAI,CAAC;CAC7B;AAED,wBAAgB,gBAAgB,CAAC,EAAE,SAAS,EAAE,EAAE,qBAAqB,kDA8CpE"}

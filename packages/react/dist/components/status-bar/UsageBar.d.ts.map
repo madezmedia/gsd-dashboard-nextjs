@@ -1,0 +1,1 @@
+{"version":3,"file":"UsageBar.d.ts","sourceRoot":"","sources":["../../../src/components/status-bar/UsageBar.tsx"],"names":[],"mappings":"AAEA,OAAO,KAAK,EAAE,SAAS,EAAE,MAAM,sBAAsB,CAAC;AAItD,MAAM,WAAW,aAAa;IAC5B,SAAS,EAAE,SAAS,GAAG,IAAI,CAAC;CAC7B;AAaD,wBAAgB,QAAQ,CAAC,EAAE,SAAS,EAAE,EAAE,aAAa,kDAgEpD"}

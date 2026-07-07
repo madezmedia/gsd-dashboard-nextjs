@@ -142,6 +142,19 @@ export async function POST(req: Request) {
                   result: res
                 }
               };
+            } else if (toolInv.state === "call") {
+              // Self-heal incomplete/timed-out tool executions to prevent AI_MissingToolResultsError
+              return {
+                ...part,
+                toolInvocation: {
+                  ...toolInv,
+                  state: "result",
+                  result: {
+                    success: false,
+                    error: "Task execution was interrupted or timed out on the serverless bridge."
+                  }
+                }
+              };
             }
           }
           return part;
