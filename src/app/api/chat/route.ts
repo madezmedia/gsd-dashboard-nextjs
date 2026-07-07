@@ -1,5 +1,5 @@
 import { createGroq, groq } from "@ai-sdk/groq";
-import { streamText, stepCountIs } from "ai";
+import { streamText, stepCountIs, convertToModelMessages } from "ai";
 import { z } from "zod";
 import { Client } from "ssh2";
 
@@ -87,6 +87,17 @@ export async function POST(req: Request) {
     }
     console.log("[route.ts] Filtered messages count for API:", apiMessages.length);
 
+    // Normalize messages: convert simple content string messages to modern parts schema
+    const normalizedMessages = apiMessages.map((msg: any) => {
+      if (!msg.parts && msg.content !== undefined) {
+        return {
+          ...msg,
+          parts: [{ type: "text", text: msg.content }]
+        };
+      }
+      return msg;
+    });
+
     // Extract custom Groq key from headers if present
     const customKey = req.headers.get("x-groq-api-key");
     console.log("[route.ts] Custom key header present:", !!customKey);
@@ -115,7 +126,7 @@ YOUR CAPABILITIES:
 - If a user asks about task status, look up ACMI tasks.
 - If a user asks to add or change a task, write it to Redis or trigger Composio.
 - If a user asks about VM health or sync status, query the VM using SSH command tools.`,
-    messages: apiMessages,
+    messages: await convertToModelMessages(normalizedMessages),
     onError: ({ error }: { error: any }) => {
       console.error("[route.ts] Stream failed asynchronously:", error);
     },
