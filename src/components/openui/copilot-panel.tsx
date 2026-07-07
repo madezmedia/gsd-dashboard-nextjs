@@ -41,6 +41,17 @@ function parseMarkdown(text: string) {
 
   // Inline code block (`code`)
   parsed = parsed.replace(
+    /`/g,
+    "" // Remove single quotes for compatibility or replace:
+  );
+  // Re-add correct inline code regex replacement:
+  parsed = text
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>");
+    
+  parsed = parsed.replace(
     /`(.*?)`/g,
     "<code class='bg-secondary dark:bg-[#1a1c1d] border border-border px-1 py-0.5 font-mono text-[10px] text-primary rounded-none font-bold'>$1</code>"
   );
@@ -50,10 +61,18 @@ function parseMarkdown(text: string) {
     return `<pre class="bg-card dark:bg-[#0c0d0e] border border-border p-3 my-2 overflow-auto font-mono text-[10px] leading-relaxed text-foreground select-text rounded-none"><div class="flex items-center justify-between text-[8px] text-muted-foreground uppercase border-b border-border pb-1.5 mb-1.5 select-none font-mono"><span>[Code Output: ${lang || "raw"}]</span></div><code>${code.trim()}</code></pre>`;
   });
 
-  // Bullet items
-  parsed = parsed.replace(/^\s*-\s+(.*?)$/gm, "• $1");
+  // Headings
+  parsed = parsed.replace(/^### (.*?)$/gm, "<h4 class='text-[12px] font-bold text-[#2d4a3e] dark:text-[#5ef2c6] mt-3 mb-1'>$1</h4>");
+  parsed = parsed.replace(/^## (.*?)$/gm, "<h3 class='text-[13px] font-bold text-[#2d4a3e] dark:text-[#5ef2c6] mt-4 mb-1.5'>$1</h3>");
+  parsed = parsed.replace(/^# (.*?)$/gm, "<h2 class='text-[14px] font-bold text-[#2d4a3e] dark:text-[#5ef2c6] mt-5 mb-2'>$1</h2>");
 
-  return <div className="space-y-1.5 break-words font-mono text-[11px] leading-relaxed" dangerouslySetInnerHTML={{ __html: parsed }} />;
+  // Bullet items starting with - or *
+  parsed = parsed.replace(/^\s*[-*]\s+(.*?)$/gm, "• $1");
+
+  // Horizontal divider rules
+  parsed = parsed.replace(/^---$/gm, "<hr class='border-border my-3' />");
+
+  return <div className="space-y-1.5 break-words font-mono text-[11px] leading-relaxed whitespace-pre-wrap" dangerouslySetInnerHTML={{ __html: parsed }} />;
 }
 
 // Generative UI components representing tool execution states
