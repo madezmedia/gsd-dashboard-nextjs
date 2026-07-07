@@ -1,0 +1,176 @@
+{
+  "meta": {
+    "generated": "2026-07-07T14:40:00Z",
+    "scanner": "agent:ops-center",
+    "tenant": "madez",
+    "total_scanned": 103,
+    "archival_candidates": 14,
+    "already_archived": 18,
+    "active_recent": 19,
+    "active_stalled": 5
+  },
+  "candidates": [
+    {
+      "id": "t_84c63bc9",
+      "title": "NPM_TOKEN for ops-center",
+      "status": "stalled",
+      "priority": "P1",
+      "owner": "agent:mikey",
+      "silence_hours": 204.8,
+      "last_activity": "2026-06-26",
+      "description": "ops-center blocked on npm publish for acmi-mcp v2.0. Needs NPM_TOKEN to complete the release.",
+      "resolution_note": "acmi-mcp v2.0.0 already published to npm — this item may be RESOLVED.",
+      "action": "CONFIRM_RESOLVED_OR_ARCHIVE"
+    },
+    {
+      "id": "t_d140ea6b",
+      "title": "Research: Replace Upstash with self-hosted Redis",
+      "status": "pending",
+      "priority": "P3",
+      "owner": "agent:grok",
+      "silence_hours": 210.9,
+      "last_activity": "2026-06-26",
+      "description": "Evaluate costs and migration effort for moving from Upstash to existing self-hosted Redis on Elestio VM.",
+      "resolution_note": "grok-local already running on self-hosted Redis v2 — research superseded by actual deployment.",
+      "action": "SUPERSEDED_ARCHIVE"
+    },
+    {
+      "id": "t_a805c594",
+      "title": "Deploy standalone kanban dashboard subdomain",
+      "status": "pending",
+      "priority": "P2",
+      "owner": "agent:grok",
+      "silence_hours": 210.9,
+      "last_activity": "2026-06-26",
+      "description": "Set up nginx route for organizational kanban board at kanban-u70402.vm.elestio.app. Point to Hermes WebUI container port.",
+      "resolution_note": "Kanban dashboard subdomain never deployed. GSD dashboard NextJS serves kanban at /workflows instead.",
+      "action": "SUPERSEDED_ARCHIVE"
+    },
+    {
+      "id": "ops-center-port-to-cowork-swarmos",
+      "title": "Port Ops-Center-v2 → Cowork Kanban / SwarmOS",
+      "status": "DRAFT-AWAITING-OPS-CENTER-DONE-STATE",
+      "priority": "P2",
+      "owner": "mikey / claude-engineer",
+      "silence_hours": 1317,
+      "last_activity": "2026-05-13",
+      "description": "Port ops-center-v2 (Control Pad OS) into Cowork as canonical fleet kanban/swarm OS surface. Gated on ops-center-v2 reaching done-state (38 gaps, 7 closed).",
+      "resolution_note": "1317h silent. Gating dependency (ops-center-v2 done-state) never met. Parallel GSD dashboard NextJS now serves similar function.",
+      "action": "DORMANT_ARCHIVE"
+    },
+    {
+      "id": "smithery-specialist-agent",
+      "title": "Smithery integration specialist agent (deferred delegation)",
+      "status": "DRAFT",
+      "priority": "P3",
+      "owner": "mikey / claude-engineer",
+      "silence_hours": 1357,
+      "last_activity": "2026-05-11",
+      "description": "Create specialist agent with deep Smithery knowledge for MCP server listing. Deferred delegation — spawn triggers (Mikey verify form, quality score 90+, second MCP listing) never fired.",
+      "resolution_note": "1357h silent. Spawn triggers never activated. Universal ACMI skill covers the scope.",
+      "action": "DORMANT_ARCHIVE"
+    },
+    {
+      "id": "acmi-cli-cmdevent-namespace-footgun",
+      "title": "cmdEvent silent orphan-write footgun",
+      "status": "RATIFIED-P1",
+      "priority": "P1",
+      "owner": "TBD",
+      "silence_hours": 1357,
+      "last_activity": "2026-05-08",
+      "description": "Bug: cmdEvent writes to orphan key when ns passed as 'thread:X' form, mismatching cmdCat reader. Silent data loss.",
+      "resolution_note": "RATIFIED by Mikey 2026-05-08 as P1 fix but never assigned an owner. Workaround documented.",
+      "action": "KEEP_OPEN_OR_ASSIGN"
+    },
+    {
+      "id": "upstash-rotation-execution-2026-05-13",
+      "title": "UPSTASH_REDIS_REST rotation — Mikey-independent execution",
+      "status": "pending",
+      "priority": "high",
+      "owner": "bentley-temp",
+      "silence_hours": 1320,
+      "last_activity": "2026-05-13",
+      "description": "All rotation work not requiring Mikey's hands. Discovery sweep, .env cleanup PRs, MCP config rewrite drafts. Blocked on Mikey to run Phase 1 rotation.",
+      "resolution_note": "1320h silent. Never unblocked — Mikey never ran rotation. Self-hosted Redis migration happened via different path.",
+      "action": "SUPERSEDED_ARCHIVE"
+    },
+    {
+      "id": "folana-vm-migration",
+      "title": "Folana VM Migration — autonomous re-instantiation on cicd-qpy7t",
+      "status": "stalled",
+      "priority": "P2",
+      "owner": "agent:default",
+      "silence_hours": 99.6,
+      "last_activity": "2026-07-01",
+      "description": "Migrate Folana to cicd-qpy7t VM. 4 phases: provisioning, supervisor bringup, comms, validation. O1-O4 ops tasks verified, D1-D4 design files delivered, 3 copy-paste prompts written.",
+      "resolution_note": "~100h stalled but under 200h threshold. Successor work item folana-hermes-cicd-retrofit opened. Not yet archival candidate.",
+      "action": "WATCH_APPROACHING"
+    },
+    {
+      "id": "folana-journal-brain-ingest-seam",
+      "title": "folana-journal — brain-ingest seam (POST /api/internal/entries)",
+      "status": "SHIPPED",
+      "priority": "P2",
+      "owner": "folana-journal",
+      "last_activity": "2026-04-28",
+      "description": "Recommendation #2 from journal audit. Added POST /api/internal/entries with bearer auth, schema additions (mood/interests/opinions/source/visibility), draft visibility filtering. 193 LOC added.",
+      "resolution_note": "DEPLOYED and SHIPPED. PR #2 at madezmedia/folanas-journal. 6/6 acceptance criteria met (build pass). Operator actions: apply migration + set BRAIN_INGEST_TOKEN.",
+      "action": "SHIPPED_ARCHIVE"
+    },
+    {
+      "id": "folana-asset-tree-prune",
+      "title": "Prune abandoned moodboard assets from Folana asset tree",
+      "status": "ready",
+      "priority": "P2",
+      "owner": "agent:ops-center",
+      "last_activity": "2026-07-07",
+      "description": "Cut abandoned moodboard iterations (duo/, duo-v2/) superseded by duo-seedream/. Pruned generator script. 4.1MB recovered.",
+      "resolution_note": "Recently created (2026-07-07) and already executed — pruning complete. ~2h old.",
+      "action": "RECENTLY_COMPLETED"
+    },
+    {
+      "id": "acmi-mcp-oauth-cloudflare",
+      "title": "Add OAuth authentication to ACMI MCP server via Cloudflare",
+      "status": "SHIPPED",
+      "priority": "P1",
+      "owner": "bentley-temp / claude-engineer",
+      "last_activity": "2026-05-08",
+      "description": "OAuth 2.1 + PKCE + DCR on Vercel for /api/mcp. PR #14 at madezmedia/acmi-product. 7 files, 592 LOC. OAuth spec and implementation both LIVE.",
+      "resolution_note": "SHIPPED and LIVE. 9/9 smoke tests passed. Cloudflare Workers migration deferred per Mikey directive 2026-05-08.",
+      "action": "SHIPPED_ARCHIVE"
+    },
+    {
+      "id": "operator-ai-workforce",
+      "title": "AI-first Zenoti competitor — operator workforce platform",
+      "status": "DRAFT",
+      "priority": "P2",
+      "owner": "unknown",
+      "last_activity": "unknown",
+      "description": "Build AI workforce for small salons/spas — voice AI receptionist, booking, marketing, retention. Powered by ACMI multi-agent coordination.",
+      "resolution_note": "5 phases SHIPPED (zenoti_research, competitive_analysis, mvp_scope, voice_agent, pitch_site, branding). 3 phases DRAFT (booking_agent, marketing_agent, retention_agent, beta_customers). No timeline events recorded.",
+      "action": "HALF_SHIPPED_HALF_DORMANT"
+    },
+    {
+      "id": "t_d072fde7",
+      "title": "register: android-worker ACMI profile",
+      "status": "archived",
+      "priority": "P2",
+      "owner": "agent:ops-worker",
+      "last_activity": "2026-07-05",
+      "description": "Register android-worker in ACMI with profile: role, capabilities (sms, notifications, camera, sensors, cron, gateway), limitations.",
+      "resolution_note": "Already archived by ops-center 2026-07-05. Progress 100%.",
+      "action": "ALREADY_ARCHIVED"
+    },
+    {
+      "id": "t_3a406658",
+      "title": "deploy: android hermes install (termux + pkg)",
+      "status": "archived",
+      "priority": "P2",
+      "owner": "agent:android-worker",
+      "last_activity": "2026-07-05",
+      "description": "Install Hermes on Android: Termux from F-Droid, pkg install python nodejs git termux-api, curl install script, hermes setup.",
+      "resolution_note": "Already archived by ops-center 2026-07-05. Progress 100%.",
+      "action": "ALREADY_ARCHIVED"
+    }
+  ]
+}

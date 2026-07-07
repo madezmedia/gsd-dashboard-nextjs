@@ -20,6 +20,7 @@ import {
   Cpu,
   Key,
   Database,
+  Archive,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -71,6 +72,7 @@ const navCategories: NavCategory[] = [
     items: [
       { href: "/nocodb", label: "NocoDB Database", icon: Database, badge: "DB" },
       { href: "/docs", label: "Docs Outline", icon: FileCode, badge: "DOCS" },
+      { href: "/archive", label: "Fleet Archival Trace", icon: Archive, badge: "AUDIT" },
       { href: "/notes", label: "Notes Editor", icon: Notebook, badge: "NOTE" },
       { href: "/integrations", label: "Integrations & Keys", icon: Key, badge: "KEY" },
       { href: "/settings", label: "Settings", icon: Settings },
