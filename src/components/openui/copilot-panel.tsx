@@ -232,6 +232,27 @@ export function CopilotPanel() {
   const [enhancing, setEnhancing] = useState(false);
   const [input, setInput] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const [viewportHeight, setViewportHeight] = useState("100dvh");
+
+  useEffect(() => {
+    if (typeof window === "undefined" || !window.visualViewport) return;
+    
+    function handleResize() {
+      if (window.visualViewport) {
+        setViewportHeight(`${window.visualViewport.height}px`);
+      }
+    }
+    
+    const vv = window.visualViewport;
+    vv.addEventListener("resize", handleResize);
+    vv.addEventListener("scroll", handleResize);
+    handleResize();
+    
+    return () => {
+      vv.removeEventListener("resize", handleResize);
+      vv.removeEventListener("scroll", handleResize);
+    };
+  }, [open]);
 
   // Load custom api key if stored locally
   const groqApiKey = typeof window !== "undefined" ? window.localStorage.getItem("groq_api_key") || "" : "";
@@ -322,7 +343,7 @@ export function CopilotPanel() {
 
       {/* Slide-out Drawer */}
       {open && (
-        <div className="fixed inset-y-0 right-0 w-full sm:w-[440px] bg-[#faf9f5] dark:bg-[#121314] border-l border-border shadow-2xl flex flex-col z-50 animate-in slide-in-from-right duration-200">
+        <div style={{ height: viewportHeight }} className="fixed top-0 right-0 w-full sm:w-[440px] bg-[#faf9f5] dark:bg-[#121314] border-l border-border shadow-2xl flex flex-col z-50 animate-in slide-in-from-right duration-200">
           {/* Header */}
           <div className="flex items-center justify-between p-4 border-b border-border shrink-0 select-none">
             <div>
