@@ -47,16 +47,35 @@ async function runSSH(cmd: string): Promise<string> {
         }
         let stdout = "";
         let stderr = "";
+        const MAX_SSH_OUTPUT = 150000; // 150KB safety limit
+        let truncated = false;
+
         stream.on("close", (code: number, signal: any) => {
           console.log(`[runSSH] Stream closed with code ${code}.`);
           conn.end();
-          resolve(stdout || stderr || `Command completed with exit code ${code}`);
+          let finalOutput = stdout || stderr || `Command completed with exit code ${code}`;
+          if (truncated) {
+            finalOutput += "\n\n... [SSH OUTPUT TRUNCATED AT 150KB TO PREVENT MEMORY OVERFLOW] ...";
+          }
+          resolve(finalOutput);
         })
         .on("data", (data: any) => {
-          stdout += data.toString();
+          if (stdout.length + data.length > MAX_SSH_OUTPUT) {
+            stdout += data.toString().substring(0, MAX_SSH_OUTPUT - stdout.length);
+            truncated = true;
+            stream.destroy(); // stop reading and end stream
+          } else {
+            stdout += data.toString();
+          }
         })
         .stderr.on("data", (data: any) => {
-          stderr += data.toString();
+          if (stderr.length + data.length > MAX_SSH_OUTPUT) {
+            stderr += data.toString().substring(0, MAX_SSH_OUTPUT - stderr.length);
+            truncated = true;
+            stream.destroy();
+          } else {
+            stderr += data.toString();
+          }
         });
       });
     })
@@ -87,15 +106,52 @@ export async function POST(req: Request) {
     }
     console.log("[route.ts] Filtered messages count for API:", apiMessages.length);
 
-    // Normalize messages: convert simple content string messages to modern parts schema
+    // Normalize messages: convert simple content string messages to modern parts schema & prune large outputs
     const normalizedMessages = apiMessages.map((msg: any) => {
-      if (!msg.parts && msg.content !== undefined) {
-        return {
-          ...msg,
-          parts: [{ type: "text", text: msg.content }]
-        };
+      let parts = msg.parts;
+      if (!parts && msg.content !== undefined) {
+        parts = [{ type: "text", text: msg.content }];
       }
-      return msg;
+
+      if (parts && Array.isArray(parts)) {
+        parts = parts.map((part: any) => {
+          if (part.type === "text" && part.text && part.text.length > 4000) {
+            return {
+              ...part,
+              text: part.text.substring(0, 2000) + "\n\n... [TRUNCATED BY FLEET COPILOT FOR CONTEXT WINDOW PRESERVATION] ...\n\n" + part.text.substring(part.text.length - 2000)
+            };
+          }
+          if (part.type === "tool-invocation" && part.toolInvocation) {
+            const toolInv = part.toolInvocation;
+            if (toolInv.result && typeof toolInv.result === "object") {
+              const res = { ...toolInv.result };
+              if (res.output && typeof res.output === "string" && res.output.length > 4000) {
+                res.output = res.output.substring(0, 2000) + "\n\n... [OUTPUT TRUNCATED BY FLEET COPILOT FOR CONTEXT OPTIMIZATION] ...\n\n" + res.output.substring(res.output.length - 2000);
+              }
+              if (res.tasks && Array.isArray(res.tasks) && res.tasks.length > 30) {
+                res.tasks = [
+                  ...res.tasks.slice(0, 15),
+                  { title: `... [${res.tasks.length - 30} tasks truncated for context preservation] ...`, status: "unknown" },
+                  ...res.tasks.slice(res.tasks.length - 15)
+                ];
+              }
+              return {
+                ...part,
+                toolInvocation: {
+                  ...toolInv,
+                  result: res
+                }
+              };
+            }
+          }
+          return part;
+        });
+      }
+
+      return {
+        ...msg,
+        parts
+      };
     });
 
     // Extract custom Groq key from headers if present
