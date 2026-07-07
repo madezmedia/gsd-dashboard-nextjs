@@ -13,7 +13,8 @@ import {
   Cpu,
   Terminal,
   ListTodo,
-  Sparkles
+  Sparkles,
+  Trash2
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -282,7 +283,7 @@ export function CopilotPanel() {
     headers: groqApiKey ? { "x-groq-api-key": groqApiKey } : {},
   });
 
-  const { messages, sendMessage, status } = useChat({
+  const { messages, sendMessage, status, setMessages } = useChat({
     transport,
     messages: [
       {
@@ -299,6 +300,49 @@ export function CopilotPanel() {
   });
 
   const isGenerating = status === "submitted";
+
+  // Restore history on mount
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const saved = window.localStorage.getItem("acmi_copilot_chat_history");
+      if (saved) {
+        try {
+          const parsed = JSON.parse(saved);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            setMessages(parsed);
+          }
+        } catch {
+          // ignore
+        }
+      }
+    }
+  }, [setMessages]);
+
+  // Save history on changes
+  useEffect(() => {
+    if (typeof window !== "undefined" && messages && messages.length > 0) {
+      if (messages.length === 1 && messages[0].id === "welcome") return;
+      window.localStorage.setItem("acmi_copilot_chat_history", JSON.stringify(messages));
+    }
+  }, [messages]);
+
+  function clearChat() {
+    if (typeof window !== "undefined") {
+      window.localStorage.removeItem("acmi_copilot_chat_history");
+    }
+    setMessages([
+      {
+        id: "welcome",
+        role: "assistant" as "system" | "user" | "assistant",
+        parts: [
+          {
+            type: "text",
+            text: "System online. I am the ACMI Fleet Copilot. I can inspect workflows, audit databases, and execute VM commands.",
+          },
+        ],
+      },
+    ]);
+  }
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -374,12 +418,21 @@ export function CopilotPanel() {
                 Vercel Serverless Stream · Multi-Step Agentic Console
               </p>
             </div>
-            <button
-              onClick={() => setOpen(false)}
-              className="p-1.5 hover:bg-[#1a1a1a]/5 dark:hover:bg-white/5 text-[#1a1a1a]/60 dark:text-white/60 hover:text-[#1a1a1a] dark:hover:text-white border border-border rounded-none bg-card cursor-pointer"
-            >
-              <X className="h-3.5 w-3.5" />
-            </button>
+            <div className="flex items-center gap-1.5">
+              <button
+                onClick={clearChat}
+                title="Clear Chat History"
+                className="p-1.5 hover:bg-[#1a1a1a]/5 dark:hover:bg-white/5 text-muted-foreground hover:text-red-500 border border-border rounded-none bg-card cursor-pointer"
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+              </button>
+              <button
+                onClick={() => setOpen(false)}
+                className="p-1.5 hover:bg-[#1a1a1a]/5 dark:hover:bg-white/5 text-[#1a1a1a]/60 dark:text-white/60 hover:text-[#1a1a1a] dark:hover:text-white border border-border rounded-none bg-card cursor-pointer"
+              >
+                <X className="h-3.5 w-3.5" />
+              </button>
+            </div>
           </div>
 
           {/* Starter Prompts */}
@@ -480,14 +533,27 @@ export function CopilotPanel() {
               ))}
 
               {/* Loading display */}
-              {isGenerating && messages[messages.length - 1]?.role === "user" && (
-                <div className="flex flex-col items-start">
-                  <span className="text-[8px] font-mono text-muted-foreground uppercase mb-0.5 select-none">
+              {isGenerating && (
+                <div className="flex flex-col items-start select-none">
+                  <span className="text-[8px] font-mono text-muted-foreground uppercase mb-0.5">
                     Fleet Copilot
                   </span>
-                  <div className="bg-card border border-border p-3 rounded-none text-muted-foreground font-mono text-xs w-[80%] flex items-center gap-2 select-none shadow-sm">
-                    <Sparkles className="h-4 w-4 animate-pulse text-[#5ef2c6]" />
-                    <span className="animate-pulse">Accessing Swarm coordinates...</span>
+                  <div className="bg-card border border-border p-3 rounded-none text-muted-foreground font-mono text-xs w-[80%] flex items-center gap-2 shadow-sm">
+                    <Cpu className="h-4 w-4 animate-spin text-[#5ef2c6]" />
+                    <span className="animate-pulse">
+                      {(() => {
+                        const lastMsg = messages[messages.length - 1];
+                        if (lastMsg && lastMsg.role === "assistant" && lastMsg.parts) {
+                          const activeToolPart = lastMsg.parts.find(
+                            (part: any) => part.type === "tool-invocation" && part.toolInvocation.state === "call"
+                          );
+                          if (activeToolPart) {
+                            return `Executing tool: ${(activeToolPart as any).toolInvocation.toolName}...`;
+                          }
+                        }
+                        return "Accessing Swarm coordinates...";
+                      })()}
+                    </span>
                   </div>
                 </div>
               )}
