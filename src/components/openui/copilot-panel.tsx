@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import { useChat } from "@ai-sdk/react";
-import { TextStreamChatTransport } from "ai";
+import { DefaultChatTransport } from "ai";
 import {
   Bot,
   Send,
@@ -257,8 +257,8 @@ export function CopilotPanel() {
   // Load custom api key if stored locally
   const groqApiKey = typeof window !== "undefined" ? window.localStorage.getItem("groq_api_key") || "" : "";
 
-  // Initialize Vercel AI SDK useChat with TextStreamChatTransport
-  const transport = new TextStreamChatTransport({
+  // Initialize Vercel AI SDK useChat with DefaultChatTransport
+  const transport = new DefaultChatTransport({
     api: "/api/chat",
     headers: groqApiKey ? { "x-groq-api-key": groqApiKey } : {},
   });
