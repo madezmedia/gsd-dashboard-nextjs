@@ -75,6 +75,7 @@ const navCategories: NavCategory[] = [
       { href: "/archive", label: "Fleet Archival Trace", icon: Archive, badge: "AUDIT" },
       { href: "/notes", label: "Notes Editor", icon: Notebook, badge: "NOTE" },
       { href: "/integrations", label: "Integrations & Keys", icon: Key, badge: "KEY" },
+      { href: "/suzanne", label: "Suzanne Showcase", icon: Notebook, badge: "PROP" },
       { href: "/settings", label: "Settings", icon: Settings },
     ]
   }
