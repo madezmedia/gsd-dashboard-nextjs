@@ -16,31 +16,31 @@ function KpiCard({ title, value, icon: Icon, description, variant = "default" }:
   return (
     <Card
       className={cn(
-        "border border-[#e5e3d7] bg-[#fbfaf5] rounded-[4px] hover:border-[#0d1b2a]/40 transition-all shadow-none overflow-hidden relative",
-        variant === "danger" && "border-[#c0392b]/30 bg-[#c0392b]/[0.02]",
-        variant === "warning" && "border-[#d35400]/30 bg-[#d35400]/[0.02]"
+        "border border-border bg-card rounded-[4px] hover:border-primary/40 transition-all shadow-none overflow-hidden relative",
+        variant === "danger" && "border-destructive/30 bg-destructive/[0.02]",
+        variant === "warning" && "border-amber-500/30 bg-amber-500/[0.02]"
       )}
     >
-      {variant === "danger" && <div className="absolute top-0 left-0 right-0 h-[2px] bg-[#c0392b]" />}
-      {variant === "warning" && <div className="absolute top-0 left-0 right-0 h-[2px] bg-[#d35400]" />}
-      {variant === "success" && <div className="absolute top-0 left-0 right-0 h-[2px] bg-[#27ae60]" />}
+      {variant === "danger" && <div className="absolute top-0 left-0 right-0 h-[2px] bg-destructive" />}
+      {variant === "warning" && <div className="absolute top-0 left-0 right-0 h-[2px] bg-amber-500" />}
+      {variant === "success" && <div className="absolute top-0 left-0 right-0 h-[2px] bg-emerald-500" />}
       
       <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-        <span className="font-mono text-[9px] text-[#2c3e50] uppercase tracking-wider">{title}</span>
+        <span className="font-mono text-[9px] text-muted-foreground uppercase tracking-wider">{title}</span>
         <Icon
           className={cn(
             "h-4 w-4",
-            variant === "success" && "text-[#27ae60]",
-            variant === "warning" && "text-[#d35400]",
-            variant === "danger" && "text-[#c0392b]",
-            variant === "default" && "text-[#2c3e50]/40"
+            variant === "success" && "text-emerald-500",
+            variant === "warning" && "text-amber-500",
+            variant === "danger" && "text-destructive",
+            variant === "default" && "text-muted-foreground/40"
           )}
         />
       </CardHeader>
       <CardContent className="pt-0">
-        <div className="text-2xl font-serif font-bold text-[#0d1b2a]">{value}</div>
+        <div className="text-2xl font-serif font-bold text-foreground">{value}</div>
         {description && (
-          <p className="text-[9px] font-mono text-[#2c3e50]/70 uppercase tracking-tight mt-1">
+          <p className="text-[9px] font-mono text-muted-foreground/70 uppercase tracking-tight mt-1">
             {description}
           </p>
         )}

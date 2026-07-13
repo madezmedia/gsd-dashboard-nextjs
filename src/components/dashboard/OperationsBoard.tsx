@@ -64,14 +64,14 @@ export function OperationsBoard({ handleResolveHitl }: OperationsBoardProps) {
 
   if (urgentCount === 0) {
     return (
-      <Card className="border border-[#e5e3d7] bg-[#fbfaf5] rounded-[4px] shadow-none">
+      <Card className="border border-border bg-card rounded-[4px] shadow-none">
         <CardContent className="p-6">
           <div className="text-center py-6 space-y-2">
-            <ShieldCheck className="h-8 w-8 text-[#27ae60]/30 mx-auto animate-pulse" />
-            <p className="font-mono text-[9px] text-[#27ae60] uppercase tracking-widest font-bold">
+            <ShieldCheck className="h-8 w-8 text-emerald-500/30 mx-auto animate-pulse" />
+            <p className="font-mono text-[9px] text-emerald-500 uppercase tracking-widest font-bold">
               Gatekeeper Queue Clear
             </p>
-            <p className="text-[9px] text-[#2c3e50]/70 font-mono">
+            <p className="text-[9px] text-muted-foreground/70 font-mono">
               All fleet automation tasks proceeding without intervention.
             </p>
           </div>
@@ -81,13 +81,13 @@ export function OperationsBoard({ handleResolveHitl }: OperationsBoardProps) {
   }
 
   return (
-    <Card className="border border-[#c0392b]/20 bg-[#fdf5f5]/30 rounded-[4px] shadow-none overflow-hidden">
-      <div className="bg-[#fdf5f5] border-b border-[#c0392b]/20 px-4 py-3 flex items-center justify-between">
-        <span className="text-xs font-mono font-bold uppercase tracking-wider text-[#c0392b] flex items-center gap-1.5">
+    <Card className="border border-destructive/20 bg-destructive/[0.02] rounded-[4px] shadow-none overflow-hidden">
+      <div className="bg-destructive/10 border-b border-destructive/20 px-4 py-3 flex items-center justify-between">
+        <span className="text-xs font-mono font-bold uppercase tracking-wider text-destructive flex items-center gap-1.5">
           <AlertTriangle className="h-4 w-4" />
           Urgent Operations Board ({urgentCount} alerts)
         </span>
-        <span className="text-[8px] font-mono text-[#c0392b] bg-[#c0392b]/10 px-2 py-0.5 uppercase font-bold rounded-[2px]">
+        <span className="text-[8px] font-mono text-destructive bg-destructive/15 px-2 py-0.5 uppercase font-bold rounded-[2px]">
           Immediate Operator Review Needed
         </span>
       </div>
@@ -96,21 +96,21 @@ export function OperationsBoard({ handleResolveHitl }: OperationsBoardProps) {
         {filteredHitlQueue.map((ticket, index) => (
           <div
             key={`urgent-hitl-${index}`}
-            className="border border-[#e5e3d7] bg-[#fbfaf5] p-3 flex flex-col md:flex-row md:items-center md:justify-between gap-3 relative rounded-[4px]"
+            className="border border-border bg-card p-3 flex flex-col md:flex-row md:items-center md:justify-between gap-3 relative rounded-[4px]"
           >
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2">
-                <Badge className="bg-[#d35400] text-white text-[8px] uppercase tracking-wide font-mono rounded-[2px] shadow-none">
+                <Badge className="bg-amber-500 text-white text-[8px] uppercase tracking-wide font-mono rounded-[2px] shadow-none">
                   hitl-escalation
                 </Badge>
-                <span className="text-[10px] font-mono text-[#2c3e50] font-bold uppercase">
+                <span className="text-[10px] font-mono text-muted-foreground font-bold uppercase">
                   {ticket.member}
                 </span>
-                <span className="text-[10px] font-mono text-[#2c3e50]/60">
+                <span className="text-[10px] font-mono text-muted-foreground/60">
                   {formatRelativeTime(ticket.ts)}
                 </span>
               </div>
-              <p className="text-xs font-bold text-[#0d1b2a] mt-1.5 font-mono bg-[#f5f4ed] p-2 border border-[#e5e3d7] rounded-[2px]">
+              <p className="text-xs font-bold text-foreground mt-1.5 font-mono bg-muted p-2 border border-border rounded-[2px]">
                 {ticket.summary}
               </p>
             </div>
@@ -119,7 +119,7 @@ export function OperationsBoard({ handleResolveHitl }: OperationsBoardProps) {
                 size="sm"
                 onClick={() => handleResolveHitl(ticket, "approve")}
                 disabled={actioningMember === ticket.member}
-                className="bg-[#27ae60] hover:bg-[#219653] text-white font-mono text-[9px] uppercase px-3 rounded-[4px] h-8 shadow-none"
+                className="bg-emerald-500 hover:bg-emerald-600 text-white font-mono text-[9px] uppercase px-3 rounded-[4px] h-8 shadow-none"
               >
                 <Check className="h-3 w-3 mr-1" /> Approve
               </Button>
@@ -128,7 +128,7 @@ export function OperationsBoard({ handleResolveHitl }: OperationsBoardProps) {
                 variant="outline"
                 onClick={() => handleResolveHitl(ticket, "reject")}
                 disabled={actioningMember === ticket.member}
-                className="border-[#e5e3d7] text-[#0d1b2a] hover:bg-[#f5f4ed] font-mono text-[9px] uppercase px-3 rounded-[4px] h-8 shadow-none"
+                className="border-border text-foreground hover:bg-muted font-mono text-[9px] uppercase px-3 rounded-[4px] h-8 shadow-none"
               >
                 <Ban className="h-3 w-3 mr-1" /> Reject
               </Button>
@@ -140,21 +140,21 @@ export function OperationsBoard({ handleResolveHitl }: OperationsBoardProps) {
         {stalledItems.map((w) => (
           <div
             key={w.id}
-            className="border border-[#e5e3d7] bg-[#fbfaf5] p-3 flex flex-col md:flex-row md:items-center md:justify-between gap-3 rounded-[4px]"
+            className="border border-border bg-card p-3 flex flex-col md:flex-row md:items-center md:justify-between gap-3 rounded-[4px]"
           >
             <div>
               <div className="flex items-center gap-2">
-                <Badge className="bg-[#c0392b] text-white text-[8px] uppercase font-mono rounded-[2px] shadow-none">
+                <Badge className="bg-destructive text-white text-[8px] uppercase font-mono rounded-[2px] shadow-none">
                   stalled-job
                 </Badge>
-                <span className="text-[10px] font-mono font-bold text-[#0d1b2a] uppercase">
+                <span className="text-[10px] font-mono font-bold text-foreground uppercase">
                   {w.id}
                 </span>
-                <span className="text-[9px] font-mono text-[#2c3e50]/70">
+                <span className="text-[9px] font-mono text-muted-foreground/70">
                   OWNER: {w.owner || "unassigned"}
                 </span>
               </div>
-              <p className="text-xs text-[#0d1b2a] font-sans font-semibold mt-1">
+              <p className="text-xs text-foreground font-sans font-semibold mt-1">
                 {w.title}
               </p>
             </div>
@@ -162,7 +162,7 @@ export function OperationsBoard({ handleResolveHitl }: OperationsBoardProps) {
               <Button
                 size="sm"
                 variant="outline"
-                className="text-[9px] font-mono border-[#e5e3d7] uppercase rounded-[4px] h-8 shadow-none hover:bg-[#f5f4ed] text-[#0d1b2a]"
+                className="text-[9px] font-mono border-border uppercase rounded-[4px] h-8 shadow-none hover:bg-muted text-foreground"
                 onClick={() => copyText(w.id, `copy-stalled-${w.id}`)}
               >
                 {copiedId === `copy-stalled-${w.id}` ? "Copied" : "Copy ID"}

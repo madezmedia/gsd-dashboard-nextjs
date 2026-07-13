@@ -83,9 +83,9 @@ export function DocsDrawer({ isOpen, onClose }: { isOpen: boolean; onClose: () =
   return (
     <div className="fixed inset-y-0 right-0 w-full sm:w-[480px] bg-card border-l border-border shadow-2xl flex flex-col z-50 animate-in slide-in-from-right duration-200 text-foreground">
       {/* Header */}
-      <div className="flex items-center justify-between p-4 border-b border-border shrink-0 bg-[#0F2A2E]">
+      <div className="flex items-center justify-between p-4 border-b border-border shrink-0 bg-secondary">
         <div>
-          <h3 className="text-sm font-bold font-mono text-[#5EF2C6] uppercase flex items-center gap-1.5">
+          <h3 className="text-sm font-bold font-mono text-primary uppercase flex items-center gap-1.5">
             <FileText className="h-4 w-4" />
             Fleet Docs & Scratch Notes
           </h3>
@@ -165,7 +165,7 @@ export function DocsDrawer({ isOpen, onClose }: { isOpen: boolean; onClose: () =
               </button>
             </div>
             <div className="flex-1 overflow-auto p-4 space-y-4">
-              <h2 className="text-base font-bold font-serif text-[#5EF2C6]">
+              <h2 className="text-base font-bold font-serif text-primary">
                 {selectedRecord.fields.Title || selectedRecord.fields.Name}
               </h2>
               <div className="text-[10px] font-mono text-muted-foreground flex gap-3 uppercase border-b border-border pb-2">

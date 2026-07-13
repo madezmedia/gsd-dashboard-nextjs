@@ -35,11 +35,11 @@ export function ActivityFeed() {
   const totalEventsCount = filteredRecentEvents.length + filteredBusEvents.length;
 
   return (
-    <Card className="border border-[#e5e3d7] bg-[#fbfaf5] rounded-[4px] shadow-none">
-      <CardHeader className="pb-2 border-b border-[#e5e3d7]">
-        <CardTitle className="text-xs font-mono uppercase tracking-wider text-[#2c3e50] flex items-center justify-between">
+    <Card className="border border-border bg-card rounded-[4px] shadow-none">
+      <CardHeader className="pb-2 border-b border-border">
+        <CardTitle className="text-xs font-mono uppercase tracking-wider text-muted-foreground flex items-center justify-between">
           <span>[Console Activity Log Stream]</span>
-          <Badge className="bg-[#f5f4ed] text-[#0d1b2a] border border-[#e5e3d7] rounded-none font-mono text-[9px] py-0 shadow-none">
+          <Badge className="bg-muted text-foreground border border-border rounded-none font-mono text-[9px] py-0 shadow-none">
             {totalEventsCount} events
           </Badge>
         </CardTitle>
@@ -53,14 +53,14 @@ export function ActivityFeed() {
               return (
                 <div
                   key={`bus-${i}`}
-                  className="flex gap-2 py-1 border-b border-[#e5e3d7]/30 last:border-0 text-[#2c3e50] items-center justify-between"
+                  className="flex gap-2 py-1 border-b border-border/30 last:border-0 text-muted-foreground items-center justify-between"
                 >
                   <div className="flex gap-2 min-w-0 flex-1 items-center">
-                    <span className="shrink-0 font-bold text-[#2c3e50]/40">
+                    <span className="shrink-0 font-bold text-muted-foreground/40">
                       [{new Date(evt.ts).toLocaleTimeString()}]
                     </span>
-                    <span className="shrink-0 text-[#0d1b2a] font-bold">{evt.source}</span>
-                    <span className="truncate text-[#2c3e50] font-mono">
+                    <span className="shrink-0 text-foreground font-bold">{evt.source}</span>
+                    <span className="truncate text-muted-foreground font-mono">
                       {String(payloadObj?.summary || evt.type)}
                     </span>
                   </div>
@@ -68,14 +68,14 @@ export function ActivityFeed() {
                     {typeof payloadObj?.correlationId === "string" && (
                       <button
                         onClick={() => copyText(payloadObj.correlationId as string, `copy-${i}`)}
-                        className="text-[8px] border border-[#e5e3d7] px-1 text-[#2c3e50]/70 hover:text-[#0d1b2a] rounded-[2px] bg-[#fbfaf5] cursor-pointer"
+                        className="text-[8px] border border-border px-1 text-muted-foreground/70 hover:text-foreground rounded-[2px] bg-card cursor-pointer"
                       >
                         {copiedId === `copy-${i}` ? "Copied" : "ID"}
                       </button>
                     )}
                     <Badge
                       variant="outline"
-                      className="text-[8px] rounded-none px-1 border-[#0d1b2a]/20 text-[#0d1b2a] bg-[#0d1b2a]/5 py-0 leading-none h-4"
+                      className="text-[8px] rounded-none px-1 border-primary/20 text-primary bg-primary/5 py-0 leading-none h-4"
                     >
                       bus
                     </Badge>
@@ -88,18 +88,18 @@ export function ActivityFeed() {
             {filteredRecentEvents.map((evt) => (
               <div
                 key={evt.id}
-                className="flex gap-2 py-1 border-b border-[#e5e3d7]/30 last:border-0 text-[#2c3e50]/80 justify-between items-center"
+                className="flex gap-2 py-1 border-b border-border/30 last:border-0 text-muted-foreground/80 justify-between items-center"
               >
                 <div className="flex gap-2 min-w-0 flex-1">
-                  <span className="shrink-0 text-[#2c3e50]/40">
+                  <span className="shrink-0 text-muted-foreground/40">
                     [{evt.ts ? new Date(evt.ts).toLocaleTimeString() : ""}]
                   </span>
-                  <span className="shrink-0 font-bold text-[#0d1b2a]">{evt.source}</span>
+                  <span className="shrink-0 font-bold text-foreground">{evt.source}</span>
                   <span className="truncate">{evt.summary}</span>
                 </div>
                 <Badge
                   variant="outline"
-                  className="text-[8px] rounded-none px-1 border-[#e5e3d7] text-[#2c3e50] bg-[#f5f4ed] py-0 leading-none h-4 shrink-0"
+                  className="text-[8px] rounded-none px-1 border-border text-muted-foreground bg-muted py-0 leading-none h-4 shrink-0"
                 >
                   {evt.kind}
                 </Badge>
@@ -107,7 +107,7 @@ export function ActivityFeed() {
             ))}
 
             {filteredRecentEvents.length === 0 && filteredBusEvents.length === 0 && (
-              <div className="text-center py-12 text-[#2c3e50]/40">
+              <div className="text-center py-12 text-muted-foreground/40">
                 No activity observed in active tenant scope
               </div>
             )}

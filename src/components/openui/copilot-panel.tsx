@@ -42,12 +42,12 @@ function CopilotPanelInner({ onClose, wsUrl, setWsUrl }: { onClose: () => void; 
   const isConnecting = status === "connecting";
 
   return (
-    <div className="flex flex-col h-full bg-[#faf9f5] dark:bg-[#121314] text-foreground font-mono">
+    <div className="flex flex-col h-full bg-card text-foreground font-mono">
       {/* Header */}
       <div className="flex items-center justify-between p-4 border-b border-border shrink-0 select-none">
         <div>
-          <h3 className="text-sm font-bold text-[#2d4a3e] dark:text-[#5EF2C6] uppercase flex items-center gap-1.5">
-            <Bot className="h-4 w-4 text-[#5ef2c6]" />
+          <h3 className="text-sm font-bold text-primary uppercase flex items-center gap-1.5">
+            <Bot className="h-4 w-4 text-primary" />
             ACMI Swarm Copilot
           </h3>
           <div className="flex items-center gap-2 mt-0.5">
@@ -189,7 +189,7 @@ export function CopilotPanel() {
       {!open && (
         <button
           onClick={() => setOpen(true)}
-          className="fixed bottom-6 right-6 z-40 flex items-center gap-1.5 px-4 py-2.5 text-xs font-mono font-bold uppercase tracking-wider text-[#2d4a3e] dark:text-[#5EF2C6] bg-[#faf9f5] dark:bg-[#121314] hover:bg-[#2d4a3e]/10 border border-[#2d4a3e]/30 dark:border-[#5EF2C6]/30 shadow-2xl transition-all rounded-none cursor-pointer"
+          className="fixed bottom-6 right-6 z-40 flex items-center gap-1.5 px-4 py-2.5 text-xs font-mono font-bold uppercase tracking-wider text-primary bg-card hover:bg-primary/10 border border-primary/30 shadow-2xl transition-all rounded-none cursor-pointer"
         >
           <Bot className="h-4 w-4" />
           <span>[COPILOT]</span>
@@ -198,7 +198,7 @@ export function CopilotPanel() {
 
       {/* Slide-out Drawer */}
       {open && (
-        <div style={{ height: viewportHeight }} className="fixed top-0 right-0 w-full sm:w-[440px] bg-[#faf9f5] dark:bg-[#121314] border-l border-border shadow-2xl flex flex-col z-50 animate-in slide-in-from-right duration-200">
+        <div style={{ height: viewportHeight }} className="fixed top-0 right-0 w-full sm:w-[440px] bg-card border-l border-border shadow-2xl flex flex-col z-50 animate-in slide-in-from-right duration-200">
           <I18nProvider>
             <AcpProvider
               agents={[

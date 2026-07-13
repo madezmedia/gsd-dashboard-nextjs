@@ -17,9 +17,9 @@ export default function CockpitDashboard() {
 
   if (!rollup) {
     return (
-      <div className="flex flex-col items-center justify-center h-96 gap-3 bg-[#fbfaf5]">
-        <RefreshCw className="h-6 w-6 text-[#0d1b2a] animate-spin" />
-        <p className="font-mono text-xs tracking-widest text-[#2c3e50] uppercase animate-pulse">
+      <div className="flex flex-col items-center justify-center h-96 gap-3 bg-background">
+        <RefreshCw className="h-6 w-6 text-primary animate-spin" />
+        <p className="font-mono text-xs tracking-widest text-muted-foreground uppercase animate-pulse">
           Establishing link with Fleet Command...
         </p>
       </div>
@@ -27,7 +27,7 @@ export default function CockpitDashboard() {
   }
 
   return (
-    <div className="w-full space-y-6 bg-[#fbfaf5] p-6 min-h-screen text-[#0d1b2a]">
+    <div className="w-full space-y-6 bg-background p-6 min-h-screen text-foreground">
       {/* 1. Header with Title & Tenant selector */}
       <CockpitHeader handleForceSync={handleForceSync} />
 
