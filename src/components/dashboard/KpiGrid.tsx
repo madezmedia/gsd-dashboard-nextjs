@@ -1,0 +1,136 @@
+import { useState } from "react";
+import { useCockpitStore } from "@/store/useCockpitStore";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { Activity, Bot, Workflow, Server, CheckCircle2 } from "lucide-react";
+import { cn } from "@/lib/utils";
+
+interface KpiCardProps {
+  title: string;
+  value: string | number;
+  icon: React.ElementType;
+  description?: string;
+  variant?: "default" | "success" | "warning" | "danger";
+}
+
+function KpiCard({ title, value, icon: Icon, description, variant = "default" }: KpiCardProps) {
+  return (
+    <Card
+      className={cn(
+        "border border-[#e5e3d7] bg-[#fbfaf5] rounded-[4px] hover:border-[#0d1b2a]/40 transition-all shadow-none overflow-hidden relative",
+        variant === "danger" && "border-[#c0392b]/30 bg-[#c0392b]/[0.02]",
+        variant === "warning" && "border-[#d35400]/30 bg-[#d35400]/[0.02]"
+      )}
+    >
+      {variant === "danger" && <div className="absolute top-0 left-0 right-0 h-[2px] bg-[#c0392b]" />}
+      {variant === "warning" && <div className="absolute top-0 left-0 right-0 h-[2px] bg-[#d35400]" />}
+      {variant === "success" && <div className="absolute top-0 left-0 right-0 h-[2px] bg-[#27ae60]" />}
+      
+      <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
+        <span className="font-mono text-[9px] text-[#2c3e50] uppercase tracking-wider">{title}</span>
+        <Icon
+          className={cn(
+            "h-4 w-4",
+            variant === "success" && "text-[#27ae60]",
+            variant === "warning" && "text-[#d35400]",
+            variant === "danger" && "text-[#c0392b]",
+            variant === "default" && "text-[#2c3e50]/40"
+          )}
+        />
+      </CardHeader>
+      <CardContent className="pt-0">
+        <div className="text-2xl font-serif font-bold text-[#0d1b2a]">{value}</div>
+        {description && (
+          <p className="text-[9px] font-mono text-[#2c3e50]/70 uppercase tracking-tight mt-1">
+            {description}
+          </p>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+export function KpiGrid() {
+  const { rollup, services, activeTenant } = useCockpitStore();
+
+  const safeRollup = rollup || {
+    totalAgents: 0,
+    activeAgents: 0,
+    totalWorkItems: 0,
+    activeWorkItems: 0,
+    stalledWorkItems: 0,
+    completedWorkItems: 0,
+    pendingWorkItems: 0,
+    pendingApprovals: 0,
+    recentEvents: [],
+    rawWorkItems: [],
+  };
+
+  // Filtering logs/services based on current activeTenant selection
+  const filteredServices = services.filter((s) => {
+    if (activeTenant === "all") return true;
+    const slugLower = s.slug.toLowerCase();
+    const nameLower = s.name.toLowerCase();
+    return slugLower.includes(activeTenant) || nameLower.includes(activeTenant);
+  });
+
+  const filteredWorkItems = (safeRollup.rawWorkItems || []).filter((w) => {
+    if (activeTenant === "all") return true;
+    const titleLower = w.title.toLowerCase();
+    const idLower = w.id.toLowerCase();
+    const ownerLower = (w.owner || "").toLowerCase();
+    return titleLower.includes(activeTenant) || idLower.includes(activeTenant) || ownerLower.includes(activeTenant);
+  });
+
+  const hitlQueue = useCockpitStore((state) => state.hitlQueue);
+  const filteredHitlQueue = hitlQueue.filter((h) => {
+    if (activeTenant === "all") return true;
+    const summaryLower = h.summary.toLowerCase();
+    const memberLower = h.member.toLowerCase();
+    return summaryLower.includes(activeTenant) || memberLower.includes(activeTenant);
+  });
+
+  const urgentCount = filteredHitlQueue.length + (safeRollup.stalledWorkItems || 0);
+  const [mountedTime] = useState(() => Date.now());
+
+  const activeServicesCount = filteredServices.filter((s) =>
+    s.verified_at ? (mountedTime - Number(s.verified_at) < 86400000) : false
+  ).length;
+
+  return (
+    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
+      <KpiCard
+        title="Total Swarms"
+        value={safeRollup.totalAgents}
+        icon={Bot}
+        description="Registered profiles"
+      />
+      <KpiCard
+        title="Active Agents"
+        value={safeRollup.activeAgents}
+        icon={Activity}
+        description="Heartbeat observed"
+        variant="success"
+      />
+      <KpiCard
+        title="Microservices"
+        value={`${activeServicesCount}/${filteredServices.length}`}
+        icon={Server}
+        description="Scope verified online"
+        variant="success"
+      />
+      <KpiCard
+        title="Work Registry"
+        value={`${filteredWorkItems.filter((w) => w.status === "active").length}/${filteredWorkItems.length}`}
+        icon={Workflow}
+        description="Active / scope items"
+      />
+      <KpiCard
+        title="Urgent Tasks"
+        value={urgentCount}
+        icon={CheckCircle2}
+        description="Require Operator review"
+        variant={urgentCount > 0 ? "warning" : "default"}
+      />
+    </div>
+  );
+}
