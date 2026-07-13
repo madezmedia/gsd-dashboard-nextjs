@@ -27,7 +27,7 @@ export default function CockpitDashboard() {
   }
 
   return (
-    <div className="w-full space-y-6 bg-background p-6 min-h-screen text-foreground">
+    <div className="w-full space-y-6">
       {/* 1. Header with Title & Tenant selector */}
       <CockpitHeader handleForceSync={handleForceSync} />
 

@@ -52,9 +52,9 @@
 :root {
   --background: #fbfaf5; /* Warm parchment base */
   --foreground: #0d1b2a; /* Deep ink-blue text */
-  --card: #fbfaf5;
+  --card: #ffffff;
   --card-foreground: #0d1b2a;
-  --popover: #fbfaf5;
+  --popover: #ffffff;
   --popover-foreground: #0d1b2a;
   --primary: #0d1b2a;
   --primary-foreground: #fbfaf5;
@@ -87,9 +87,9 @@
 .dark {
   --background: #0d1b2a; /* Dark ink base */
   --foreground: #fbfaf5; /* Light parchment text */
-  --card: #0d1b2a;
+  --card: #152538;
   --card-foreground: #fbfaf5;
-  --popover: #0d1b2a;
+  --popover: #152538;
   --popover-foreground: #fbfaf5;
   --primary: #fbfaf5;
   --primary-foreground: #0d1b2a;
