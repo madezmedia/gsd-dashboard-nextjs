@@ -56,84 +56,6 @@ function getKindBadgeClasses(kind: string): string {
   return "bg-secondary text-muted-foreground border border-border";
 }
 
-const getMockEvents = (id: string, anchor: number): AcmiEvent[] => {
-  const DEFAULT_TIMELINE_EVENTS: Record<string, AcmiEvent[]> = {
-    "claude-engineer": [
-      {
-        id: "evt-01",
-        ts: anchor - 300000,
-        source: "agent:claude-engineer",
-        kind: "milestone",
-        summary: "Successfully compiled workspace dashboard modules with 0 typescript errors.",
-        correlationId: "cid-code-compile-912"
-      },
-      {
-        id: "evt-02",
-        ts: anchor - 900000,
-        source: "agent:design-ui-designer",
-        kind: "handoff",
-        summary: "Received theme layout mappings for Mad EZ v3 specs dashboard.",
-        correlationId: "cid-design-handover-884"
-      },
-      {
-        id: "evt-03",
-        ts: anchor - 1800000,
-        source: "agent:claude-engineer",
-        kind: "work-item",
-        summary: "Analyzed Upstash Redis command parameters and patched MGET bypass logic.",
-        correlationId: "cid-redis-patch-771"
-      }
-    ],
-    "antigravity": [
-      {
-        id: "evt-antig-1",
-        ts: anchor - 120000,
-        source: "agent:antigravity",
-        kind: "spawn",
-        summary: "Antigravity cockpit controller initialized and socket listener active.",
-        correlationId: "cid-spawn-cockpit-1"
-      },
-      {
-        id: "evt-antig-2",
-        ts: anchor - 600000,
-        source: "agent:antigravity",
-        kind: "milestone",
-        summary: "Published v3 design realignments to the local Super Bus channel.",
-        correlationId: "cid-alignment-bus-2"
-      }
-    ],
-    "design-ui-designer": [
-      {
-        id: "evt-dsgn-1",
-        ts: anchor - 400000,
-        source: "agent:design-ui-designer",
-        kind: "milestone",
-        summary: "Drafted grid layouts and configured tailwind theme overrides.",
-        correlationId: "cid-grid-draft-001"
-      },
-      {
-        id: "evt-dsgn-2",
-        ts: anchor - 1200000,
-        source: "agent:design-ui-designer",
-        kind: "spawn",
-        summary: "UI design agent container spawned on target VM.",
-        correlationId: "cid-spawn-design-01"
-      }
-    ]
-  };
-
-  return DEFAULT_TIMELINE_EVENTS[id] || [
-    {
-      id: "evt-fallback-gen",
-      ts: anchor - 3600000,
-      source: `agent:${id}`,
-      kind: "spawn",
-      summary: `Agent trace established. Monitored link with ${id} active.`,
-      correlationId: `cid-fallback-gen-${id}`
-    }
-  ];
-};
-
 function formatTimestamp(ts: number): string {
   const d = new Date(ts);
   const now = Date.now();
@@ -159,7 +81,6 @@ export const AcmiTimelineStream: React.FC<AcmiTimelineStreamProps> = ({
   const [loadState, setLoadState] = useState<LoadState>(propsEvents ? "loaded" : "idle");
   const [errorMsg, setErrorMsg] = useState("");
   const [activeCategory, setActiveCategory] = useState("all");
-  const [anchorTime] = useState(() => Date.now());
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const fetchEvents = useCallback(async () => {
@@ -198,8 +119,7 @@ export const AcmiTimelineStream: React.FC<AcmiTimelineStreamProps> = ({
     };
   }, [pollIntervalMs, fetchEvents, propsEvents]);
 
-  // Merge in static timeline fallbacks if database returns empty
-  const activeEvents = allEvents.length > 0 ? allEvents : getMockEvents(id, anchorTime);
+  const activeEvents = allEvents;
 
   const filtered = filterKind
     ? activeEvents.filter((e) => filterKind.includes(e.kind))
