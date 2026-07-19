@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useCockpitStore } from "@/store/useCockpitStore";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 import { Activity, Bot, Workflow, Server, CheckCircle2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -16,7 +16,7 @@ function KpiCard({ title, value, icon: Icon, description, variant = "default" }:
   return (
     <Card
       className={cn(
-        "border border-border bg-card rounded-[4px] hover:border-primary/40 transition-all shadow-none overflow-hidden relative",
+        "border border-border bg-card rounded-md hover:border-primary/40 transition-all shadow-none overflow-hidden relative flex flex-col justify-between p-5 min-h-[130px] pb-5",
         variant === "danger" && "border-destructive/30 bg-destructive/[0.02]",
         variant === "warning" && "border-amber-500/30 bg-amber-500/[0.02]"
       )}
@@ -25,26 +25,26 @@ function KpiCard({ title, value, icon: Icon, description, variant = "default" }:
       {variant === "warning" && <div className="absolute top-0 left-0 right-0 h-[2px] bg-amber-500" />}
       {variant === "success" && <div className="absolute top-0 left-0 right-0 h-[2px] bg-emerald-500" />}
       
-      <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
+      <div className="flex flex-row items-center justify-between w-full pb-1">
         <span className="font-mono text-[9px] text-muted-foreground uppercase tracking-wider">{title}</span>
         <Icon
           className={cn(
-            "h-4 w-4",
+            "h-4 w-4 shrink-0",
             variant === "success" && "text-emerald-500",
             variant === "warning" && "text-amber-500",
             variant === "danger" && "text-destructive",
             variant === "default" && "text-muted-foreground/40"
           )}
         />
-      </CardHeader>
-      <CardContent className="pt-0">
-        <div className="text-2xl font-serif font-bold text-foreground">{value}</div>
+      </div>
+      <div className="flex-1 flex flex-col justify-end mt-2">
+        <div className="text-2xl font-serif font-bold text-foreground leading-none">{value}</div>
         {description && (
-          <p className="text-[9px] font-mono text-muted-foreground/70 uppercase tracking-tight mt-1">
+          <p className="text-[9px] font-mono text-muted-foreground/70 uppercase tracking-tight mt-1.5 pb-1">
             {description}
           </p>
         )}
-      </CardContent>
+      </div>
     </Card>
   );
 }
@@ -97,7 +97,7 @@ export function KpiGrid() {
   ).length;
 
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 w-full">
       <KpiCard
         title="Total Swarms"
         value={safeRollup.totalAgents}

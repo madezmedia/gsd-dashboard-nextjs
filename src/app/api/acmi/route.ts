@@ -56,6 +56,18 @@ function parseSignals(rawSignals: Record<string, string>): Record<string, unknow
   return parsed;
 }
 
+function parseSafeDateString(scoreStr: string): string {
+  let parsedTime = Number(scoreStr);
+  if (isNaN(parsedTime) || parsedTime <= 0) {
+    parsedTime = Date.now();
+  }
+  try {
+    return new Date(parsedTime).toISOString();
+  } catch {
+    return new Date().toISOString();
+  }
+}
+
 // In-Memory Self-Healing Check
 async function ensureSeeded() {
   if (isSeeded) return;
@@ -496,7 +508,7 @@ async function getEntityData(config: TenantConfig, namespace: string, id: string
       } catch {
         eventObj = {
           id: "evt-fallback-" + Math.random().toString(36).substring(2, 11),
-          ts: new Date(Number(scoreStr || Date.now())).toISOString(),
+          ts: parseSafeDateString(scoreStr),
           source: "system",
           kind: "legacy-event",
           summary: String(payloadStr),
@@ -741,7 +753,7 @@ export async function POST(req: NextRequest) {
               // Fallback parser as instructed by orchestrator
               eventObj = {
                 id: "evt-fallback-" + Math.random().toString(36).substring(2, 11),
-                ts: new Date(Number(scoreStr || Date.now())).toISOString(),
+                ts: parseSafeDateString(scoreStr),
                 source: "system",
                 kind: "legacy-event",
                 summary: String(payloadStr),
@@ -959,7 +971,7 @@ export async function POST(req: NextRequest) {
               } catch {
                 eventObj = {
                   id: "evt-fallback-" + Math.random().toString(36).substring(2, 11),
-                  ts: new Date(Number(scoreStr || Date.now())).toISOString(),
+                  ts: parseSafeDateString(scoreStr),
                   source: "system",
                   kind: "legacy-event",
                   summary: String(payloadStr),

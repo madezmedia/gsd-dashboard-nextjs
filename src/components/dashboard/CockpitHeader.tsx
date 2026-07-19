@@ -71,8 +71,8 @@ export function CockpitHeader({ handleForceSync }: CockpitHeaderProps) {
       </div>
 
       {/* Tenant selector buttons */}
-      <div className="border-t border-border pt-4 flex flex-wrap items-center justify-between gap-4">
-        <div className="flex items-center gap-1">
+      <div className="border-t border-border mt-3 pt-5 pb-1 flex flex-wrap items-center justify-between gap-4">
+        <div className="flex items-center gap-1.5">
           <span className="text-[9px] font-mono text-muted-foreground/70 uppercase mr-2 flex items-center gap-1">
             <Layers className="h-3 w-3" /> Scope:
           </span>
@@ -81,7 +81,7 @@ export function CockpitHeader({ handleForceSync }: CockpitHeaderProps) {
               key={t}
               onClick={() => setActiveTenant(t)}
               className={cn(
-                "px-3 py-1 text-[9px] font-mono border uppercase tracking-wider transition-all rounded-[4px] cursor-pointer",
+                "px-3 py-1.5 text-[9px] font-mono border uppercase tracking-wider transition-all rounded-md cursor-pointer",
                 activeTenant === t
                   ? "border-primary text-primary-foreground bg-primary font-bold"
                   : "border-border text-muted-foreground hover:text-foreground bg-card/50"

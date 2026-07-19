@@ -232,7 +232,7 @@ function WorkflowListContent() {
 export default function WorkflowTracker() {
   return (
     <Suspense fallback={
-      <div className="flex items-center justify-center h-64 font-mono text-xs uppercase animate-pulse text-[#1a1a1a]/60">
+      <div className="flex items-center justify-center h-64 font-mono text-xs uppercase animate-pulse text-muted-foreground/60">
         Initializing editorial stream...
       </div>
     }>

@@ -11,7 +11,10 @@ interface GatewayServicesProps {
 }
 
 function formatRelativeTime(ts: number | undefined): string {
-  if (!ts) return "";
+  if (!ts) return "Pending Sync";
+  const d = new Date(ts);
+  if (isNaN(d.getTime())) return "Pending Sync";
+  
   const diffMs = Date.now() - ts;
   const diffSec = Math.floor(diffMs / 1000);
   const diffMin = Math.floor(diffSec / 60);
@@ -20,7 +23,7 @@ function formatRelativeTime(ts: number | undefined): string {
   if (diffSec < 60) return "just now";
   if (diffMin < 60) return `${diffMin}m ago`;
   if (diffHr < 24) return `${diffHr}h ago`;
-  return new Date(ts).toLocaleDateString();
+  return d.toLocaleDateString();
 }
 
 export function GatewayServices({ handleResolveHitl }: GatewayServicesProps) {

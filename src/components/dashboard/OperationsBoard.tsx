@@ -9,7 +9,10 @@ interface OperationsBoardProps {
 }
 
 function formatRelativeTime(ts: number | undefined): string {
-  if (!ts) return "";
+  if (!ts) return "Pending Sync";
+  const d = new Date(ts);
+  if (isNaN(d.getTime())) return "Pending Sync";
+  
   const diffMs = Date.now() - ts;
   const diffSec = Math.floor(diffMs / 1000);
   const diffMin = Math.floor(diffSec / 60);
@@ -18,7 +21,7 @@ function formatRelativeTime(ts: number | undefined): string {
   if (diffSec < 60) return "just now";
   if (diffMin < 60) return `${diffMin}m ago`;
   if (diffHr < 24) return `${diffHr}h ago`;
-  return new Date(ts).toLocaleDateString();
+  return d.toLocaleDateString();
 }
 
 export function OperationsBoard({ handleResolveHitl }: OperationsBoardProps) {
@@ -114,12 +117,12 @@ export function OperationsBoard({ handleResolveHitl }: OperationsBoardProps) {
                 {ticket.summary}
               </p>
             </div>
-            <div className="flex gap-2">
+            <div className="flex items-center gap-2 shrink-0 md:w-56 md:justify-end">
               <Button
                 size="sm"
                 onClick={() => handleResolveHitl(ticket, "approve")}
                 disabled={actioningMember === ticket.member}
-                className="bg-emerald-500 hover:bg-emerald-600 text-white font-mono text-[9px] uppercase px-3 rounded-[4px] h-8 shadow-none"
+                className="bg-emerald-500 hover:bg-emerald-600 text-white font-mono text-[9px] uppercase px-3 rounded-[4px] h-8 shadow-none w-24 justify-center"
               >
                 <Check className="h-3 w-3 mr-1" /> Approve
               </Button>
@@ -128,7 +131,7 @@ export function OperationsBoard({ handleResolveHitl }: OperationsBoardProps) {
                 variant="outline"
                 onClick={() => handleResolveHitl(ticket, "reject")}
                 disabled={actioningMember === ticket.member}
-                className="border-border text-foreground hover:bg-muted font-mono text-[9px] uppercase px-3 rounded-[4px] h-8 shadow-none"
+                className="border-border text-foreground hover:bg-muted font-mono text-[9px] uppercase px-3 rounded-[4px] h-8 shadow-none w-24 justify-center"
               >
                 <Ban className="h-3 w-3 mr-1" /> Reject
               </Button>
@@ -142,7 +145,7 @@ export function OperationsBoard({ handleResolveHitl }: OperationsBoardProps) {
             key={w.id}
             className="border border-border bg-card p-3 flex flex-col md:flex-row md:items-center md:justify-between gap-3 rounded-[4px]"
           >
-            <div>
+            <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2">
                 <Badge className="bg-destructive text-white text-[8px] uppercase font-mono rounded-[2px] shadow-none">
                   stalled-job
@@ -158,11 +161,11 @@ export function OperationsBoard({ handleResolveHitl }: OperationsBoardProps) {
                 {w.title}
               </p>
             </div>
-            <div className="flex gap-2">
+            <div className="flex items-center gap-2 shrink-0 md:w-56 md:justify-end">
               <Button
                 size="sm"
                 variant="outline"
-                className="text-[9px] font-mono border-border uppercase rounded-[4px] h-8 shadow-none hover:bg-muted text-foreground"
+                className="text-[9px] font-mono border-border uppercase rounded-[4px] h-8 shadow-none hover:bg-muted text-foreground w-24 justify-center"
                 onClick={() => copyText(w.id, `copy-stalled-${w.id}`)}
               >
                 {copiedId === `copy-stalled-${w.id}` ? "Copied" : "Copy ID"}

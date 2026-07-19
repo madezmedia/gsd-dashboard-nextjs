@@ -360,7 +360,7 @@ function WorkflowTraceContent({ id }: { id: string }) {
                       </button>
                       
                       {isExpanded && (
-                        <pre className="mt-2 w-full bg-[#0d1f22] text-[#f4f2eb] border border-border p-2.5 font-mono text-[10px] overflow-x-auto rounded-xl">
+                        <pre className="mt-2 w-full bg-[#0B2124] text-[#5EF2C6] border border-primary/20 p-2.5 font-mono text-[10px] overflow-x-auto rounded-xl">
                           {JSON.stringify(evt.payload, null, 2)}
                         </pre>
                       )}
