@@ -6,6 +6,7 @@ import "./globals.css";
 import { ResponsiveLayout } from "@/components/layout/responsive-layout";
 import { CopilotPanel } from "@/components/openui/copilot-panel";
 import { ShortcutHandler } from "@/components/layout/shortcut-handler";
+import { PostHogProvider } from "@/components/analytics/PostHogProvider";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -30,26 +31,28 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${geistSans.variable} ${geistMono.variable}`} suppressHydrationWarning>
       <body className="min-h-screen flex font-sans antialiased bg-background text-foreground">
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="dark"
-          enableSystem={false}
-          disableTransitionOnChange
-        >
-          <Suspense fallback={null}>
-            <ShortcutHandler />
-          </Suspense>
-          <Suspense fallback={<div className="w-full h-full flex items-center justify-center font-mono text-[10px] text-muted-foreground uppercase bg-background">Loading ACMI System...</div>}>
-            <ResponsiveLayout>
-              <main className="flex-1 flex flex-col overflow-hidden">
-                <div className="flex-1 overflow-auto p-4 lg:p-6 bg-background">
-                  {children}
-                </div>
-              </main>
-            </ResponsiveLayout>
-          </Suspense>
-          <CopilotPanel />
-        </ThemeProvider>
+        <PostHogProvider>
+          <ThemeProvider
+            attribute="class"
+            defaultTheme="dark"
+            enableSystem={false}
+            disableTransitionOnChange
+          >
+            <Suspense fallback={null}>
+              <ShortcutHandler />
+            </Suspense>
+            <Suspense fallback={<div className="w-full h-full flex items-center justify-center font-mono text-[10px] text-muted-foreground uppercase bg-background">Loading ACMI System...</div>}>
+              <ResponsiveLayout>
+                <main className="flex-1 flex flex-col overflow-hidden">
+                  <div className="flex-1 overflow-auto p-4 lg:p-6 bg-background">
+                    {children}
+                  </div>
+                </main>
+              </ResponsiveLayout>
+            </Suspense>
+            <CopilotPanel />
+          </ThemeProvider>
+        </PostHogProvider>
       </body>
     </html>
   );
