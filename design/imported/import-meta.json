@@ -1,0 +1,18 @@
+{
+  "project_id": "a378a26c-7385-439b-9979-e939d6de1e62",
+  "source": "claude-design-api project data (chat tool inputs)",
+  "files": {
+    "GSD Cockpit Polish.dc.html": {
+      "path": "/Users/michaelshaw/Projects/gsd-dashboard-nextjs/design/imported/GSD_Cockpit_Polish.dc.html",
+      "bytes": 59530,
+      "fragment_bytes": 50359,
+      "js_bytes": 8900
+    },
+    "GSD Fleet Template.dc.html": {
+      "path": "/Users/michaelshaw/Projects/gsd-dashboard-nextjs/design/imported/GSD_Fleet_Template.dc.html",
+      "bytes": 38480,
+      "fragment_bytes": 25326,
+      "js_bytes": 12883
+    }
+  }
+}

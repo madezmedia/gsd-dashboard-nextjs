@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Geist, Geist_Mono, JetBrains_Mono, Newsreader, Raleway } from "next/font/google";
 import { ThemeProvider } from "next-themes";
 import { Suspense } from "react";
 import "./globals.css";
@@ -18,6 +18,24 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+const jetbrains = JetBrains_Mono({
+  variable: "--font-jetbrains",
+  subsets: ["latin"],
+  weight: ["400", "500", "700"],
+});
+
+const newsreader = Newsreader({
+  variable: "--font-newsreader",
+  subsets: ["latin"],
+  weight: ["500", "600", "700"],
+});
+
+const raleway = Raleway({
+  variable: "--font-raleway",
+  subsets: ["latin"],
+  weight: ["400", "500", "600"],
+});
+
 export const metadata: Metadata = {
   title: "ACMI Fleet Dashboard",
   description: "ACMI Super Bus — Layer 6: Dashboard UI with OpenUI + Vercel AI SDK + Groq",
@@ -29,7 +47,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${geistSans.variable} ${geistMono.variable}`} suppressHydrationWarning>
+    <html
+      lang="en"
+      className={`${geistSans.variable} ${geistMono.variable} ${jetbrains.variable} ${newsreader.variable} ${raleway.variable}`}
+      suppressHydrationWarning
+    >
       <body className="min-h-screen flex font-sans antialiased bg-background text-foreground">
         <PostHogProvider>
           <ThemeProvider
@@ -43,11 +65,7 @@ export default function RootLayout({
             </Suspense>
             <Suspense fallback={<div className="w-full h-full flex items-center justify-center font-mono text-[10px] text-muted-foreground uppercase bg-background">Loading ACMI System...</div>}>
               <ResponsiveLayout>
-                <main className="flex-1 flex flex-col overflow-hidden">
-                  <div className="flex-1 overflow-auto p-4 lg:p-6 bg-background">
-                    {children}
-                  </div>
-                </main>
+                {children}
               </ResponsiveLayout>
             </Suspense>
             <CopilotPanel />

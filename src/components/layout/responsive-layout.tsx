@@ -38,6 +38,12 @@ export function ResponsiveLayout({ children }: { children: React.ReactNode }) {
     };
   }, []);
 
+  // GSD Fleet Template owns its own chrome (Claude Design import)
+  const isFleetTemplate = pathname === "/" || pathname.startsWith("/fleet");
+  if (isFleetTemplate) {
+    return <div className="min-h-screen w-full">{children}</div>;
+  }
+
   return (
     <div className="min-h-screen flex flex-col lg:flex-row w-full bg-background text-foreground">
       {/* 1. Desktop Sidebar panel - locked above 1024px viewport */}
@@ -104,7 +110,11 @@ export function ResponsiveLayout({ children }: { children: React.ReactNode }) {
 
       {/* 4. Isolated safe child content layer */}
       <div className="flex-1 flex flex-col overflow-hidden min-w-0 bg-background">
-        {children}
+        <main className="flex-1 flex flex-col overflow-hidden">
+          <div className="flex-1 overflow-auto p-4 lg:p-6 bg-background">
+            {children}
+          </div>
+        </main>
       </div>
 
       {/* Global slide-out Documentation Drawer */}

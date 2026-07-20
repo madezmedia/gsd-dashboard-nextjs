@@ -1,0 +1,575 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>GSD Cockpit Polish.dc.html</title>
+<script src="./support.js" defer></script>
+</head>
+<body>
+<helmet>
+<meta name="design_doc_mode" content="canvas">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,400;0,500;0,700;1,400&family=Montserrat:wght@600;700;800&family=Newsreader:ital,opsz,wght@0,6..72,500;0,6..72,600;0,6..72,700;1,6..72,500&family=Raleway:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#ecead f;background:#eceadf;font-family:'Raleway',system-ui,sans-serif}
+a{color:#2d4a3e}a:hover{color:#3a5a4d}
+.dv-turn{padding:40px 44px 32px;border-bottom:1px solid rgba(0,0,0,.08);scroll-margin-top:16px}
+.dv-thd{display:flex;align-items:baseline;gap:10px;margin:0 0 20px}
+.dv-tid{font:700 10px 'JetBrains Mono',monospace;padding:3px 7px;background:#2d4a3e;color:#fff;border-radius:4px;text-decoration:none}
+.dv-tname{font:600 13px/1.2 'Raleway',sans-serif;color:#1a1a1a}
+.dv-opts{display:flex;flex-wrap:wrap;gap:36px;align-items:flex-start}
+.dv-opt{flex:none;display:flex;flex-direction:column;gap:9px;scroll-margin-top:16px}
+.dv-oid{font:700 10.5px 'JetBrains Mono',monospace;padding:3px 7px;background:rgba(45,74,62,.12);color:#2d4a3e;border-radius:5px;text-decoration:none}
+.dv-olabel{display:flex;align-items:baseline;gap:8px;font:500 11px/1.3 'Raleway',sans-serif;color:rgba(0,0,0,.6)}
+.dv-card{max-width:100%;background:#fff;border:1px solid rgba(0,0,0,.1);border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,.07);overflow:hidden}
+.dv-opt:target .dv-oid{background:#2d4a3e;color:#fff}
+.dv-next{margin:24px 0 0;font:12px/1.5 'Raleway',sans-serif;color:rgba(0,0,0,.55)}
+.gsd{--bg:#faf9f5;--card:#ffffff;--fg:#20241f;--muted:#63705f;--soft:#98a191;--border:#e2dfd2;--hair:#eae7dc;--panel:#f4f2e9;--primary:#2d4a3e;--primary-fg:#ffffff;--em:#0e8f66;--em-bg:rgba(14,143,102,.07);--am:#b07f14;--am-bg:rgba(176,127,20,.08);--rb:#a63c30;--rb-bg:rgba(166,60,48,.05);--ink:#20241f}
+.gsd[data-theme="dark"]{--bg:#151714;--card:#1d201c;--fg:#e9e7dc;--muted:#a3ab9c;--soft:#6d756a;--border:#2e332c;--hair:#272b25;--panel:#22261f;--primary:#6cae8c;--primary-fg:#111510;--em:#3fc491;--em-bg:rgba(63,196,145,.09);--am:#dca campo;--am:#dca43d;--am-bg:rgba(220,164,61,.1);--rb:#df6a5d;--rb-bg:rgba(223,106,93,.07);--ink:#e9e7dc}
+@keyframes gsdpulse{0%,100%{opacity:1}50%{opacity:.3}}
+</style>
+</helmet>
+<section class="dv-turn" id="t1">
+<div class="dv-thd"><a class="dv-tid" href="#t1">1</a><span class="dv-tname">GSD Fleet Cockpit — three elevated directions (light/dark toggle in each header)</span>
+<span style="font:400 11px 'Raleway',sans-serif;color:rgba(0,0,0,.5)">Grounded in the live repo: parchment surface, forest primary, mono telemetry, serif metrics, no purple, aligned action columns, safe timestamps.</span></div>
+<div class="dv-opts">
+
+<div class="dv-opt" id="1a" data-screen-label="1a Refined Cockpit">
+<div class="dv-olabel"><a class="dv-oid" href="#1a">1a</a>Refined Cockpit — your current structure, spec fixes applied, everything on the grid</div>
+<div class="dv-card" style="width:1340px">
+<div class="gsd" data-theme="{{ themeA }}" style="background:var(--bg);padding:24px;display:flex;flex-direction:column;gap:20px;color:var(--fg)">
+  <header style="position:relative;border:1px solid var(--border);background:var(--card);border-radius:6px;padding:20px 22px 14px;overflow:hidden">
+    <div style="position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--primary)"></div>
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap">
+      <div style="display:flex;flex-direction:column;gap:5px">
+        <h1 style="margin:0;font:600 22px 'Newsreader',serif;color:var(--fg)">Fleet Command <em style="font-style:italic;color:var(--primary)">Cockpit</em></h1>
+        <p style="margin:0;font:500 9px 'JetBrains Mono',monospace;letter-spacing:.18em;text-transform:uppercase;color:var(--muted)">ACMI Swarm Operations · Multi-Tenant Integration Console</p>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px">
+        <button style="display:flex;align-items:center;gap:6px;height:30px;padding:0 12px;background:var(--card);border:1px solid var(--border);border-radius:4px;font:700 9px 'JetBrains Mono',monospace;letter-spacing:.12em;text-transform:uppercase;color:var(--fg);cursor:pointer">Docs &amp; Notes</button>
+        <button style="display:flex;align-items:center;gap:6px;height:30px;padding:0 12px;background:var(--card);border:1px solid var(--border);border-radius:4px;font:700 9px 'JetBrains Mono',monospace;letter-spacing:.12em;text-transform:uppercase;color:var(--fg);cursor:pointer"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M21 12a9 9 0 1 1-2.6-6.3M21 3v6h-6"></path></svg>Sync State</button>
+        <div style="display:flex;align-items:center;gap:7px;height:30px;padding:0 12px;background:var(--panel);border:1px solid var(--border);border-radius:4px;font:700 9px 'JetBrains Mono',monospace;letter-spacing:.14em">
+          <span style="width:6px;height:6px;border-radius:99px;background:var(--em);animation:gsdpulse 3s ease-in-out infinite"></span><span style="color:var(--em)">[CONNECTED]</span>
+        </div>
+        <button onClick="{{ toggleA }}" style="height:30px;padding:0 12px;background:var(--ink);color:var(--bg);border:1px solid var(--ink);border-radius:4px;font:700 9px 'JetBrains Mono',monospace;letter-spacing:.12em;text-transform:uppercase;cursor:pointer">{{ themeLabelA }}</button>
+      </div>
+    </div>
+    <div style="border-top:1px solid var(--hair);margin-top:16px;padding-top:14px;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap">
+      <div style="display:flex;align-items:center;gap:6px">
+        <span style="font:700 9px 'JetBrains Mono',monospace;letter-spacing:.16em;text-transform:uppercase;color:var(--soft);margin-right:6px">Scope:</span>
+        <sc-for list="{{ tenantsA }}" as="t" hint-placeholder-count="5"><button onClick="{{ t.pick }}" style="{{ t.style }}">{{ t.label }}</button></sc-for>
+      </div>
+      <span style="font:500 9px 'JetBrains Mono',monospace;letter-spacing:.14em;text-transform:uppercase;color:var(--soft)">Active tenant context: <strong style="color:var(--fg)">{{ tenantA }}</strong></span>
+    </div>
+  </header>
+
+  <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:14px">
+    <div style="display:flex;flex-direction:column;justify-content:space-between;min-height:124px;padding:16px 18px;background:var(--card);border:1px solid var(--border);border-radius:6px">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:8px"><span style="font:700 9px 'JetBrains Mono',monospace;letter-spacing:.15em;text-transform:uppercase;color:var(--muted)">Total Swarms</span><span style="width:6px;height:6px;border-radius:2px;background:var(--soft)"></span></div>
+      <div><div style="font:600 30px 'Newsreader',serif;line-height:1;color:var(--fg)">12</div><p style="margin:7px 0 0;font:500 9px 'JetBrains Mono',monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--soft)">Registered profiles</p></div>
+    </div>
+    <div style="position:relative;display:flex;flex-direction:column;justify-content:space-between;min-height:124px;padding:16px 18px;background:var(--card);border:1px solid var(--border);border-radius:6px;overflow:hidden">
+      <div style="position:absolute;top:0;left:0;right:0;height:2px;background:var(--em)"></div>
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:8px"><span style="font:700 9px 'JetBrains Mono',monospace;letter-spacing:.15em;text-transform:uppercase;color:var(--muted)">Active Agents</span><span style="width:6px;height:6px;border-radius:99px;background:var(--em);animation:gsdpulse 3s ease-in-out infinite"></span></div>
+      <div><div style="font:600 30px 'Newsreader',serif;line-height:1;color:var(--fg)">8</div><p style="margin:7px 0 0;font:500 9px 'JetBrains Mono',monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--soft)">Heartbeat observed</p></div>
+    </div>
+    <div style="position:relative;display:flex;flex-direction:column;justify-content:space-between;min-height:124px;padding:16px 18px;background:var(--card);border:1px solid var(--border);border-radius:6px;overflow:hidden">
+      <div style="position:absolute;top:0;left:0;right:0;height:2px;background:var(--em)"></div>
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:8px"><span style="font:700 9px 'JetBrains Mono',monospace;letter-spacing:.15em;text-transform:uppercase;color:var(--muted)">Microservices</span><span style="width:6px;height:6px;border-radius:99px;background:var(--em)"></span></div>
+      <div><div style="font:600 30px 'Newsreader',serif;line-height:1;color:var(--fg)">9<span style="color:var(--soft);font-size:20px">/11</span></div><p style="margin:7px 0 0;font:500 9px 'JetBrains Mono',monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--soft)">Scope verified online</p></div>
+    </div>
+    <div style="display:flex;flex-direction:column;justify-content:space-between;min-height:124px;padding:16px 18px;background:var(--card);border:1px solid var(--border);border-radius:6px">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:8px"><span style="font:700 9px 'JetBrains Mono',monospace;letter-spacing:.15em;text-transform:uppercase;color:var(--muted)">Work Registry</span><span style="width:6px;height:6px;border-radius:2px;background:var(--soft)"></span></div>
+      <div><div style="font:600 30px 'Newsreader',serif;line-height:1;color:var(--fg)">14<span style="color:var(--soft);font-size:20px">/47</span></div><p style="margin:7px 0 0;font:500 9px 'JetBrains Mono',monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--soft)">Active / scope items</p></div>
+    </div>
+    <div style="position:relative;display:flex;flex-direction:column;justify-content:space-between;min-height:124px;padding:16px 18px;background:var(--card);border:1px solid var(--am);border-radius:6px;overflow:hidden">
+      <div style="position:absolute;top:0;left:0;right:0;height:2px;background:var(--am)"></div>
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:8px"><span style="font:700 9px 'JetBrains Mono',monospace;letter-spacing:.15em;text-transform:uppercase;color:var(--am)">Urgent Tasks</span><span style="width:6px;height:6px;border-radius:99px;background:var(--am);animation:gsdpulse 2.4s ease-in-out infinite"></span></div>
+      <div><div style="font:600 30px 'Newsreader',serif;line-height:1;color:var(--fg)">3</div><p style="margin:7px 0 0;font:500 9px 'JetBrains Mono',monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--am)">Require operator review</p></div>
+    </div>
+  </div>
+
+  <div style="border:1px solid var(--border);border-radius:6px;background:var(--card);overflow:hidden">
+    <div style="background:var(--rb-bg);border-bottom:1px solid var(--border);padding:11px 16px;display:flex;align-items:center;justify-content:space-between">
+      <span style="display:flex;align-items:center;gap:8px;font:700 10px 'JetBrains Mono',monospace;letter-spacing:.14em;text-transform:uppercase;color:var(--rb)"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0zM12 9v4m0 4h.01"></path></svg>Urgent Operations Board · 3 alerts</span>
+      <span style="font:700 8px 'JetBrains Mono',monospace;letter-spacing:.14em;text-transform:uppercase;color:var(--rb);background:var(--card);border:1px solid var(--border);padding:3px 8px;border-radius:3px">Immediate operator review</span>
+    </div>
+    <div style="padding:14px 16px;display:flex;flex-direction:column;gap:10px">
+      <sc-for list="{{ hitlA }}" as="h" hint-placeholder-count="2">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:16px;padding:12px 14px;border:1px solid var(--hair);border-radius:4px;background:var(--bg)">
+        <div style="display:flex;flex-direction:column;gap:7px;min-width:0;flex:1">
+          <div style="display:flex;align-items:center;gap:10px">
+            <span style="font:700 8px 'JetBrains Mono',monospace;letter-spacing:.1em;text-transform:uppercase;color:#fff;background:var(--am);padding:3px 7px;border-radius:2px">hitl-escalation</span>
+            <span style="font:700 10px 'JetBrains Mono',monospace;text-transform:uppercase;color:var(--fg)">{{ h.member }}</span>
+            <span style="font:400 10px 'JetBrains Mono',monospace;color:var(--soft)">{{ h.when }}</span>
+          </div>
+          <p style="margin:0;font:500 11px/1.5 'JetBrains Mono',monospace;color:var(--fg);background:var(--panel);border:1px solid var(--hair);border-radius:3px;padding:8px 10px">{{ h.summary }}</p>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;flex-shrink:0;width:212px;justify-content:flex-end">
+          <button style="width:98px;height:30px;display:flex;align-items:center;justify-content:center;gap:5px;background:var(--em);color:#fff;border:1px solid var(--em);border-radius:4px;font:700 9px 'JetBrains Mono',monospace;letter-spacing:.1em;text-transform:uppercase;cursor:pointer"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6 9 17l-5-5"></path></svg>Approve</button>
+          <button style="width:98px;height:30px;display:flex;align-items:center;justify-content:center;gap:5px;background:var(--card);color:var(--fg);border:1px solid var(--border);border-radius:4px;font:700 9px 'JetBrains Mono',monospace;letter-spacing:.1em;text-transform:uppercase;cursor:pointer"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6"><circle cx="12" cy="12" r="9"></circle><path d="m5.7 5.7 12.6 12.6"></path></svg>Reject</button>
+        </div>
+      </div>
+      </sc-for>
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:16px;padding:12px 14px;border:1px solid var(--hair);border-radius:4px;background:var(--bg)">
+        <div style="display:flex;flex-direction:column;gap:6px;min-width:0;flex:1">
+          <div style="display:flex;align-items:center;gap:10px">
+            <span style="font:700 8px 'JetBrains Mono',monospace;letter-spacing:.1em;text-transform:uppercase;color:#fff;background:var(--rb);padding:3px 7px;border-radius:2px">stalled-job</span>
+            <span style="font:700 10px 'JetBrains Mono',monospace;text-transform:uppercase;color:var(--fg)">wf-suzanne-showcase-021</span>
+            <span style="font:400 9px 'JetBrains Mono',monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--soft)">Owner: agent:folana</span>
+          </div>
+          <p style="margin:0;font:600 12px 'Raleway',sans-serif;color:var(--fg)">Property showcase render pipeline stalled at asset fetch — 41 min without heartbeat</p>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;flex-shrink:0;width:212px;justify-content:flex-end">
+          <button style="width:98px;height:30px;display:flex;align-items:center;justify-content:center;background:var(--card);color:var(--fg);border:1px solid var(--border);border-radius:4px;font:700 9px 'JetBrains Mono',monospace;letter-spacing:.1em;text-transform:uppercase;cursor:pointer">Copy ID</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div style="display:grid;grid-template-columns:2fr 1fr;gap:16px;align-items:start">
+    <div style="border:1px solid var(--border);border-radius:6px;background:var(--card)">
+      <div style="padding:12px 16px;border-bottom:1px solid var(--hair);display:flex;align-items:center;justify-content:space-between">
+        <span style="font:700 10px 'JetBrains Mono',monospace;letter-spacing:.15em;text-transform:uppercase;color:var(--muted)">[Console Activity Stream]</span>
+        <span style="font:500 9px 'JetBrains Mono',monospace;color:var(--fg);background:var(--panel);border:1px solid var(--hair);padding:2px 8px;border-radius:3px">142 events</span>
+      </div>
+      <div style="padding:8px 16px 12px">
+        <sc-for list="{{ feed }}" as="e" hint-placeholder-count="8">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:6px 0;border-bottom:1px solid var(--hair)">
+          <div style="display:flex;align-items:center;gap:9px;min-width:0;flex:1;font:400 11px 'JetBrains Mono',monospace">
+            <span style="flex-shrink:0;color:var(--soft)">[{{ e.t }}]</span>
+            <span style="flex-shrink:0;font-weight:700;color:var(--fg)">{{ e.src }}</span>
+            <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--muted)">{{ e.sum }}</span>
+          </div>
+          <span style="{{ e.badgeStyle }}">{{ e.kind }}</span>
+        </div>
+        </sc-for>
+      </div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:16px">
+      <div style="border:1px solid var(--border);border-radius:6px;background:var(--card)">
+        <div style="padding:12px 16px;border-bottom:1px solid var(--hair);display:flex;align-items:center;justify-content:space-between">
+          <span style="font:700 10px 'JetBrains Mono',monospace;letter-spacing:.15em;text-transform:uppercase;color:var(--muted)">[Swarm Gateway Actions]</span>
+          <span style="font:500 8px 'JetBrains Mono',monospace;letter-spacing:.1em;text-transform:uppercase;color:var(--soft)">Ops command</span>
+        </div>
+        <div style="padding:14px 16px;display:flex;flex-direction:column;gap:12px">
+          <div style="display:flex;flex-direction:column;gap:7px">
+            <span style="font:700 9px 'JetBrains Mono',monospace;letter-spacing:.12em;text-transform:uppercase;color:var(--fg)">Quick diagnostic cmd</span>
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;background:var(--primary);color:var(--primary-fg);border-radius:3px;padding:9px 11px;font:500 9px 'JetBrains Mono',monospace">
+              <code style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">curl -s $GATEWAY_HOST/health</code>
+              <svg style="flex-shrink:0;opacity:.7;cursor:pointer" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="12" height="12" rx="2"></rect><path d="M5 15V5a2 2 0 0 1 2-2h10"></path></svg>
+            </div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:9px;border:1px solid var(--hair);border-radius:4px;background:var(--bg);padding:12px">
+            <span style="font:700 9px 'JetBrains Mono',monospace;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)">Actioning ticket</span>
+            <div style="display:flex;align-items:center;justify-content:space-between;font:400 9px 'JetBrains Mono',monospace;color:var(--soft)"><span>Agent: bentley</span><span>12m ago</span></div>
+            <p style="margin:0;font:500 10.5px/1.55 'JetBrains Mono',monospace;color:var(--fg);background:var(--card);border:1px solid var(--hair);border-radius:3px;padding:8px 10px">Publish AEO landing page for azpetstylist.com — copy approved, awaiting deploy authorization</p>
+            <input placeholder="Add resolution instruction…" style="height:30px;background:var(--card);border:1px solid var(--border);border-radius:4px;padding:0 10px;font:400 10px 'JetBrains Mono',monospace;color:var(--fg);outline:none">
+            <div style="display:flex;gap:8px">
+              <button style="flex:1;height:30px;display:flex;align-items:center;justify-content:center;gap:5px;background:var(--em);color:#fff;border:1px solid var(--em);border-radius:4px;font:700 9px 'JetBrains Mono',monospace;letter-spacing:.1em;text-transform:uppercase;cursor:pointer">Approve</button>
+              <button style="flex:1;height:30px;display:flex;align-items:center;justify-content:center;gap:5px;background:var(--card);color:var(--fg);border:1px solid var(--border);border-radius:4px;font:700 9px 'JetBrains Mono',monospace;letter-spacing:.1em;text-transform:uppercase;cursor:pointer">Reject</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div style="border:1px solid var(--border);border-radius:6px;background:var(--card)">
+        <div style="padding:12px 16px;border-bottom:1px solid var(--hair);display:flex;align-items:center;justify-content:space-between">
+          <span style="font:700 10px 'JetBrains Mono',monospace;letter-spacing:.15em;text-transform:uppercase;color:var(--muted)">[Services Health Matrix]</span>
+          <span style="font:400 9px 'JetBrains Mono',monospace;color:var(--soft)">11 nodes</span>
+        </div>
+        <div style="padding:12px 16px;display:grid;grid-template-columns:1fr 1fr;gap:7px">
+          <sc-for list="{{ services }}" as="s" hint-placeholder-count="8">
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;border:1px solid var(--hair);background:var(--bg);border-radius:3px;padding:7px 9px">
+            <span style="font:700 9px 'JetBrains Mono',monospace;letter-spacing:.06em;text-transform:uppercase;color:var(--fg);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ s.slug }}</span>
+            <span style="{{ s.dotStyle }}"></span>
+          </div>
+          </sc-for>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div style="border:1px solid var(--border);border-radius:6px;background:var(--card)">
+    <div style="padding:12px 16px;border-bottom:1px solid var(--hair);display:flex;align-items:center;justify-content:space-between">
+      <span style="font:700 10px 'JetBrains Mono',monospace;letter-spacing:.15em;text-transform:uppercase;color:var(--muted)">[Workflow Lifecycle Stages]</span>
+      <span style="font:400 9px 'JetBrains Mono',monospace;letter-spacing:.08em;text-transform:uppercase;color:var(--soft)">Active pipeline tracker</span>
+    </div>
+    <div style="padding:14px 16px;display:grid;grid-template-columns:repeat(4,1fr);gap:12px">
+      <sc-for list="{{ kanban }}" as="col" hint-placeholder-count="4">
+      <div style="border:1px solid var(--hair);border-radius:4px;background:var(--bg);padding:11px 12px;display:flex;flex-direction:column;gap:9px">
+        <div style="display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--hair);padding-bottom:8px">
+          <span style="font:700 10px 'JetBrains Mono',monospace;letter-spacing:.12em;text-transform:uppercase;color:var(--fg)">{{ col.name }}</span>
+          <span style="{{ col.countStyle }}">{{ col.count }}</span>
+        </div>
+        <sc-for list="{{ col.items }}" as="w" hint-placeholder-count="2">
+        <div style="border:1px solid var(--hair);background:var(--card);border-radius:3px;padding:9px 10px;display:flex;flex-direction:column;gap:5px">
+          <span style="font:700 9px 'JetBrains Mono',monospace;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ w.id }}</span>
+          <p style="margin:0;font:600 11px/1.4 'Raleway',sans-serif;color:var(--fg)">{{ w.title }}</p>
+          <div style="height:3px;background:var(--hair);border-radius:2px;overflow:hidden"><div style="{{ w.barStyle }}"></div></div>
+          <div style="display:flex;align-items:center;justify-content:space-between;font:400 9px 'JetBrains Mono',monospace;color:var(--soft)"><span>{{ w.progress }}%</span><span>{{ w.owner }}</span></div>
+        </div>
+        </sc-for>
+      </div>
+      </sc-for>
+    </div>
+  </div>
+  <div style="display:flex;align-items:center;justify-content:space-between;font:500 8px 'JetBrains Mono',monospace;letter-spacing:.16em;text-transform:uppercase;color:var(--soft);padding:0 2px">
+    <span>ACMI Fleet · GSD Cockpit v1.4</span><span>Tenant scope: {{ tenantA }} · 152.53.201.27 · bridge OK</span>
+  </div>
+</div>
+</div>
+</div>
+
+<div class="dv-opt" id="1b" data-screen-label="1b Command Shell">
+<div class="dv-olabel"><a class="dv-oid" href="#1b">1b</a>Command Shell — full app frame with mono sidebar, KPI strip, pinned decision rail</div>
+<div class="dv-card" style="width:1400px">
+<div class="gsd" data-theme="{{ themeB }}" style="display:flex;background:var(--bg);color:var(--fg);min-height:860px">
+  <aside style="width:224px;flex-shrink:0;border-right:1px solid var(--border);background:var(--card);display:flex;flex-direction:column">
+    <div style="display:flex;align-items:center;gap:10px;padding:0 16px;height:56px;border-bottom:1px solid var(--border)">
+      <div style="width:30px;height:30px;display:flex;align-items:center;justify-content:center;background:var(--primary);color:var(--primary-fg);border-radius:4px;font:700 11px 'JetBrains Mono',monospace">[A]</div>
+      <div style="display:flex;flex-direction:column">
+        <span style="font:700 10px 'JetBrains Mono',monospace;letter-spacing:.14em;text-transform:uppercase;color:var(--primary)">ACMI Fleet</span>
+        <span style="font:500 8px 'JetBrains Mono',monospace;letter-spacing:.12em;text-transform:uppercase;color:var(--soft)">GSD Cockpit</span>
+      </div>
+    </div>
+    <nav style="flex:1;padding:14px 10px;display:flex;flex-direction:column;gap:18px;overflow:hidden">
+      <sc-for list="{{ nav }}" as="cat" hint-placeholder-count="4">
+      <div style="display:flex;flex-direction:column;gap:2px">
+        <span style="font:700 8.5px 'JetBrains Mono',monospace;letter-spacing:.2em;text-transform:uppercase;color:var(--soft);padding:0 10px 6px">{{ cat.title }}</span>
+        <sc-for list="{{ cat.items }}" as="it" hint-placeholder-count="4">
+        <div style="{{ it.rowStyle }}">
+          <span style="width:5px;height:5px;border-radius:1px;background:currentColor;opacity:.55;flex-shrink:0"></span>
+          <span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ it.label }}</span>
+          <span style="{{ it.badgeStyle }}">{{ it.badge }}</span>
+        </div>
+        </sc-for>
+      </div>
+      </sc-for>
+    </nav>
+    <div style="border-top:1px solid var(--border);padding:10px 16px;display:flex;align-items:center;justify-content:space-between">
+      <span style="font:500 8px 'JetBrains Mono',monospace;letter-spacing:.14em;text-transform:uppercase;color:var(--soft)">ACMI v1.4</span>
+      <button onClick="{{ toggleB }}" style="height:24px;padding:0 9px;background:var(--panel);color:var(--fg);border:1px solid var(--border);border-radius:3px;font:700 8px 'JetBrains Mono',monospace;letter-spacing:.12em;text-transform:uppercase;cursor:pointer">{{ themeLabelB }}</button>
+    </div>
+  </aside>
+  <div style="flex:1;min-width:0;display:flex;flex-direction:column">
+    <div style="height:56px;flex-shrink:0;border-bottom:1px solid var(--border);background:var(--card);display:flex;align-items:center;justify-content:space-between;padding:0 22px">
+      <div style="display:flex;align-items:baseline;gap:12px">
+        <span style="font:600 16px 'Newsreader',serif;color:var(--fg)">Command Center</span>
+        <span style="font:500 9px 'JetBrains Mono',monospace;letter-spacing:.16em;text-transform:uppercase;color:var(--soft)">Operations / Live</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px">
+        <div style="display:flex;align-items:center;gap:6px">
+          <sc-for list="{{ tenantsB }}" as="t" hint-placeholder-count="5"><button onClick="{{ t.pick }}" style="{{ t.style }}">{{ t.label }}</button></sc-for>
+        </div>
+        <div style="width:1px;height:20px;background:var(--border)"></div>
+        <div style="display:flex;align-items:center;gap:6px;font:700 9px 'JetBrains Mono',monospace;letter-spacing:.12em"><span style="width:6px;height:6px;border-radius:99px;background:var(--em);animation:gsdpulse 3s ease-in-out infinite"></span><span style="color:var(--em)">[CONNECTED]</span></div>
+        <button style="height:28px;padding:0 11px;background:var(--primary);color:var(--primary-fg);border:1px solid var(--primary);border-radius:4px;font:700 9px 'JetBrains Mono',monospace;letter-spacing:.12em;text-transform:uppercase;cursor:pointer">Sync State</button>
+      </div>
+    </div>
+    <div style="flex:1;padding:20px 22px;display:flex;flex-direction:column;gap:18px;overflow:hidden">
+      <div style="border:1px solid var(--border);border-radius:6px;background:var(--card);display:grid;grid-template-columns:repeat(5,1fr)">
+        <div style="padding:16px 20px;border-right:1px solid var(--hair)"><p style="margin:0 0 10px;font:700 9px 'JetBrains Mono',monospace;letter-spacing:.15em;text-transform:uppercase;color:var(--muted)">Total Swarms</p><span style="font:600 28px 'Newsreader',serif;line-height:1;color:var(--fg)">12</span><p style="margin:8px 0 0;font:500 9px 'JetBrains Mono',monospace;color:var(--soft)">registered profiles</p></div>
+        <div style="padding:16px 20px;border-right:1px solid var(--hair)"><p style="margin:0 0 10px;font:700 9px 'JetBrains Mono',monospace;letter-spacing:.15em;text-transform:uppercase;color:var(--muted)">Active Agents</p><span style="font:600 28px 'Newsreader',serif;line-height:1;color:var(--em)">8</span><p style="margin:8px 0 0;font:500 9px 'JetBrains Mono',monospace;color:var(--soft)">heartbeat &lt; 5m</p></div>
+        <div style="padding:16px 20px;border-right:1px solid var(--hair)"><p style="margin:0 0 10px;font:700 9px 'JetBrains Mono',monospace;letter-spacing:.15em;text-transform:uppercase;color:var(--muted)">Microservices</p><span style="font:600 28px 'Newsreader',serif;line-height:1;color:var(--fg)">9<span style="font-size:18px;color:var(--soft)">/11</span></span><p style="margin:8px 0 0;font:500 9px 'JetBrains Mono',monospace;color:var(--soft)">verified online</p></div>
+        <div style="padding:16px 20px;border-right:1px solid var(--hair)"><p style="margin:0 0 10px;font:700 9px 'JetBrains Mono',monospace;letter-spacing:.15em;text-transform:uppercase;color:var(--muted)">Work Registry</p><span style="font:600 28px 'Newsreader',serif;line-height:1;color:var(--fg)">14<span style="font-size:18px;color:var(--soft)">/47</span></span><p style="margin:8px 0 0;font:500 9px 'JetBrains Mono',monospace;color:var(--soft)">active / total</p></div>
+        <div style="padding:16px 20px;background:var(--am-bg)"><p style="margin:0 0 10px;font:700 9px 'JetBrains Mono',monospace;letter-spacing:.15em;text-transform:uppercase;color:var(--am)">Urgent Tasks</p><span style="font:600 28px 'Newsreader',serif;line-height:1;color:var(--am)">3</span><p style="margin:8px 0 0;font:500 9px 'JetBrains Mono',monospace;color:var(--am)">operator review</p></div>
+      </div>
+      <div style="flex:1;display:grid;grid-template-columns:1fr 340px;gap:18px;align-items:start;min-height:0">
+        <div style="display:flex;flex-direction:column;gap:18px;min-width:0">
+          <div style="border:1px solid var(--border);border-radius:6px;background:var(--card)">
+            <div style="padding:11px 16px;border-bottom:1px solid var(--hair);display:flex;align-items:center;justify-content:space-between">
+              <span style="font:700 10px 'JetBrains Mono',monospace;letter-spacing:.15em;text-transform:uppercase;color:var(--muted)">[Console Activity Stream]</span>
+              <span style="font:500 9px 'JetBrains Mono',monospace;color:var(--fg);background:var(--panel);border:1px solid var(--hair);padding:2px 8px;border-radius:3px">142 events</span>
+            </div>
+            <div style="padding:8px 16px 12px">
+              <sc-for list="{{ feed }}" as="e" hint-placeholder-count="8">
+              <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:6px 0;border-bottom:1px solid var(--hair)">
+                <div style="display:flex;align-items:center;gap:9px;min-width:0;flex:1;font:400 11px 'JetBrains Mono',monospace">
+                  <span style="flex-shrink:0;color:var(--soft)">[{{ e.t }}]</span>
+                  <span style="flex-shrink:0;font-weight:700;color:var(--fg)">{{ e.src }}</span>
+                  <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--muted)">{{ e.sum }}</span>
+                </div>
+                <span style="{{ e.badgeStyle }}">{{ e.kind }}</span>
+              </div>
+              </sc-for>
+            </div>
+          </div>
+          <div style="border:1px solid var(--border);border-radius:6px;background:var(--card)">
+            <div style="padding:11px 16px;border-bottom:1px solid var(--hair);display:flex;align-items:center;justify-content:space-between">
+              <span style="font:700 10px 'JetBrains Mono',monospace;letter-spacing:.15em;text-transform:uppercase;color:var(--muted)">[Workflow Pipeline]</span>
+              <span style="font:400 9px 'JetBrains Mono',monospace;color:var(--soft)">47 items</span>
+            </div>
+            <div style="padding:14px 16px;display:flex;flex-direction:column;gap:10px">
+              <div style="display:flex;height:8px;border-radius:4px;overflow:hidden;border:1px solid var(--hair)">
+                <div style="width:38%;background:var(--soft);opacity:.5"></div><div style="width:30%;background:var(--em)"></div><div style="width:6%;background:var(--rb)"></div><div style="width:26%;background:var(--primary)"></div>
+              </div>
+              <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px">
+                <div style="display:flex;align-items:center;gap:8px;border:1px solid var(--hair);border-radius:4px;padding:9px 12px;background:var(--bg)"><span style="width:7px;height:7px;border-radius:2px;background:var(--soft);opacity:.6"></span><span style="font:700 9px 'JetBrains Mono',monospace;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)">Backlog</span><span style="margin-left:auto;font:600 14px 'Newsreader',serif;color:var(--fg)">18</span></div>
+                <div style="display:flex;align-items:center;gap:8px;border:1px solid var(--hair);border-radius:4px;padding:9px 12px;background:var(--bg)"><span style="width:7px;height:7px;border-radius:2px;background:var(--em)"></span><span style="font:700 9px 'JetBrains Mono',monospace;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)">Active</span><span style="margin-left:auto;font:600 14px 'Newsreader',serif;color:var(--fg)">14</span></div>
+                <div style="display:flex;align-items:center;gap:8px;border:1px solid var(--hair);border-radius:4px;padding:9px 12px;background:var(--bg)"><span style="width:7px;height:7px;border-radius:2px;background:var(--rb)"></span><span style="font:700 9px 'JetBrains Mono',monospace;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)">Stalled</span><span style="margin-left:auto;font:600 14px 'Newsreader',serif;color:var(--rb)">3</span></div>
+                <div style="display:flex;align-items:center;gap:8px;border:1px solid var(--hair);border-radius:4px;padding:9px 12px;background:var(--bg)"><span style="width:7px;height:7px;border-radius:2px;background:var(--primary)"></span><span style="font:700 9px 'JetBrains Mono',monospace;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)">Completed</span><span style="margin-left:auto;font:600 14px 'Newsreader',serif;color:var(--fg)">12</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:18px">
+          <div style="border:1px solid var(--am);border-radius:6px;background:var(--card);overflow:hidden">
+            <div style="background:var(--am-bg);border-bottom:1px solid var(--border);padding:10px 14px;display:flex;align-items:center;justify-content:space-between">
+              <span style="font:700 9px 'JetBrains Mono',monospace;letter-spacing:.14em;text-transform:uppercase;color:var(--am)">Decision Queue · 3</span>
+              <span style="width:6px;height:6px;border-radius:99px;background:var(--am);animation:gsdpulse 2.4s ease-in-out infinite"></span>
+            </div>
+            <div style="padding:12px 14px;display:flex;flex-direction:column;gap:10px">
+              <sc-for list="{{ hitlA }}" as="h" hint-placeholder-count="2">
+              <div style="border:1px solid var(--hair);border-radius:4px;background:var(--bg);padding:10px 11px;display:flex;flex-direction:column;gap:8px">
+                <div style="display:flex;align-items:center;justify-content:space-between;font:400 9px 'JetBrains Mono',monospace;color:var(--soft)"><span style="font-weight:700;text-transform:uppercase;color:var(--fg)">{{ h.member }}</span><span>{{ h.when }}</span></div>
+                <p style="margin:0;font:500 10px/1.5 'JetBrains Mono',monospace;color:var(--fg)">{{ h.summary }}</p>
+                <div style="display:flex;gap:6px">
+                  <button style="flex:1;height:26px;background:var(--em);color:#fff;border:1px solid var(--em);border-radius:3px;font:700 8px 'JetBrains Mono',monospace;letter-spacing:.1em;text-transform:uppercase;cursor:pointer">Approve</button>
+                  <button style="flex:1;height:26px;background:var(--card);color:var(--fg);border:1px solid var(--border);border-radius:3px;font:700 8px 'JetBrains Mono',monospace;letter-spacing:.1em;text-transform:uppercase;cursor:pointer">Reject</button>
+                </div>
+              </div>
+              </sc-for>
+              <div style="border:1px solid var(--hair);border-radius:4px;background:var(--bg);padding:10px 11px;display:flex;align-items:center;justify-content:space-between;gap:8px">
+                <div style="min-width:0"><p style="margin:0;font:700 9px 'JetBrains Mono',monospace;text-transform:uppercase;color:var(--rb)">stalled · wf-suzanne-showcase-021</p><p style="margin:4px 0 0;font:500 10px 'Raleway',sans-serif;color:var(--muted)">Render pipeline · 41m silent</p></div>
+                <button style="flex-shrink:0;height:26px;padding:0 10px;background:var(--card);color:var(--fg);border:1px solid var(--border);border-radius:3px;font:700 8px 'JetBrains Mono',monospace;letter-spacing:.1em;text-transform:uppercase;cursor:pointer">Copy ID</button>
+              </div>
+            </div>
+          </div>
+          <div style="border:1px solid var(--border);border-radius:6px;background:var(--card)">
+            <div style="padding:11px 14px;border-bottom:1px solid var(--hair)"><span style="font:700 10px 'JetBrains Mono',monospace;letter-spacing:.15em;text-transform:uppercase;color:var(--muted)">[Services Health]</span></div>
+            <div style="padding:10px 14px;display:flex;flex-direction:column">
+              <sc-for list="{{ services }}" as="s" hint-placeholder-count="8">
+              <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:6px 0;border-bottom:1px solid var(--hair)">
+                <span style="font:700 9px 'JetBrains Mono',monospace;letter-spacing:.06em;text-transform:uppercase;color:var(--fg)">{{ s.slug }}</span>
+                <div style="display:flex;align-items:center;gap:7px"><span style="font:400 8.5px 'JetBrains Mono',monospace;color:var(--soft)">{{ s.lat }}</span><span style="{{ s.dotStyle }}"></span></div>
+              </div>
+              </sc-for>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+</div>
+
+<div class="dv-opt" id="1c" data-screen-label="1c Operator Ledger">
+<div class="dv-olabel"><a class="dv-oid" href="#1c">1c</a>Operator Ledger — editorial, white-label calm: hairlines instead of boxes, serif stat band</div>
+<div class="dv-card" style="width:1340px">
+<div class="gsd" data-theme="{{ themeC }}" style="background:var(--bg);color:var(--fg);padding:36px 44px 30px;display:flex;flex-direction:column;gap:0">
+  <div style="display:flex;align-items:flex-end;justify-content:space-between;gap:20px;padding-bottom:22px">
+    <div>
+      <p style="margin:0 0 10px;font:700 9px 'JetBrains Mono',monospace;letter-spacing:.24em;text-transform:uppercase;color:var(--muted)">ACMI Fleet · Operations Console</p>
+      <h1 style="margin:0;font:500 40px/1.05 'Newsreader',serif;color:var(--fg)">Fleet Command<em style="color:var(--primary)">.</em></h1>
+    </div>
+    <div style="display:flex;align-items:center;gap:22px">
+      <div style="text-align:right">
+        <p style="margin:0;font:500 9px 'JetBrains Mono',monospace;letter-spacing:.16em;text-transform:uppercase;color:var(--soft)">Monday · July 20, 2026 · 14:32 UTC</p>
+        <p style="margin:4px 0 0;font:500 9px 'JetBrains Mono',monospace;letter-spacing:.16em;text-transform:uppercase;color:var(--fg)">Tenant scope: <strong>{{ tenantC }}</strong> · <span style="color:var(--em)">Connected</span></p>
+      </div>
+      <div style="display:flex;align-items:center;gap:6px">
+        <sc-for list="{{ tenantsC }}" as="t" hint-placeholder-count="5"><button onClick="{{ t.pick }}" style="{{ t.style }}">{{ t.label }}</button></sc-for>
+      </div>
+      <button onClick="{{ toggleC }}" style="height:30px;padding:0 12px;background:var(--ink);color:var(--bg);border:1px solid var(--ink);border-radius:4px;font:700 9px 'JetBrains Mono',monospace;letter-spacing:.12em;text-transform:uppercase;cursor:pointer">{{ themeLabelC }}</button>
+    </div>
+  </div>
+
+  <div style="display:grid;grid-template-columns:repeat(5,1fr);border-top:1px solid var(--fg);border-bottom:1px solid var(--border)">
+    <div style="padding:22px 24px 22px 0"><p style="margin:0 0 12px;font:700 9px 'JetBrains Mono',monospace;letter-spacing:.18em;text-transform:uppercase;color:var(--muted)">Total Swarms</p><span style="font:500 44px/1 'Newsreader',serif;color:var(--fg)">12</span><p style="margin:10px 0 0;font:400 10px 'Raleway',sans-serif;color:var(--soft)">registered profiles</p></div>
+    <div style="padding:22px 24px;border-left:1px solid var(--border)"><p style="margin:0 0 12px;font:700 9px 'JetBrains Mono',monospace;letter-spacing:.18em;text-transform:uppercase;color:var(--muted)">Active Agents</p><span style="font:500 44px/1 'Newsreader',serif;color:var(--fg)">8</span><p style="margin:10px 0 0;font:400 10px 'Raleway',sans-serif;color:var(--em)">heartbeat observed</p></div>
+    <div style="padding:22px 24px;border-left:1px solid var(--border)"><p style="margin:0 0 12px;font:700 9px 'JetBrains Mono',monospace;letter-spacing:.18em;text-transform:uppercase;color:var(--muted)">Microservices</p><span style="font:500 44px/1 'Newsreader',serif;color:var(--fg)">9<span style="font-size:24px;color:var(--soft)">/11</span></span><p style="margin:10px 0 0;font:400 10px 'Raleway',sans-serif;color:var(--soft)">verified online</p></div>
+    <div style="padding:22px 24px;border-left:1px solid var(--border)"><p style="margin:0 0 12px;font:700 9px 'JetBrains Mono',monospace;letter-spacing:.18em;text-transform:uppercase;color:var(--muted)">Work Registry</p><span style="font:500 44px/1 'Newsreader',serif;color:var(--fg)">14<span style="font-size:24px;color:var(--soft)">/47</span></span><p style="margin:10px 0 0;font:400 10px 'Raleway',sans-serif;color:var(--soft)">active in scope</p></div>
+    <div style="padding:22px 0 22px 24px;border-left:1px solid var(--border)"><p style="margin:0 0 12px;font:700 9px 'JetBrains Mono',monospace;letter-spacing:.18em;text-transform:uppercase;color:var(--am)">Urgent Tasks</p><span style="font:500 44px/1 'Newsreader',serif;color:var(--am)">3</span><p style="margin:10px 0 0;font:400 10px 'Raleway',sans-serif;color:var(--am)">require operator review</p></div>
+  </div>
+
+  <div style="padding:26px 0 8px;display:flex;align-items:baseline;justify-content:space-between">
+    <h2 style="margin:0;font:500 19px 'Newsreader',serif;color:var(--fg)">Urgent operations <em style="color:var(--rb)">— 3 open</em></h2>
+    <span style="font:500 9px 'JetBrains Mono',monospace;letter-spacing:.16em;text-transform:uppercase;color:var(--soft)">Immediate operator review</span>
+  </div>
+  <div style="display:flex;flex-direction:column">
+    <sc-for list="{{ hitlA }}" as="h" hint-placeholder-count="2">
+    <div style="display:flex;align-items:center;gap:18px;padding:15px 0;border-bottom:1px solid var(--border)">
+      <span style="flex-shrink:0;width:88px;font:700 8px 'JetBrains Mono',monospace;letter-spacing:.1em;text-transform:uppercase;color:var(--am)">hitl</span>
+      <span style="flex-shrink:0;width:130px;font:700 10px 'JetBrains Mono',monospace;text-transform:uppercase;color:var(--fg)">{{ h.member }}</span>
+      <p style="margin:0;flex:1;min-width:0;font:400 13px/1.45 'Raleway',sans-serif;color:var(--fg);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ h.summary }}</p>
+      <span style="flex-shrink:0;font:400 10px 'JetBrains Mono',monospace;color:var(--soft)">{{ h.when }}</span>
+      <div style="display:flex;gap:8px;flex-shrink:0;width:200px;justify-content:flex-end">
+        <button style="width:92px;height:29px;background:var(--primary);color:var(--primary-fg);border:1px solid var(--primary);border-radius:4px;font:700 9px 'JetBrains Mono',monospace;letter-spacing:.1em;text-transform:uppercase;cursor:pointer">Approve</button>
+        <button style="width:92px;height:29px;background:transparent;color:var(--fg);border:1px solid var(--border);border-radius:4px;font:700 9px 'JetBrains Mono',monospace;letter-spacing:.1em;text-transform:uppercase;cursor:pointer">Reject</button>
+      </div>
+    </div>
+    </sc-for>
+    <div style="display:flex;align-items:center;gap:18px;padding:15px 0;border-bottom:1px solid var(--border)">
+      <span style="flex-shrink:0;width:88px;font:700 8px 'JetBrains Mono',monospace;letter-spacing:.1em;text-transform:uppercase;color:var(--rb)">stalled</span>
+      <span style="flex-shrink:0;width:130px;font:700 10px 'JetBrains Mono',monospace;text-transform:uppercase;color:var(--fg)">agent:folana</span>
+      <p style="margin:0;flex:1;min-width:0;font:400 13px/1.45 'Raleway',sans-serif;color:var(--fg);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">wf-suzanne-showcase-021 · render pipeline stalled at asset fetch, 41 min without heartbeat</p>
+      <span style="flex-shrink:0;font:400 10px 'JetBrains Mono',monospace;color:var(--soft)">41m ago</span>
+      <div style="display:flex;gap:8px;flex-shrink:0;width:200px;justify-content:flex-end">
+        <button style="width:92px;height:29px;background:transparent;color:var(--fg);border:1px solid var(--border);border-radius:4px;font:700 9px 'JetBrains Mono',monospace;letter-spacing:.1em;text-transform:uppercase;cursor:pointer">Copy ID</button>
+      </div>
+    </div>
+  </div>
+
+  <div style="display:grid;grid-template-columns:1.6fr 1fr;gap:44px;padding-top:28px">
+    <div>
+      <div style="display:flex;align-items:baseline;justify-content:space-between;padding-bottom:10px;border-bottom:1px solid var(--fg)">
+        <h2 style="margin:0;font:500 19px 'Newsreader',serif;color:var(--fg)">Activity ledger</h2>
+        <span style="font:500 9px 'JetBrains Mono',monospace;letter-spacing:.14em;text-transform:uppercase;color:var(--soft)">142 events · live</span>
+      </div>
+      <sc-for list="{{ feed }}" as="e" hint-placeholder-count="8">
+      <div style="display:flex;align-items:center;gap:12px;padding:9px 0;border-bottom:1px solid var(--border);font:400 11px 'JetBrains Mono',monospace">
+        <span style="flex-shrink:0;width:66px;color:var(--soft)">{{ e.t }}</span>
+        <span style="flex-shrink:0;width:150px;font-weight:700;color:var(--fg);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ e.src }}</span>
+        <span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--muted)">{{ e.sum }}</span>
+        <span style="{{ e.badgeStyle }}">{{ e.kind }}</span>
+      </div>
+      </sc-for>
+    </div>
+    <div>
+      <div style="display:flex;align-items:baseline;justify-content:space-between;padding-bottom:10px;border-bottom:1px solid var(--fg)">
+        <h2 style="margin:0;font:500 19px 'Newsreader',serif;color:var(--fg)">Services</h2>
+        <span style="font:500 9px 'JetBrains Mono',monospace;letter-spacing:.14em;text-transform:uppercase;color:var(--soft)">9 of 11 online</span>
+      </div>
+      <sc-for list="{{ services }}" as="s" hint-placeholder-count="8">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:9px 0;border-bottom:1px solid var(--border)">
+        <span style="font:700 10px 'JetBrains Mono',monospace;letter-spacing:.06em;text-transform:uppercase;color:var(--fg)">{{ s.slug }}</span>
+        <div style="display:flex;align-items:center;gap:9px"><span style="font:400 9px 'JetBrains Mono',monospace;color:var(--soft)">{{ s.lat }}</span><span style="{{ s.dotStyle }}"></span></div>
+      </div>
+      </sc-for>
+      <div style="margin-top:22px;border:1px solid var(--border);border-radius:5px;padding:14px 16px;background:var(--card)">
+        <p style="margin:0 0 8px;font:700 9px 'JetBrains Mono',monospace;letter-spacing:.16em;text-transform:uppercase;color:var(--muted)">Pipeline · 47 items</p>
+        <div style="display:flex;height:7px;border-radius:4px;overflow:hidden;margin-bottom:10px"><div style="width:38%;background:var(--soft);opacity:.45"></div><div style="width:30%;background:var(--em)"></div><div style="width:6%;background:var(--rb)"></div><div style="width:26%;background:var(--primary)"></div></div>
+        <div style="display:flex;justify-content:space-between;font:500 9px 'JetBrains Mono',monospace;letter-spacing:.06em;text-transform:uppercase;color:var(--soft)"><span>18 backlog</span><span style="color:var(--em)">14 active</span><span style="color:var(--rb)">3 stalled</span><span>12 done</span></div>
+      </div>
+    </div>
+  </div>
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-top:30px;padding-top:12px;border-top:1px solid var(--border);font:500 8px 'JetBrains Mono',monospace;letter-spacing:.18em;text-transform:uppercase;color:var(--soft)">
+    <span>The agency is the infrastructure · ACMI Fleet v1.4</span><span>gsd-cockpit · white-label ready</span>
+  </div>
+</div>
+</div>
+</div>
+
+</div>
+<p class="dv-next">Try next: "build out <a class="dv-oid" href="#1b">1b</a> as the full template with more pages" · "use <a class="dv-oid" href="#1c">1c</a>'s stat band inside <a class="dv-oid" href="#1a">1a</a>" · "show the all-clear (no alerts) state"</p>
+</section>
+<script>
+class Component extends DCLogic {
+  state = { themeA: "light", themeB: "dark", themeC: "light", tenantA: "madez", tenantB: "all", tenantC: "madez" };
+  mkToggle(k) { return () => this.setState(s => ({ [k]: s[k] === "light" ? "dark" : "light" })); }
+  mkTenants(key, small) {
+    const active = this.state[key];
+    return ["all", "madez", "duane", "suzanne", "avery"].map(label => ({
+      label,
+      pick: () => this.setState({ [key]: label }),
+      style: Object.assign({
+        padding: small ? "4px 9px" : "6px 12px",
+        fontFamily: "'JetBrains Mono',monospace", fontSize: "9px", fontWeight: 700,
+        letterSpacing: ".12em", textTransform: "uppercase", borderRadius: "4px", cursor: "pointer",
+        transition: "all .15s"
+      }, label === active
+        ? { background: "var(--primary)", color: "var(--primary-fg)", border: "1px solid var(--primary)" }
+        : { background: "transparent", color: "var(--muted)", border: "1px solid var(--border)" })
+    }));
+  }
+  renderVals() {
+    const badge = tone => ({
+      flexShrink: 0, fontFamily: "'JetBrains Mono',monospace", fontSize: "8px", fontWeight: 700,
+      letterSpacing: ".08em", textTransform: "uppercase", padding: "2px 6px", borderRadius: "2px",
+      border: "1px solid var(--hair)",
+      color: tone === "em" ? "var(--em)" : tone === "am" ? "var(--am)" : tone === "rb" ? "var(--rb)" : "var(--muted)",
+      background: tone === "em" ? "var(--em-bg)" : tone === "am" ? "var(--am-bg)" : tone === "rb" ? "var(--rb-bg)" : "var(--panel)"
+    });
+    const dot = up => ({
+      flexShrink: 0, width: "6px", height: "6px", borderRadius: "99px",
+      background: up ? "var(--em)" : "var(--rb)",
+      animation: up ? "gsdpulse 3s ease-in-out infinite" : "none"
+    });
+    const feed = [
+      { t: "14:32:08", src: "agent:bentley", sum: "[milestone-shipped @mikey] AEO landing copy approved for azpetstylist", kind: "milestone", tone: "em" },
+      { t: "14:29:41", src: "agent:claude-engineer", sum: "[work-update] crm-square-sync merge strategy drafted, awaiting HITL", kind: "work-update", tone: null },
+      { t: "14:27:03", src: "bus:relay", sum: "heartbeat batch acknowledged · 8 agents · 0 dropped frames", kind: "heartbeat", tone: null },
+      { t: "14:21:56", src: "agent:folana", sum: "[incident-update] render-farm asset fetch timeout, retry 3/3 failed", kind: "incident", tone: "rb" },
+      { t: "14:18:12", src: "agent:gemini-cli", sum: "[artifact-published] weekly GEO ranking report for tenant duane", kind: "artifact", tone: null },
+      { t: "14:11:47", src: "agent:bentley", sum: "[hitl-escalation @operator] deploy authorization requested", kind: "hitl", tone: "am" },
+      { t: "14:04:30", src: "system:gateway", sum: "rollup snapshot persisted · 47 work items · 12 profiles", kind: "rollup", tone: null },
+      { t: "13:58:22", src: "agent:claude-web", sum: "[coord-note @fleet] suzanne showcase assets migrated to CDN bucket", kind: "coord", tone: null }
+    ].map(e => Object.assign(e, { badgeStyle: badge(e.tone) }));
+    const services = [
+      { slug: "gsd-gateway", up: true, lat: "38ms" }, { slug: "acmi-bridge", up: true, lat: "41ms" },
+      { slug: "bus-relay", up: true, lat: "12ms" }, { slug: "voice-stack", up: true, lat: "96ms" },
+      { slug: "crm-sync", up: true, lat: "58ms" }, { slug: "aeo-crawler", up: true, lat: "203ms" },
+      { slug: "render-farm", up: false, lat: "—" }, { slug: "webhook-hub", up: true, lat: "24ms" }
+    ].map(s => Object.assign(s, { dotStyle: dot(s.up) }));
+    const hitlA = [
+      { member: "bentley", when: "12m ago", summary: "Publish AEO landing page for azpetstylist.com — copy approved, awaiting deploy authorization" },
+      { member: "claude-engineer", when: "38m ago", summary: "Square CRM sync will overwrite 214 customer records for tenant duane — confirm merge strategy" }
+    ];
+    const countBadge = tone => Object.assign(badge(tone), { fontSize: "9px" });
+    const bar = (pct, c) => ({ width: pct + "%", height: "100%", background: c });
+    const kanban = [
+      { name: "[01] Backlog", count: "18 items", countStyle: countBadge(null), items: [
+        { id: "wf-madez-newsroom-052", title: "Editorial calendar automation for The Dispatch", progress: 0, owner: "unassigned", barStyle: bar(2, "var(--soft)") },
+        { id: "wf-avery-intake-011", title: "Client intake voice agent scripting pass", progress: 0, owner: "unassigned", barStyle: bar(2, "var(--soft)") }] },
+      { name: "[02] Active", count: "14 items", countStyle: countBadge("em"), items: [
+        { id: "wf-madez-aeo-047", title: "AEO landing page rollout — azpetstylist.com", progress: 82, owner: "bentley", barStyle: bar(82, "var(--em)") },
+        { id: "wf-duane-crm-033", title: "Square CRM two-way sync with conflict ledger", progress: 45, owner: "claude-engineer", barStyle: bar(45, "var(--em)") }] },
+      { name: "[03] Stalled", count: "3 items", countStyle: countBadge("rb"), items: [
+        { id: "wf-suzanne-showcase-021", title: "Property showcase render pipeline", progress: 61, owner: "folana", barStyle: bar(61, "var(--rb)") }] },
+      { name: "[04] Completed", count: "12 items", countStyle: countBadge("em"), items: [
+        { id: "wf-madez-acmi-040", title: "ACMI v1.4 rollup schema migration", progress: 100, owner: "claude-engineer", barStyle: bar(100, "var(--primary)") },
+        { id: "wf-duane-geo-028", title: "GEO citation audit — 6 local packs", progress: 100, owner: "gemini-cli", barStyle: bar(100, "var(--primary)") }] }
+    ];
+    const navRow = active => ({
+      display: "flex", alignItems: "center", gap: "9px", padding: "7px 10px", borderRadius: "4px",
+      fontFamily: "'JetBrains Mono',monospace", fontSize: "10px", fontWeight: active ? 700 : 500,
+      color: active ? "var(--primary)" : "var(--muted)",
+      background: active ? "var(--panel)" : "transparent",
+      border: active ? "1px solid var(--border)" : "1px solid transparent", cursor: "pointer"
+    });
+    const navBadge = live => ({
+      fontFamily: "'JetBrains Mono',monospace", fontSize: "7.5px", fontWeight: 700, letterSpacing: ".08em",
+      padding: "2px 4px", borderRadius: "2px", flexShrink: 0,
+      background: live ? "var(--primary)" : "var(--panel)",
+      color: live ? "var(--primary-fg)" : "var(--soft)",
+      border: live ? "1px solid var(--primary)" : "1px solid var(--hair)"
+    });
+    const nav = [
+      { title: "Operations", items: [
+        { label: "Command Center", badge: "LIVE", rowStyle: navRow(true), badgeStyle: navBadge(true) },
+        { label: "Fleet Cockpit", badge: "BUS", rowStyle: navRow(false), badgeStyle: navBadge(false) },
+        { label: "System Status", badge: "SYS", rowStyle: navRow(false), badgeStyle: navBadge(false) },
+        { label: "Scheduled Crons", badge: "CRON", rowStyle: navRow(false), badgeStyle: navBadge(false) }] },
+      { title: "Work & Coord", items: [
+        { label: "Todo Kanban", badge: "KBN", rowStyle: navRow(false), badgeStyle: navBadge(false) },
+        { label: "Calendar View", badge: "CAL", rowStyle: navRow(false), badgeStyle: navBadge(false) },
+        { label: "Workflow Tracker", badge: "174", rowStyle: navRow(false), badgeStyle: navBadge(false) },
+        { label: "HITL Approvals", badge: "3", rowStyle: navRow(false), badgeStyle: navBadge(false) }] },
+      { title: "Agents & Hub", items: [
+        { label: "Agent Console", badge: "88", rowStyle: navRow(false), badgeStyle: navBadge(false) },
+        { label: "A2A Comms Graph", badge: "SVG", rowStyle: navRow(false), badgeStyle: navBadge(false) },
+        { label: "Voice Chat", badge: "DEEP", rowStyle: navRow(false), badgeStyle: navBadge(false) }] },
+      { title: "Data & Context", items: [
+        { label: "Database", badge: "DB", rowStyle: navRow(false), badgeStyle: navBadge(false) },
+        { label: "Docs Outline", badge: "DOCS", rowStyle: navRow(false), badgeStyle: navBadge(false) },
+        { label: "Archival Trace", badge: "AUDIT", rowStyle: navRow(false), badgeStyle: navBadge(false) },
+        { label: "Integrations & Keys", badge: "KEY", rowStyle: navRow(false), badgeStyle: navBadge(false) },
+        { label: "Settings", badge: "", rowStyle: navRow(false), badgeStyle: navBadge(false) }] }
+    ];
+    return {
+      themeA: this.state.themeA, themeB: this.state.themeB, themeC: this.state.themeC,
+      themeLabelA: this.state.themeA === "light" ? "Dark" : "Light",
+      themeLabelB: this.state.themeB === "light" ? "Dark" : "Light",
+      themeLabelC: this.state.themeC === "light" ? "Dark" : "Light",
+      toggleA: this.mkToggle("themeA"), toggleB: this.mkToggle("themeB"), toggleC: this.mkToggle("themeC"),
+      tenantA: this.state.tenantA, tenantB: this.state.tenantB, tenantC: this.state.tenantC,
+      tenantsA: this.mkTenants("tenantA"), tenantsB: this.mkTenants("tenantB", true), tenantsC: this.mkTenants("tenantC", true),
+      feed, services, hitlA, kanban, nav
+    };
+  }
+}
+</script>
+</body>
+</html>
