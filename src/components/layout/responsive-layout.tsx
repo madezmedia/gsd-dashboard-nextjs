@@ -38,10 +38,14 @@ export function ResponsiveLayout({ children }: { children: React.ReactNode }) {
     };
   }, []);
 
-  // GSD Fleet Template owns its own chrome (Claude Design import)
+  // GSD Fleet Template owns its own chrome — full-bleed, no app chrome wrapping
   const isFleetTemplate = pathname === "/" || pathname.startsWith("/fleet");
   if (isFleetTemplate) {
-    return <div className="min-h-screen w-full">{children}</div>;
+    return (
+      <div className="gsd-fleet-root" style={{ width: "100%", minHeight: "100vh", margin: 0, padding: 0 }}>
+        {children}
+      </div>
+    );
   }
 
   return (

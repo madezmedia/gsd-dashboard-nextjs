@@ -52,7 +52,7 @@ export default function RootLayout({
       className={`${geistSans.variable} ${geistMono.variable} ${jetbrains.variable} ${newsreader.variable} ${raleway.variable}`}
       suppressHydrationWarning
     >
-      <body className="min-h-screen flex font-sans antialiased bg-background text-foreground">
+      <body className="min-h-screen flex flex-col font-sans antialiased bg-background text-foreground">
         <PostHogProvider>
           <ThemeProvider
             attribute="class"
@@ -63,10 +63,14 @@ export default function RootLayout({
             <Suspense fallback={null}>
               <ShortcutHandler />
             </Suspense>
-            <Suspense fallback={<div className="w-full h-full flex items-center justify-center font-mono text-[10px] text-muted-foreground uppercase bg-background">Loading ACMI System...</div>}>
-              <ResponsiveLayout>
-                {children}
-              </ResponsiveLayout>
+            <Suspense
+              fallback={
+                <div className="w-full min-h-screen flex items-center justify-center font-mono text-[10px] text-muted-foreground uppercase bg-background">
+                  Loading ACMI System...
+                </div>
+              }
+            >
+              <ResponsiveLayout>{children}</ResponsiveLayout>
             </Suspense>
             <CopilotPanel />
           </ThemeProvider>
