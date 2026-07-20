@@ -6,21 +6,13 @@
  *
  * Uses isolated --gsd-* CSS vars so Tailwind/shadcn tokens cannot break layout.
  */
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import "./gsd-shell.css";
-import {
-  AGENTS,
-  FEED,
-  HISTORY,
-  HITL,
-  KANBAN,
-  NAV,
-  PAGE_TITLES,
-  SERVICES_RAW,
-  TENANT_CARDS,
-  TENANTS,
-  type Tone,
-} from "./demo-data";
+import { NAV, PAGE_TITLES, TENANTS, type Tone } from "./demo-data";
+import { useCockpitData } from "@/hooks/useCockpitData";
+import { useGsdFleetModel } from "./useGsdFleetModel";
+import type { HitlTicket } from "@/store/useCockpitStore";
+import type { TenantType } from "@/store/useCockpitStore";
 
 function badgeTone(tone: Tone) {
   if (tone === "em") return "is-em";
@@ -38,19 +30,22 @@ function barColor(tone: Tone | "primary" | "soft") {
 
 export function GsdFleetTemplate() {
   const [theme, setTheme] = useState<"light" | "dark">("dark");
-  const [tenant, setTenant] = useState("all");
   const [page, setPage] = useState("overview");
+  const { handleForceSync, handleResolveHitl } = useCockpitData();
+  const m = useGsdFleetModel();
 
   const [pageTitle, pageEyebrow] = PAGE_TITLES[page] || PAGE_TITLES.overview;
-  const services = useMemo(() => SERVICES_RAW.slice(0, 6), []);
-  const servicesFull = useMemo(
-    () =>
-      SERVICES_RAW.map((s) => ({
-        ...s,
-        verified: s.up ? "verified 2m ago" : "unreachable",
-      })),
-    [],
-  );
+  const tenant = m.activeTenant;
+  const setTenant = (t: string) => m.setActiveTenant(t as TenantType);
+  const FEED = m.feed;
+  const HITL = m.hitl;
+  const services = m.services;
+  const servicesFull = m.servicesFull;
+  const KANBAN = m.kanban;
+  const AGENTS = m.agents;
+  const TENANT_CARDS = m.tenantCards;
+  const k = m.kpis;
+  const pipe = m.pipelineCounts;
 
   return (
     <div className="gsd-shell" data-theme={theme}>
@@ -118,12 +113,26 @@ export function GsdFleetTemplate() {
               ))}
             </div>
             <div className="gsd-divider-v" />
-            <div className="gsd-connected">
-              <span className="gsd-connected-dot gsd-pulse" />
-              <span>[CONNECTED]</span>
+            <div className="gsd-connected" style={{ color: m.connected ? "var(--gsd-em)" : "var(--gsd-rb)" }}>
+              <span
+                className={`gsd-connected-dot${m.connected ? " gsd-pulse" : ""}`}
+                style={{ background: m.connected ? "var(--gsd-em)" : "var(--gsd-rb)" }}
+              />
+              <span>
+                {m.loading
+                  ? "[SYNCING]"
+                  : m.connected
+                    ? "[CONNECTED]"
+                    : "[STALLED]"}
+              </span>
             </div>
-            <button type="button" className="gsd-btn-primary">
-              Sync State
+            <button
+              type="button"
+              className="gsd-btn-primary"
+              disabled={m.forcingSync}
+              onClick={() => handleForceSync()}
+            >
+              {m.forcingSync ? "Syncing…" : "Sync State"}
             </button>
           </div>
         </header>
@@ -134,28 +143,28 @@ export function GsdFleetTemplate() {
               <div className="gsd-kpis">
                 <div className="gsd-kpi">
                   <p className="gsd-kpi-label">Total Swarms</p>
-                  <span className="gsd-kpi-value">12</span>
+                  <span className="gsd-kpi-value">{k.totalAgents}</span>
                   <p className="gsd-kpi-desc">registered profiles</p>
                 </div>
                 <div className="gsd-kpi">
                   <p className="gsd-kpi-label">Active Agents</p>
-                  <span className="gsd-kpi-value is-em">8</span>
+                  <span className="gsd-kpi-value is-em">{k.activeAgents}</span>
                   <p className="gsd-kpi-desc">heartbeat &lt; 5m</p>
                 </div>
                 <div className="gsd-kpi">
                   <p className="gsd-kpi-label">Microservices</p>
-                  <span className="gsd-kpi-value">9/11</span>
+                  <span className="gsd-kpi-value">{k.servicesOnline}/{k.servicesTotal || "—"}</span>
                   <p className="gsd-kpi-desc">verified online</p>
                 </div>
                 <div className="gsd-kpi">
                   <p className="gsd-kpi-label">Work Registry</p>
-                  <span className="gsd-kpi-value">14/47</span>
+                  <span className="gsd-kpi-value">{k.activeWork}/{k.totalWork}</span>
                   <p className="gsd-kpi-desc">active / total</p>
                 </div>
-                <div className="gsd-kpi is-urgent">
+                <div className={`gsd-kpi${k.urgent > 0 ? " is-urgent" : ""}`}>
                   <p className="gsd-kpi-label">Urgent Tasks</p>
-                  <span className="gsd-kpi-value">3</span>
-                  <p className="gsd-kpi-desc">operator review</p>
+                  <span className="gsd-kpi-value">{k.urgent}</span>
+                  <p className="gsd-kpi-desc">HITL + stalled</p>
                 </div>
               </div>
 
@@ -164,11 +173,14 @@ export function GsdFleetTemplate() {
                   <section className="gsd-panel">
                     <div className="gsd-panel-head">
                       <span className="gsd-panel-title">[Console Activity Stream]</span>
-                      <span className="gsd-chip">142 events</span>
+                      <span className="gsd-chip">{FEED.length} events</span>
                     </div>
                     <div className="gsd-feed">
+                      {FEED.length === 0 ? (
+                        <div className="gsd-feed-row" style={{ color: "var(--gsd-soft)", font: "400 11px var(--gsd-font-mono)" }}>No live events yet — waiting for ACMI / bus…</div>
+                      ) : null}
                       {FEED.map((e) => (
-                        <div key={e.t + e.src} className="gsd-feed-row">
+                        <div key={e.key} className="gsd-feed-row">
                           <div className="gsd-feed-main">
                             <span className="gsd-feed-t">[{e.t}]</span>
                             <span className="gsd-feed-src">{e.src}</span>
@@ -184,7 +196,7 @@ export function GsdFleetTemplate() {
                     <div className="gsd-panel-head">
                       <span className="gsd-panel-title">[Pipeline Summary]</span>
                       <span className="gsd-chip">
-                        47 items ·{" "}
+                        {pipe.total} items ·{" "}
                         <button type="button" className="gsd-link" onClick={() => setPage("pipeline")}>
                           view all
                         </button>
@@ -200,10 +212,10 @@ export function GsdFleetTemplate() {
                     </div>
                     <div className="gsd-pipe-stats">
                       {[
-                        { n: "Backlog", c: "18", col: "var(--gsd-soft)", op: 0.6 },
-                        { n: "Active", c: "14", col: "var(--gsd-em)", op: 1 },
-                        { n: "Stalled", c: "3", col: "var(--gsd-rb)", op: 1, val: "var(--gsd-rb)" },
-                        { n: "Completed", c: "12", col: "var(--gsd-primary)", op: 1 },
+                        { n: "Backlog", c: String(pipe.backlog), col: "var(--gsd-soft)", op: 0.6 },
+                        { n: "Active", c: String(pipe.active), col: "var(--gsd-em)", op: 1 },
+                        { n: "Stalled", c: String(pipe.stalled), col: "var(--gsd-rb)", op: 1, val: "var(--gsd-rb)" },
+                        { n: "Completed", c: String(pipe.completed), col: "var(--gsd-primary)", op: 1 },
                       ].map((x) => (
                         <div key={x.n} className="gsd-pipe-stat">
                           <span
@@ -223,14 +235,19 @@ export function GsdFleetTemplate() {
                 <div className="gsd-stack">
                   <section className="gsd-hitl">
                     <div className="gsd-hitl-head">
-                      <span className="gsd-hitl-head-title">Decision Queue · 3</span>
+                      <span className="gsd-hitl-head-title">Decision Queue · {HITL.length}</span>
                       <button type="button" className="gsd-link" style={{ color: "var(--gsd-am)" }} onClick={() => setPage("approvals")}>
                         View all →
                       </button>
                     </div>
                     <div className="gsd-hitl-body">
+                      {HITL.length === 0 ? (
+                        <div style={{ font: "400 10px var(--gsd-font-mono)", color: "var(--gsd-soft)" }}>
+                          Queue clear — no HITL escalations
+                        </div>
+                      ) : null}
                       {HITL.slice(0, 2).map((h) => (
-                        <div key={h.member + h.when} className="gsd-hitl-card">
+                        <div key={h.member + h.when + h.summary.slice(0, 20)} className="gsd-hitl-card">
                           <div
                             style={{
                               display: "flex",
@@ -254,10 +271,20 @@ export function GsdFleetTemplate() {
                             {h.summary}
                           </p>
                           <div style={{ display: "flex", gap: 6 }}>
-                            <button type="button" className="gsd-btn-em">
-                              Approve
+                            <button
+                              type="button"
+                              className="gsd-btn-em"
+                              disabled={m.actioningMember === h.ticket.member}
+                              onClick={() => handleResolveHitl(h.ticket as HitlTicket, "approve")}
+                            >
+                              {m.actioningMember === h.ticket.member ? "…" : "Approve"}
                             </button>
-                            <button type="button" className="gsd-btn-outline">
+                            <button
+                              type="button"
+                              className="gsd-btn-outline"
+                              disabled={m.actioningMember === h.ticket.member}
+                              onClick={() => handleResolveHitl(h.ticket as HitlTicket, "reject")}
+                            >
                               Reject
                             </button>
                           </div>
@@ -311,7 +338,7 @@ export function GsdFleetTemplate() {
                   style={{ background: "var(--gsd-am-bg)", borderBottomColor: "var(--gsd-border)" }}
                 >
                   <span className="gsd-panel-title" style={{ color: "var(--gsd-am)" }}>
-                    Pending Approvals · 3
+                    Pending Approvals · {HITL.length}
                   </span>
                   <span
                     className="gsd-chip"
@@ -321,8 +348,13 @@ export function GsdFleetTemplate() {
                   </span>
                 </div>
                 <div style={{ padding: 16, display: "flex", flexDirection: "column", gap: 10 }}>
+                  {HITL.length === 0 ? (
+                    <div style={{ font: "400 11px var(--gsd-font-mono)", color: "var(--gsd-soft)" }}>
+                      No pending approvals in ACMI queue.
+                    </div>
+                  ) : null}
                   {HITL.map((h) => (
-                    <div key={h.member + h.tag} className="gsd-approval-row">
+                    <div key={h.member + h.tag + h.summary.slice(0, 24)} className="gsd-approval-row">
                       <div style={{ display: "flex", flexDirection: "column", gap: 7, minWidth: 0, flex: 1 }}>
                         <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
                           <span className="gsd-tag">{h.tag}</span>
@@ -354,10 +386,22 @@ export function GsdFleetTemplate() {
                         </p>
                       </div>
                       <div style={{ display: "flex", gap: 8, width: 212, flexShrink: 0 }}>
-                        <button type="button" className="gsd-btn-em" style={{ height: 30 }}>
+                        <button
+                          type="button"
+                          className="gsd-btn-em"
+                          style={{ height: 30 }}
+                          disabled={m.actioningMember === h.ticket.member}
+                          onClick={() => handleResolveHitl(h.ticket as HitlTicket, "approve")}
+                        >
                           Approve
                         </button>
-                        <button type="button" className="gsd-btn-outline" style={{ height: 30 }}>
+                        <button
+                          type="button"
+                          className="gsd-btn-outline"
+                          style={{ height: 30 }}
+                          disabled={m.actioningMember === h.ticket.member}
+                          onClick={() => handleResolveHitl(h.ticket as HitlTicket, "reject")}
+                        >
                           Reject
                         </button>
                       </div>
@@ -368,21 +412,26 @@ export function GsdFleetTemplate() {
 
               <section className="gsd-panel">
                 <div className="gsd-panel-head">
-                  <span className="gsd-panel-title">[Resolution History]</span>
+                  <span className="gsd-panel-title">[Recent Fleet Events]</span>
                 </div>
                 <div className="gsd-feed">
-                  {HISTORY.map((h) => (
-                    <div key={h.t + h.member} className="gsd-feed-row" style={{ font: "400 11px var(--gsd-font-mono)" }}>
+                  {FEED.slice(0, 8).map((h) => (
+                    <div key={h.key} className="gsd-feed-row" style={{ font: "400 11px var(--gsd-font-mono)" }}>
                       <span style={{ width: 64, color: "var(--gsd-soft)" }}>{h.t}</span>
-                      <span style={{ width: 130, fontWeight: 700, color: "var(--gsd-fg)" }}>{h.member}</span>
+                      <span style={{ width: 130, fontWeight: 700, color: "var(--gsd-fg)" }}>{h.src}</span>
                       <span className="gsd-feed-sum" style={{ flex: 1 }}>
-                        {h.summary}
+                        {h.sum}
                       </span>
                       <span className={`gsd-badge ${badgeTone(h.tone)}`} style={{ fontSize: 9 }}>
-                        {h.result}
+                        {h.kind}
                       </span>
                     </div>
                   ))}
+                  {FEED.length === 0 ? (
+                    <div style={{ padding: 12, font: "400 11px var(--gsd-font-mono)", color: "var(--gsd-soft)" }}>
+                      Waiting for ACMI timeline / bus events…
+                    </div>
+                  ) : null}
                 </div>
               </section>
             </>
@@ -392,7 +441,7 @@ export function GsdFleetTemplate() {
             <section className="gsd-panel">
               <div className="gsd-panel-head">
                 <span className="gsd-panel-title">[Work Item Pipeline]</span>
-                <span className="gsd-chip">47 total · scope: {tenant}</span>
+                <span className="gsd-chip">{pipe.total} total · scope: {tenant}</span>
               </div>
               <div className="gsd-kanban">
                 {KANBAN.map((col) => (
@@ -542,7 +591,7 @@ export function GsdFleetTemplate() {
             <section className="gsd-panel">
               <div className="gsd-panel-head">
                 <span className="gsd-panel-title">[Services Health Matrix]</span>
-                <span className="gsd-chip">9 of 11 online</span>
+                <span className="gsd-chip">{k.servicesOnline} of {k.servicesTotal} online</span>
               </div>
               <div style={{ padding: "8px 16px 12px" }}>
                 {servicesFull.map((s) => (
