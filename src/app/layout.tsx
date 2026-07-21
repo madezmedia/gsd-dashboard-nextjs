@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono, JetBrains_Mono, Newsreader, Raleway } from "next/font/google";
 import { ThemeProvider } from "next-themes";
 import { Suspense } from "react";
+import { Analytics } from "@vercel/analytics/react";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 import "./globals.css";
 import { ResponsiveLayout } from "@/components/layout/responsive-layout";
 import { CopilotPanel } from "@/components/openui/copilot-panel";
@@ -74,6 +76,8 @@ export default function RootLayout({
             </Suspense>
             <CopilotPanel />
           </ThemeProvider>
+          <Analytics />
+          <SpeedInsights />
         </PostHogProvider>
       </body>
     </html>
