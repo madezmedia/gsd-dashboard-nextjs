@@ -1,8 +1,6 @@
-"use client";
+import { redirect } from "next/navigation";
 
-import { GsdFleetHome } from "@/components/fleet-template/GsdFleetHome";
-
-/** Alias for Approach A home shell. */
+/** Alias → main command center (legacy system). */
 export default function FleetPage() {
-  return <GsdFleetHome />;
+  redirect("/");
 }

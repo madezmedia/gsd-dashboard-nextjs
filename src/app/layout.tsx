@@ -52,7 +52,7 @@ export default function RootLayout({
       className={`${geistSans.variable} ${geistMono.variable} ${jetbrains.variable} ${newsreader.variable} ${raleway.variable}`}
       suppressHydrationWarning
     >
-      <body className="min-h-screen flex flex-col font-sans antialiased bg-background text-foreground">
+      <body className="min-h-screen flex flex-col font-sans antialiased bg-background text-foreground overflow-x-hidden">
         <PostHogProvider>
           <ThemeProvider
             attribute="class"

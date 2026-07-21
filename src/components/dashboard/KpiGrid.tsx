@@ -16,7 +16,7 @@ function KpiCard({ title, value, icon: Icon, description, variant = "default" }:
   return (
     <Card
       className={cn(
-        "border border-border bg-card rounded-md hover:border-primary/40 transition-all shadow-none overflow-hidden relative flex flex-col justify-between p-5 min-h-[130px]",
+        "border border-border bg-card rounded-md hover:border-primary/40 transition-all shadow-none overflow-hidden relative flex flex-col justify-between p-4 sm:p-5 min-h-[110px] sm:min-h-[120px]",
         variant === "danger" && "border-destructive/30 bg-destructive/[0.02]",
         variant === "warning" && "border-amber-500/30 bg-amber-500/[0.02]"
       )}
@@ -97,7 +97,7 @@ export function KpiGrid() {
   ).length;
 
   return (
-    <div className="gsd-kpi-grid grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 w-full min-w-0 overflow-x-auto">
+    <div className="gsd-kpi-grid grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3 w-full min-w-0">
       <KpiCard
         title="Total Swarms"
         value={safeRollup.totalAgents}

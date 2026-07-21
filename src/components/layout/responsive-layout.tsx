@@ -38,38 +38,31 @@ export function ResponsiveLayout({ children }: { children: React.ReactNode }) {
     };
   }, []);
 
-  // GSD Fleet Template owns its own chrome — full-bleed, no app chrome wrapping
-  const isFleetTemplate = pathname === "/" || pathname.startsWith("/fleet");
-  if (isFleetTemplate) {
-    return (
-      <div className="gsd-fleet-root" style={{ width: "100%", minHeight: "100vh", margin: 0, padding: 0 }}>
-        {children}
-      </div>
-    );
-  }
-
+  // Single chrome for all routes: legacy sidebar + main (including Command Center /)
   return (
     <div className="min-h-screen flex flex-col lg:flex-row w-full bg-background text-foreground">
-      {/* 1. Desktop Sidebar panel - locked above 1024px viewport */}
+      {/* 1. Desktop Sidebar — full FLEET_NAV / all ACMI pages */}
       <div className="hidden lg:flex shrink-0">
         <Sidebar onToggleDocs={() => setDocsOpen((prev) => !prev)} />
       </div>
 
-      {/* 2. Mobile Responsive Monospaced Navigation Bar - visible below 1024px viewport */}
+      {/* 2. Mobile nav bar */}
       <header className="flex lg:hidden items-center justify-between border-b border-border bg-card px-4 h-14 shrink-0 font-mono w-full">
         <div className="flex gap-2">
           <button
+            type="button"
             onClick={() => setIsOpen(true)}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold uppercase tracking-wider text-primary hover:bg-primary/10 border border-primary/20 transition-all rounded-none bg-card"
+            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold uppercase tracking-wider text-primary hover:bg-primary/10 border border-primary/20 transition-all rounded-none bg-card cursor-pointer"
             aria-label="Open ACMI Command Menu"
           >
             <Menu className="h-3.5 w-3.5" />
             <span>[MENU]</span>
           </button>
-          
+
           <button
+            type="button"
             onClick={() => setDocsOpen((prev) => !prev)}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold uppercase tracking-wider text-primary hover:bg-primary/10 border border-primary/20 transition-all rounded-none bg-card"
+            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold uppercase tracking-wider text-primary hover:bg-primary/10 border border-primary/20 transition-all rounded-none bg-card cursor-pointer"
             aria-label="Toggle Docs Drawer"
           >
             <FileText className="h-3.5 w-3.5" />
@@ -82,29 +75,24 @@ export function ResponsiveLayout({ children }: { children: React.ReactNode }) {
         </span>
       </header>
 
-      {/* 3. Sliding Absolute Sidebar Drawer with backdrop-blur filter */}
+      {/* 3. Mobile sidebar drawer */}
       {isOpen && (
         <div className="fixed inset-0 z-50 flex lg:hidden">
-          {/* Backdrop screen click trap */}
           <div
             className="fixed inset-0 bg-background/80 backdrop-blur-sm transition-opacity duration-300"
             onClick={() => setIsOpen(false)}
           />
-
-          {/* Left slide container */}
           <div className="relative flex flex-col w-60 bg-card border-r border-border h-full shadow-2xl animate-in slide-in-from-left duration-200">
-            {/* Close toggle button */}
             <div className="absolute top-3 right-3 z-50">
               <button
+                type="button"
                 onClick={() => setIsOpen(false)}
-                className="p-1.5 hover:bg-white/5 text-foreground/60 hover:text-foreground transition-colors border border-border rounded-none bg-card"
+                className="p-1.5 hover:bg-muted text-muted-foreground hover:text-foreground transition-colors border border-border rounded-none bg-card cursor-pointer"
                 aria-label="Close Command Menu"
               >
                 <X className="h-3.5 w-3.5" />
               </button>
             </div>
-
-            {/* Sidebar nested dynamically */}
             <div className="flex-1 overflow-hidden flex">
               <Sidebar onToggleDocs={() => setDocsOpen((prev) => !prev)} />
             </div>
@@ -112,16 +100,15 @@ export function ResponsiveLayout({ children }: { children: React.ReactNode }) {
         </div>
       )}
 
-      {/* 4. Isolated safe child content layer */}
+      {/* 4. Main content */}
       <div className="flex-1 flex flex-col overflow-hidden min-w-0 bg-background">
-        <main className="flex-1 flex flex-col overflow-hidden">
-          <div className="flex-1 overflow-auto p-4 lg:p-6 bg-background">
+        <main className="flex-1 flex flex-col overflow-hidden min-h-0">
+          <div className="flex-1 overflow-auto overflow-x-hidden p-4 lg:p-6 bg-background">
             {children}
           </div>
         </main>
       </div>
 
-      {/* Global slide-out Documentation Drawer */}
       <DocsDrawer isOpen={docsOpen} onClose={() => setDocsOpen(false)} />
     </div>
   );

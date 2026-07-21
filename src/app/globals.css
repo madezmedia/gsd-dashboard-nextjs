@@ -134,3 +134,36 @@
     @apply font-sans;
   }
 }
+
+/* ── Legacy cockpit polish (no component rebuild) ───────────────────────── */
+@layer components {
+  .cockpit-page {
+    max-width: 1600px;
+  }
+
+  /* Prefer mono labels + readable cards on command center */
+  .cockpit-page [data-slot="card"] {
+    box-shadow: none;
+  }
+
+  .cockpit-page button,
+  .cockpit-page [data-slot="button"] {
+    cursor: pointer;
+  }
+
+  .cockpit-page button:disabled,
+  .cockpit-page [data-slot="button"][disabled] {
+    cursor: not-allowed;
+  }
+
+  /* KPI strip: keep 5-up when space allows without cramped gaps */
+  .cockpit-page .gsd-kpi-grid {
+    gap: 0.75rem;
+  }
+
+  @media (min-width: 1280px) {
+    .cockpit-page .gsd-kpi-grid {
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+    }
+  }
+}
