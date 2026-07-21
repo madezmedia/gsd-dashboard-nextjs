@@ -2,6 +2,7 @@
 
 import React, { useState, useId } from "react";
 import { trackCoachingEnrollment, trackRoiCalculatorInteraction } from "@/lib/analytics";
+import { VideoPosterPreview } from "@/components/remotion/VideoPosterPreview";
 import {
   MessageSquare,
   Video,
@@ -330,6 +331,11 @@ export default function CoachingPage() {
               {activePillar.valueProp} With our retainer, your leadership team gets direct line access to developers who have built high-scale AI systems across Fortune 500 &amp; high-growth startups.
             </p>
           </div>
+        </section>
+
+        {/* REMOTION VIDEO MOTION ASSET PREVIEW */}
+        <section className="space-y-4">
+          <VideoPosterPreview initialVideo="coaching" showSelector={true} />
         </section>
 
         {/* SECTION 2: INTERACTIVE ROI & IN-HOUSE VS RETAINER COMPARISON */}
