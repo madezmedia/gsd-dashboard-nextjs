@@ -44,40 +44,59 @@ export function useCockpitData() {
   // Force synchronizing the fleet state
   const handleForceSync = useCallback(async () => {
     setForcingSync(true);
-    const success = await triggerFleetSync();
-    if (success) {
-      setTimeout(() => {
-        loadData();
-        setForcingSync(false);
-      }, 1500);
-    } else {
+    try {
+      const success = await triggerFleetSync();
+      if (success) {
+        await loadData();
+      } else {
+        // Still refresh local view even if remote trigger is a no-op
+        await loadData();
+      }
+    } catch (err) {
+      console.error("fleet sync failed", err);
+      alert("Fleet sync trigger failed — check ACMI proxy.");
+    } finally {
       setForcingSync(false);
     }
   }, [loadData, setForcingSync]);
 
-  // Actioning (resolving) HITL tickets
+  // Actioning (resolving) HITL tickets — same proven path as /hitl page
   const handleResolveHitl = useCallback(
     async (ticket: HitlTicket, action: "approve" | "reject") => {
       const member = ticket.member;
+      if (!member) {
+        console.error("HITL ticket missing member", ticket);
+        alert("Cannot resolve: ticket has no agent member id.");
+        return false;
+      }
       setActioningMember(member);
       try {
         const success = await resolveHitlTicket(
           member,
           action,
-          feedbackNote,
+          feedbackNote || "",
           ticket.work_item_id || ticket.id
         );
         if (success) {
+          // Optimistic: drop from queue immediately, then reload
+          setHitlQueue(
+            useCockpitStore.getState().hitlQueue.filter((t) => t.member !== member)
+          );
           setFeedbackNote("");
           await loadData();
+          return true;
         }
+        alert("Failed to submit approval action to ACMI (acmi_hitl_action).");
+        return false;
       } catch (err) {
         console.error("Failed to action HITL ticket:", err);
+        alert("Error resolving HITL ticket — check ACMI proxy.");
+        return false;
       } finally {
         setActioningMember(null);
       }
     },
-    [feedbackNote, loadData, setActioningMember, setFeedbackNote]
+    [feedbackNote, loadData, setActioningMember, setFeedbackNote, setHitlQueue]
   );
 
   useEffect(() => {

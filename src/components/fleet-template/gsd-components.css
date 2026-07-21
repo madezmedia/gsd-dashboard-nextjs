@@ -150,10 +150,20 @@
   box-shadow: none !important;
 }
 
-/* Buttons in content */
-.gsd-shell .gsd-content button {
+/* Buttons in content — never block real ACMI actions */
+.gsd-shell .gsd-content button,
+.gsd-shell .gsd-content [data-slot="button"],
+.gsd-shell .gsd-content a {
   font-family: var(--gsd-font-mono);
   letter-spacing: 0.06em;
+  pointer-events: auto !important;
+  cursor: pointer;
+}
+
+.gsd-shell .gsd-content button:disabled,
+.gsd-shell .gsd-content [data-slot="button"][disabled] {
+  cursor: not-allowed;
+  opacity: 0.55;
 }
 
 .gsd-shell .gsd-content input {

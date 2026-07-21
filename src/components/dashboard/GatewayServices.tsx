@@ -7,7 +7,10 @@ import { Terminal, Copy, ShieldCheck, Check, Ban } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface GatewayServicesProps {
-  handleResolveHitl: (ticket: HitlTicket, action: "approve" | "reject") => Promise<void>;
+  handleResolveHitl: (
+    ticket: HitlTicket,
+    action: "approve" | "reject"
+  ) => Promise<boolean | void>;
 }
 
 function formatRelativeTime(ts: number | undefined): string {
@@ -58,14 +61,14 @@ export function GatewayServices({ handleResolveHitl }: GatewayServicesProps) {
   return (
     <div className="space-y-6">
       {/* Swarm Gateway Actions */}
-      <Card className="border border-border bg-card rounded-[4px] shadow-none">
+      <Card className="border border-border bg-card rounded-[4px] shadow-none py-0">
         <CardHeader className="pb-2 border-b border-border">
           <CardTitle className="text-xs font-mono uppercase tracking-wider flex items-center justify-between text-muted-foreground">
             <span>[Swarm Gateway Actions]</span>
             <span className="text-[8px] text-muted-foreground/40 font-mono">Operations Command</span>
           </CardTitle>
         </CardHeader>
-        <CardContent className="pt-3 space-y-3">
+        <CardContent className="p-3 space-y-3">
           <div className="p-3 bg-muted/80 border border-border rounded-[2px] font-mono text-[10px] space-y-2">
             <p className="font-bold text-foreground uppercase flex items-center gap-1">
               <Terminal className="h-3 w-3" /> Quick Diagnostic Cmd:
@@ -108,19 +111,29 @@ export function GatewayServices({ handleResolveHitl }: GatewayServicesProps) {
 
               <div className="flex gap-2">
                 <Button
+                  type="button"
                   size="sm"
-                  className="flex-1 bg-emerald-500 hover:bg-emerald-600 text-white font-mono text-[10px] uppercase h-8 rounded-[4px] shadow-none"
-                  onClick={() => handleResolveHitl(topTicket, "approve")}
+                  className="flex-1 bg-emerald-500 hover:bg-emerald-600 text-white font-mono text-[10px] uppercase h-8 rounded-[4px] shadow-none cursor-pointer"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    void handleResolveHitl(topTicket, "approve");
+                  }}
                   disabled={actioningMember === topTicket.member}
                 >
                   <Check className="h-3.5 w-3.5 mr-1" />
-                  Approve
+                  {actioningMember === topTicket.member ? "…" : "Approve"}
                 </Button>
                 <Button
+                  type="button"
                   size="sm"
                   variant="outline"
-                  className="flex-1 border-border text-foreground hover:bg-muted font-mono text-[10px] uppercase h-8 rounded-[4px] shadow-none"
-                  onClick={() => handleResolveHitl(topTicket, "reject")}
+                  className="flex-1 border-border text-foreground hover:bg-muted font-mono text-[10px] uppercase h-8 rounded-[4px] shadow-none cursor-pointer"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    void handleResolveHitl(topTicket, "reject");
+                  }}
                   disabled={actioningMember === topTicket.member}
                 >
                   <Ban className="h-3.5 w-3.5 mr-1" />
@@ -143,7 +156,7 @@ export function GatewayServices({ handleResolveHitl }: GatewayServicesProps) {
       </Card>
 
       {/* Microservices Matrix */}
-      <Card className="border border-border bg-card rounded-[4px] shadow-none">
+      <Card className="border border-border bg-card rounded-[4px] shadow-none py-0">
         <CardHeader className="pb-2 border-b border-border">
           <CardTitle className="text-xs font-mono uppercase tracking-wider text-muted-foreground flex items-center justify-between">
             <span>[Services Health Matrix]</span>
@@ -152,7 +165,7 @@ export function GatewayServices({ handleResolveHitl }: GatewayServicesProps) {
             </span>
           </CardTitle>
         </CardHeader>
-        <CardContent className="pt-3">
+        <CardContent className="p-3">
           <div className="grid grid-cols-2 gap-2 text-[10px] font-mono">
             {filteredServices.slice(0, 8).map((svc) => {
               const isUp = svc.verified_at ? (mountedTime - Number(svc.verified_at) < 86400000) : false;

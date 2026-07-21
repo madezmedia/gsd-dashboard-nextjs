@@ -1,12 +1,22 @@
+"use client";
+
+import Link from "next/link";
 import { useCockpitStore } from "@/store/useCockpitStore";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { type ACMIWorkItem } from "@/lib/acmi-client";
+import {
+  fetchDashboardRollup,
+  updateWorkItemStatus,
+  type ACMIWorkItem,
+} from "@/lib/acmi-client";
 import { cn } from "@/lib/utils";
+import { useState } from "react";
 
 export function KanbanBoard() {
-  const { rollup, activeTenant } = useCockpitStore();
+  const { rollup, activeTenant, setRollup } = useCockpitStore();
+  const [actioningId, setActioningId] = useState<string | null>(null);
 
   const safeRollup = rollup || {
     totalAgents: 0,
@@ -42,51 +52,138 @@ export function KanbanBoard() {
   const stalledItems = filteredWorkItems.filter((w) => w.status === "stalled");
   const completedItems = filteredWorkItems.filter((w) => w.status === "completed");
 
-  const renderKanbanCard = (w: ACMIWorkItem) => {
+  const refreshRollup = async () => {
+    try {
+      const data = await fetchDashboardRollup();
+      setRollup(data);
+    } catch (err) {
+      console.error("Failed to refresh rollup after status change", err);
+    }
+  };
+
+  const handleStatus = async (id: string, status: string) => {
+    setActioningId(id);
+    try {
+      const ok = await updateWorkItemStatus(id, status);
+      if (!ok) {
+        alert(`Failed to update work item ${id} → ${status}`);
+        return;
+      }
+      await refreshRollup();
+    } finally {
+      setActioningId(null);
+    }
+  };
+
+  const renderKanbanCard = (w: ACMIWorkItem, column: "backlog" | "active" | "stalled" | "completed") => {
     const isAntigravity = w.owner?.toLowerCase().includes("antigravity");
+    const busy = actioningId === w.id;
     return (
       <div
         key={w.id}
         className={cn(
-          "border p-2 bg-muted/30 border-border rounded-[2px]",
+          "border p-2 bg-muted/30 border-border rounded-[2px] group",
           isAntigravity && "border-primary bg-muted/80"
         )}
       >
-        <div className="flex items-center justify-between gap-1 mb-1">
-          <span className="font-mono text-[9px] font-bold truncate text-foreground uppercase tracking-wider">
-            {w.id}
-          </span>
-          {isAntigravity && (
-            <span className="font-mono text-[8px] bg-primary text-primary-foreground px-1 tracking-wider rounded-[2px]">
-              [antigravity]
+        <Link
+          href={`/workflows/${encodeURIComponent(w.id)}`}
+          className="block cursor-pointer hover:opacity-90"
+        >
+          <div className="flex items-center justify-between gap-1 mb-1">
+            <span className="font-mono text-[9px] font-bold truncate text-foreground uppercase tracking-wider">
+              {w.id}
             </span>
+            {isAntigravity && (
+              <span className="font-mono text-[8px] bg-primary text-primary-foreground px-1 tracking-wider rounded-[2px]">
+                [antigravity]
+              </span>
+            )}
+          </div>
+          <p className="text-xs font-medium text-foreground mb-1 line-clamp-2">{w.title}</p>
+          <div className="flex justify-between items-center text-[9px] text-muted-foreground/70 font-mono">
+            <span>Progress: {w.progress}%</span>
+            <span className="truncate max-w-[80px]">
+              Owner: {w.owner?.replace("agent:", "") || "unassigned"}
+            </span>
+          </div>
+        </Link>
+
+        {/* Real ACMI status actions — proven updateWorkItemStatus path */}
+        <div
+          className="mt-2 flex flex-wrap gap-1 border-t border-border/40 pt-2"
+          onClick={(e) => e.stopPropagation()}
+        >
+          {column === "backlog" && (
+            <Button
+              type="button"
+              size="xs"
+              className="font-mono text-[8px] uppercase h-6 cursor-pointer"
+              disabled={busy}
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                void handleStatus(w.id, "active");
+              }}
+            >
+              {busy ? "…" : "Start"}
+            </Button>
           )}
-        </div>
-        <p className="text-xs font-medium text-foreground mb-1 line-clamp-2">{w.title}</p>
-        <div className="flex justify-between items-center text-[9px] text-muted-foreground/70 font-mono">
-          <span>Progress: {w.progress}%</span>
-          <span className="truncate max-w-[80px]">
-            Owner: {w.owner?.replace("agent:", "") || "unassigned"}
-          </span>
+          {column === "active" && (
+            <Button
+              type="button"
+              size="xs"
+              className="font-mono text-[8px] uppercase h-6 cursor-pointer bg-emerald-600 hover:bg-emerald-700 text-white"
+              disabled={busy}
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                void handleStatus(w.id, "completed");
+              }}
+            >
+              {busy ? "…" : "Complete"}
+            </Button>
+          )}
+          {column === "stalled" && (
+            <Button
+              type="button"
+              size="xs"
+              className="font-mono text-[8px] uppercase h-6 cursor-pointer"
+              disabled={busy}
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                void handleStatus(w.id, "active");
+              }}
+            >
+              {busy ? "…" : "Escalate"}
+            </Button>
+          )}
+          <Link
+            href={`/workflows/${encodeURIComponent(w.id)}`}
+            onClick={(e) => e.stopPropagation()}
+            className="inline-flex h-6 items-center rounded-md border border-border bg-background px-2 font-mono text-[8px] uppercase tracking-wide text-foreground hover:bg-muted cursor-pointer"
+          >
+            Open
+          </Link>
         </div>
       </div>
     );
   };
 
   return (
-    <Card className="border border-border bg-muted/20 rounded-[4px] shadow-none">
+    <Card className="border border-border bg-muted/20 rounded-[4px] shadow-none py-0">
       <CardHeader className="border-b border-border pb-3">
         <CardTitle className="text-xs font-mono uppercase tracking-wider text-muted-foreground flex items-center justify-between">
           <span>[Workflow Kanban Lifecycle Stages]</span>
           <span className="text-[9px] text-muted-foreground/50 font-mono font-normal">
-            Active pipeline tracker
+            Click card · real ACMI status actions
           </span>
         </CardTitle>
       </CardHeader>
       <CardContent className="p-4">
         <div className="overflow-x-auto pb-2">
           <div className="flex gap-4 min-w-[1000px] lg:min-w-0 lg:grid lg:grid-cols-4 w-full">
-            {/* Stage 1: Backlog */}
             <div className="border border-border bg-card p-3 space-y-3 w-[240px] shrink-0 lg:w-auto lg:shrink rounded-[4px]">
               <div className="border-b border-border pb-1.5 flex items-center justify-between">
                 <span className="font-mono text-xs font-bold text-foreground uppercase tracking-wider">
@@ -99,9 +196,9 @@ export function KanbanBoard() {
                   {backlogItems.length} items
                 </Badge>
               </div>
-              <ScrollArea className="h-[250px] pr-2">
+              <ScrollArea className="h-[280px] pr-2">
                 <div className="space-y-2">
-                  {backlogItems.slice(0, 10).map(renderKanbanCard)}
+                  {backlogItems.slice(0, 10).map((w) => renderKanbanCard(w, "backlog"))}
                   {backlogItems.length === 0 && (
                     <div className="text-[10px] font-mono text-muted-foreground/40 text-center py-4">
                       No items in Backlog
@@ -111,7 +208,6 @@ export function KanbanBoard() {
               </ScrollArea>
             </div>
 
-            {/* Stage 2: Active */}
             <div className="border border-border bg-card p-3 space-y-3 w-[240px] shrink-0 lg:w-auto lg:shrink rounded-[4px]">
               <div className="border-b border-border pb-1.5 flex items-center justify-between">
                 <span className="font-mono text-xs font-bold text-foreground uppercase tracking-wider">
@@ -124,9 +220,9 @@ export function KanbanBoard() {
                   {activeItems.length} items
                 </Badge>
               </div>
-              <ScrollArea className="h-[250px] pr-2">
+              <ScrollArea className="h-[280px] pr-2">
                 <div className="space-y-2">
-                  {activeItems.slice(0, 10).map(renderKanbanCard)}
+                  {activeItems.slice(0, 10).map((w) => renderKanbanCard(w, "active"))}
                   {activeItems.length === 0 && (
                     <div className="text-[10px] font-mono text-muted-foreground/40 text-center py-4">
                       No active items
@@ -136,7 +232,6 @@ export function KanbanBoard() {
               </ScrollArea>
             </div>
 
-            {/* Stage 3: Stalled */}
             <div className="border border-border bg-card p-3 space-y-3 w-[240px] shrink-0 lg:w-auto lg:shrink rounded-[4px]">
               <div className="border-b border-border pb-1.5 flex items-center justify-between">
                 <span className="font-mono text-xs font-bold text-foreground uppercase tracking-wider">
@@ -149,9 +244,9 @@ export function KanbanBoard() {
                   {stalledItems.length} items
                 </Badge>
               </div>
-              <ScrollArea className="h-[250px] pr-2">
+              <ScrollArea className="h-[280px] pr-2">
                 <div className="space-y-2">
-                  {stalledItems.slice(0, 10).map(renderKanbanCard)}
+                  {stalledItems.slice(0, 10).map((w) => renderKanbanCard(w, "stalled"))}
                   {stalledItems.length === 0 && (
                     <div className="text-[10px] font-mono text-muted-foreground/40 text-center py-4">
                       No stalled items
@@ -161,7 +256,6 @@ export function KanbanBoard() {
               </ScrollArea>
             </div>
 
-            {/* Stage 4: Completed */}
             <div className="border border-border bg-card p-3 space-y-3 w-[240px] shrink-0 lg:w-auto lg:shrink rounded-[4px]">
               <div className="border-b border-border pb-1.5 flex items-center justify-between">
                 <span className="font-mono text-xs font-bold text-foreground uppercase tracking-wider">
@@ -174,9 +268,9 @@ export function KanbanBoard() {
                   {completedItems.length} items
                 </Badge>
               </div>
-              <ScrollArea className="h-[250px] pr-2">
+              <ScrollArea className="h-[280px] pr-2">
                 <div className="space-y-2">
-                  {completedItems.slice(0, 10).map(renderKanbanCard)}
+                  {completedItems.slice(0, 10).map((w) => renderKanbanCard(w, "completed"))}
                   {completedItems.length === 0 && (
                     <div className="text-[10px] font-mono text-muted-foreground/40 text-center py-4">
                       No completed items

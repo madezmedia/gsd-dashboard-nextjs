@@ -1,11 +1,19 @@
+import { useState } from "react";
 import { useCockpitStore, type HitlTicket } from "@/store/useCockpitStore";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { AlertTriangle, ShieldCheck, Check, Ban } from "lucide-react";
+import {
+  fetchDashboardRollup,
+  updateWorkItemStatus,
+} from "@/lib/acmi-client";
 
 interface OperationsBoardProps {
-  handleResolveHitl: (ticket: HitlTicket, action: "approve" | "reject") => Promise<void>;
+  handleResolveHitl: (
+    ticket: HitlTicket,
+    action: "approve" | "reject"
+  ) => Promise<boolean | void>;
 }
 
 function formatRelativeTime(ts: number | undefined): string {
@@ -32,7 +40,24 @@ export function OperationsBoard({ handleResolveHitl }: OperationsBoardProps) {
     actioningMember,
     copiedId,
     copyText,
+    setRollup,
   } = useCockpitStore();
+  const [escalatingId, setEscalatingId] = useState<string | null>(null);
+
+  const handleEscalateStalled = async (id: string) => {
+    setEscalatingId(id);
+    try {
+      const ok = await updateWorkItemStatus(id, "active");
+      if (!ok) {
+        alert(`Failed to escalate work item ${id}`);
+        return;
+      }
+      const next = await fetchDashboardRollup();
+      setRollup(next);
+    } finally {
+      setEscalatingId(null);
+    }
+  };
 
   const safeRollup = rollup || {
     totalAgents: 0,
@@ -68,8 +93,8 @@ export function OperationsBoard({ handleResolveHitl }: OperationsBoardProps) {
   if (urgentCount === 0) {
     return (
       <Card className="border border-border bg-card rounded-[4px] shadow-none">
-        <CardContent className="p-6">
-          <div className="text-center py-6 space-y-2">
+        <CardContent className="p-4">
+          <div className="text-center py-4 space-y-2">
             <ShieldCheck className="h-8 w-8 text-emerald-500/30 mx-auto animate-pulse" />
             <p className="font-mono text-[9px] text-emerald-500 uppercase tracking-widest font-bold">
               Gatekeeper Queue Clear
@@ -119,19 +144,30 @@ export function OperationsBoard({ handleResolveHitl }: OperationsBoardProps) {
             </div>
             <div className="flex items-center gap-2 shrink-0 md:w-56 md:justify-end">
               <Button
+                type="button"
                 size="sm"
-                onClick={() => handleResolveHitl(ticket, "approve")}
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  void handleResolveHitl(ticket, "approve");
+                }}
                 disabled={actioningMember === ticket.member}
-                className="bg-emerald-500 hover:bg-emerald-600 text-white font-mono text-[9px] uppercase px-3 rounded-[4px] h-8 shadow-none w-24 justify-center"
+                className="bg-emerald-500 hover:bg-emerald-600 text-white font-mono text-[9px] uppercase px-3 rounded-[4px] h-8 shadow-none w-24 justify-center cursor-pointer"
               >
-                <Check className="h-3 w-3 mr-1" /> Approve
+                <Check className="h-3 w-3 mr-1" />
+                {actioningMember === ticket.member ? "…" : "Approve"}
               </Button>
               <Button
+                type="button"
                 size="sm"
                 variant="outline"
-                onClick={() => handleResolveHitl(ticket, "reject")}
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  void handleResolveHitl(ticket, "reject");
+                }}
                 disabled={actioningMember === ticket.member}
-                className="border-border text-foreground hover:bg-muted font-mono text-[9px] uppercase px-3 rounded-[4px] h-8 shadow-none w-24 justify-center"
+                className="border-border text-foreground hover:bg-muted font-mono text-[9px] uppercase px-3 rounded-[4px] h-8 shadow-none w-24 justify-center cursor-pointer"
               >
                 <Ban className="h-3 w-3 mr-1" /> Reject
               </Button>
@@ -163,10 +199,28 @@ export function OperationsBoard({ handleResolveHitl }: OperationsBoardProps) {
             </div>
             <div className="flex items-center gap-2 shrink-0 md:w-56 md:justify-end">
               <Button
+                type="button"
+                size="sm"
+                className="text-[9px] font-mono uppercase rounded-[4px] h-8 shadow-none w-24 justify-center cursor-pointer"
+                disabled={escalatingId === w.id}
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  void handleEscalateStalled(w.id);
+                }}
+              >
+                {escalatingId === w.id ? "…" : "Escalate"}
+              </Button>
+              <Button
+                type="button"
                 size="sm"
                 variant="outline"
-                className="text-[9px] font-mono border-border uppercase rounded-[4px] h-8 shadow-none hover:bg-muted text-foreground w-24 justify-center"
-                onClick={() => copyText(w.id, `copy-stalled-${w.id}`)}
+                className="text-[9px] font-mono border-border uppercase rounded-[4px] h-8 shadow-none hover:bg-muted text-foreground w-24 justify-center cursor-pointer"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  copyText(w.id, `copy-stalled-${w.id}`);
+                }}
               >
                 {copiedId === `copy-stalled-${w.id}` ? "Copied" : "Copy ID"}
               </Button>
