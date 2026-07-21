@@ -1,11 +1,11 @@
 "use client";
 
-import { GsdFleetTemplate } from "@/components/fleet-template/GsdFleetTemplate";
+import { GsdFleetHome } from "@/components/fleet-template/GsdFleetHome";
 
 /**
- * Home cockpit — GSD Fleet Template from Claude Design
- * https://claude.ai/design/p/a378a26c-7385-439b-9979-e939d6de1e62?file=GSD+Fleet+Template.dc.html
+ * Home: GSD shell + real ACMI cockpit components (Approach A).
+ * Legacy mock-heavy template kept as GsdFleetTemplate for reference.
  */
 export default function CockpitDashboard() {
-  return <GsdFleetTemplate />;
+  return <GsdFleetHome />;
 }

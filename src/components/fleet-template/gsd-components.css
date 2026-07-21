@@ -1,0 +1,198 @@
+/**
+ * GSD skin for real ACMI dashboard components (inside .gsd-shell).
+ * High-specificity overrides so shadcn Card/Badge tokens don't win.
+ */
+
+.gsd-shell .gsd-content {
+  /* reset inherited theme bleed */
+  color: var(--gsd-fg);
+  font-family: var(--gsd-font-sans);
+}
+
+/* Generic panel look for any card-like surface in content */
+.gsd-shell .gsd-content .border-border,
+.gsd-shell .gsd-content [class*="border-border"] {
+  border-color: var(--gsd-border) !important;
+}
+
+.gsd-shell .gsd-content .bg-card,
+.gsd-shell .gsd-content [class*="bg-card"] {
+  background-color: var(--gsd-card) !important;
+}
+
+.gsd-shell .gsd-content .bg-muted,
+.gsd-shell .gsd-content [class*="bg-muted"] {
+  background-color: var(--gsd-panel) !important;
+}
+
+.gsd-shell .gsd-content .text-foreground {
+  color: var(--gsd-fg) !important;
+}
+
+.gsd-shell .gsd-content .text-muted-foreground,
+.gsd-shell .gsd-content [class*="text-muted-foreground"] {
+  color: var(--gsd-muted) !important;
+}
+
+.gsd-shell .gsd-content .text-primary {
+  color: var(--gsd-primary) !important;
+}
+
+.gsd-shell .gsd-content .bg-primary {
+  background-color: var(--gsd-primary) !important;
+  color: var(--gsd-primary-fg) !important;
+}
+
+.gsd-shell .gsd-content .border-primary {
+  border-color: var(--gsd-primary) !important;
+}
+
+.gsd-shell .gsd-content .bg-emerald-500,
+.gsd-shell .gsd-content .text-emerald-500 {
+  /* map success greens to gsd-em */
+}
+
+.gsd-shell .gsd-content .text-emerald-500 {
+  color: var(--gsd-em) !important;
+}
+
+.gsd-shell .gsd-content .bg-emerald-500 {
+  background-color: var(--gsd-em) !important;
+}
+
+.gsd-shell .gsd-content .bg-emerald-500\/10 {
+  background-color: var(--gsd-em-bg) !important;
+}
+
+.gsd-shell .gsd-content .border-emerald-500\/20 {
+  border-color: color-mix(in srgb, var(--gsd-em) 25%, transparent) !important;
+}
+
+.gsd-shell .gsd-content .text-destructive,
+.gsd-shell .gsd-content .bg-destructive {
+  color: var(--gsd-rb) !important;
+}
+
+.gsd-shell .gsd-content [class*="bg-destructive"] {
+  background-color: var(--gsd-rb-bg) !important;
+}
+
+.gsd-shell .gsd-content [class*="border-destructive"] {
+  border-color: color-mix(in srgb, var(--gsd-rb) 30%, transparent) !important;
+}
+
+.gsd-shell .gsd-content [class*="text-destructive"] {
+  color: var(--gsd-rb) !important;
+}
+
+.gsd-shell .gsd-content [class*="bg-amber-500"] {
+  background-color: var(--gsd-am) !important;
+}
+
+.gsd-shell .gsd-content [class*="text-amber-500"],
+.gsd-shell .gsd-content [class*="border-amber-500"] {
+  color: var(--gsd-am) !important;
+  border-color: color-mix(in srgb, var(--gsd-am) 30%, transparent) !important;
+}
+
+/* KPI row — design uses single strip; KpiGrid root is the grid */
+.gsd-shell .gsd-kpi-strip {
+  border: 1px solid var(--gsd-border);
+  border-radius: 6px;
+  background: var(--gsd-card);
+  overflow: hidden;
+}
+
+.gsd-shell .gsd-kpi-strip > div {
+  display: grid !important;
+  grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
+  gap: 0 !important;
+  width: 100%;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.gsd-shell .gsd-kpi-strip > div > * {
+  border-radius: 0 !important;
+  border: none !important;
+  border-right: 1px solid var(--gsd-hair) !important;
+  min-height: 110px;
+  box-shadow: none !important;
+  background: transparent !important;
+}
+
+.gsd-shell .gsd-kpi-strip > div > *:last-child {
+  border-right: none !important;
+}
+
+.gsd-shell .gsd-kpi-strip .text-2xl,
+.gsd-shell .gsd-kpi-strip [class*="text-2xl"] {
+  font-family: var(--gsd-font-serif) !important;
+  font-weight: 600 !important;
+  font-size: 28px !important;
+  line-height: 1 !important;
+}
+
+.gsd-shell .gsd-kpi-strip .font-mono,
+.gsd-shell .gsd-content .font-mono {
+  font-family: var(--gsd-font-mono) !important;
+}
+
+.gsd-shell .gsd-content .font-serif {
+  font-family: var(--gsd-font-serif) !important;
+}
+
+/* Cards / panels */
+.gsd-shell .gsd-content [data-slot="card"],
+.gsd-shell .gsd-content .rounded-\[4px\],
+.gsd-shell .gsd-content .rounded-md {
+  border-radius: 6px !important;
+  box-shadow: none !important;
+}
+
+/* Buttons in content */
+.gsd-shell .gsd-content button {
+  font-family: var(--gsd-font-mono);
+  letter-spacing: 0.06em;
+}
+
+.gsd-shell .gsd-content input {
+  font-family: var(--gsd-font-mono);
+  background: var(--gsd-card) !important;
+  border-color: var(--gsd-border) !important;
+  color: var(--gsd-fg) !important;
+}
+
+/* Main compose grid */
+.gsd-shell .gsd-compose {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  width: 100%;
+}
+
+.gsd-shell .gsd-compose-split {
+  display: grid;
+  grid-template-columns: 1fr 340px;
+  gap: 18px;
+  align-items: start;
+}
+
+@media (max-width: 1100px) {
+  .gsd-shell .gsd-kpi-strip > div {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+  .gsd-shell .gsd-compose-split {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 640px) {
+  .gsd-shell .gsd-kpi-strip > div {
+    grid-template-columns: 1fr !important;
+  }
+  .gsd-shell .gsd-kpi-strip > div > * {
+    border-right: none !important;
+    border-bottom: 1px solid var(--gsd-hair) !important;
+  }
+}

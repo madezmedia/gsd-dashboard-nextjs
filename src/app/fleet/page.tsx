@@ -1,8 +1,8 @@
 "use client";
 
-import { GsdFleetTemplate } from "@/components/fleet-template/GsdFleetTemplate";
+import { GsdFleetHome } from "@/components/fleet-template/GsdFleetHome";
 
-/** Alias route for the Claude Design GSD Fleet Template implementation. */
-export default function FleetTemplatePage() {
-  return <GsdFleetTemplate />;
+/** Alias for Approach A home shell. */
+export default function FleetPage() {
+  return <GsdFleetHome />;
 }
