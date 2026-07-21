@@ -52,7 +52,7 @@ export default function RootLayout({
       className={`${geistSans.variable} ${geistMono.variable} ${jetbrains.variable} ${newsreader.variable} ${raleway.variable}`}
       suppressHydrationWarning
     >
-      <body className="min-h-screen flex flex-col font-sans antialiased bg-background text-foreground overflow-x-hidden">
+      <body className="min-h-dvh font-sans antialiased bg-background text-foreground">
         <PostHogProvider>
           <ThemeProvider
             attribute="class"
@@ -65,7 +65,7 @@ export default function RootLayout({
             </Suspense>
             <Suspense
               fallback={
-                <div className="w-full min-h-screen flex items-center justify-center font-mono text-[10px] text-muted-foreground uppercase bg-background">
+                <div className="w-full min-h-dvh flex items-center justify-center font-mono text-[10px] text-muted-foreground uppercase bg-background tracking-widest">
                   Loading ACMI System...
                 </div>
               }

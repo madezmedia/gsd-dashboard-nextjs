@@ -92,7 +92,7 @@ export function Sidebar({ onToggleDocs }: { onToggleDocs?: () => void }) {
   return (
     <aside
       className={cn(
-        "flex flex-col border-r border-sidebar-border bg-sidebar text-sidebar-foreground transition-all duration-300 rounded-none h-screen shrink-0 overflow-hidden",
+        "fleet-sidebar flex flex-col text-sidebar-foreground transition-all duration-300 rounded-none shrink-0 overflow-hidden",
         collapsed ? "w-16" : "w-64"
       )}
     >

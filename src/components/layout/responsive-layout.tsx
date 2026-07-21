@@ -11,15 +11,11 @@ export function ResponsiveLayout({ children }: { children: React.ReactNode }) {
   const [docsOpen, setDocsOpen] = useState(false);
   const pathname = usePathname();
 
-  // Auto-close overlays on url transition safely
   useEffect(() => {
-    const handle = setTimeout(() => {
-      setIsOpen(false);
-    }, 0);
+    const handle = setTimeout(() => setIsOpen(false), 0);
     return () => clearTimeout(handle);
   }, [pathname]);
 
-  // Handle global keydown to toggle drawers (e.g. Cmd+D for Docs)
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "d") {
@@ -38,75 +34,68 @@ export function ResponsiveLayout({ children }: { children: React.ReactNode }) {
     };
   }, []);
 
-  // Single chrome for all routes: legacy sidebar + main (including Command Center /)
   return (
-    <div className="min-h-screen flex flex-col lg:flex-row w-full bg-background text-foreground">
-      {/* 1. Desktop Sidebar — full FLEET_NAV / all ACMI pages */}
-      <div className="hidden lg:flex shrink-0">
+    <div className="fleet-app-shell">
+      {/* Desktop sidebar */}
+      <div className="fleet-app-shell__sidebar hidden lg:flex">
         <Sidebar onToggleDocs={() => setDocsOpen((prev) => !prev)} />
       </div>
 
-      {/* 2. Mobile nav bar */}
+      {/* Mobile top bar */}
       <header className="flex lg:hidden items-center justify-between border-b border-border bg-card px-4 h-14 shrink-0 font-mono w-full">
         <div className="flex gap-2">
           <button
             type="button"
             onClick={() => setIsOpen(true)}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold uppercase tracking-wider text-primary hover:bg-primary/10 border border-primary/20 transition-all rounded-none bg-card cursor-pointer"
+            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold uppercase tracking-wider text-primary hover:bg-primary/10 border border-primary/20 bg-card cursor-pointer"
             aria-label="Open ACMI Command Menu"
           >
             <Menu className="h-3.5 w-3.5" />
             <span>[MENU]</span>
           </button>
-
           <button
             type="button"
             onClick={() => setDocsOpen((prev) => !prev)}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold uppercase tracking-wider text-primary hover:bg-primary/10 border border-primary/20 transition-all rounded-none bg-card cursor-pointer"
+            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold uppercase tracking-wider text-primary hover:bg-primary/10 border border-primary/20 bg-card cursor-pointer"
             aria-label="Toggle Docs Drawer"
           >
             <FileText className="h-3.5 w-3.5" />
             <span>[DOCS]</span>
           </button>
         </div>
-
         <span className="text-xs font-bold text-foreground tracking-widest uppercase font-mono">
           [ACMI: COCKPIT]
         </span>
       </header>
 
-      {/* 3. Mobile sidebar drawer */}
+      {/* Mobile drawer */}
       {isOpen && (
         <div className="fixed inset-0 z-50 flex lg:hidden">
           <div
-            className="fixed inset-0 bg-background/80 backdrop-blur-sm transition-opacity duration-300"
+            className="fixed inset-0 bg-background/80 backdrop-blur-sm"
             onClick={() => setIsOpen(false)}
           />
-          <div className="relative flex flex-col w-60 bg-card border-r border-border h-full shadow-2xl animate-in slide-in-from-left duration-200">
+          <div className="relative flex flex-col w-64 h-full max-h-dvh bg-sidebar border-r border-sidebar-border shadow-2xl animate-in slide-in-from-left duration-200">
             <div className="absolute top-3 right-3 z-50">
               <button
                 type="button"
                 onClick={() => setIsOpen(false)}
-                className="p-1.5 hover:bg-muted text-muted-foreground hover:text-foreground transition-colors border border-border rounded-none bg-card cursor-pointer"
+                className="p-1.5 hover:bg-muted text-muted-foreground border border-border bg-card cursor-pointer"
                 aria-label="Close Command Menu"
               >
                 <X className="h-3.5 w-3.5" />
               </button>
             </div>
-            <div className="flex-1 overflow-hidden flex">
+            <div className="flex-1 min-h-0 overflow-hidden flex">
               <Sidebar onToggleDocs={() => setDocsOpen((prev) => !prev)} />
             </div>
           </div>
         </div>
       )}
 
-      {/* 4. Main content */}
-      <div className="flex-1 flex flex-col overflow-hidden min-w-0 bg-background">
-        <main className="flex-1 flex flex-col overflow-hidden min-h-0">
-          <div className="flex-1 overflow-auto overflow-x-hidden p-4 lg:p-6 bg-background">
-            {children}
-          </div>
-        </main>
+      {/* Main scroll region */}
+      <div className="fleet-app-shell__main">
+        <div className="fleet-app-shell__scroll">{children}</div>
       </div>
 
       <DocsDrawer isOpen={docsOpen} onClose={() => setDocsOpen(false)} />
