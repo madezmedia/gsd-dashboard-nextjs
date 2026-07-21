@@ -82,16 +82,16 @@ export function KanbanBoard() {
       <div
         key={w.id}
         className={cn(
-          "border p-2 bg-muted/30 border-border rounded-[2px] group",
-          isAntigravity && "border-primary bg-muted/80"
+          "group min-w-0 rounded-md border border-border bg-card p-2.5",
+          isAntigravity && "border-primary bg-primary/5"
         )}
       >
         <Link
           href={`/workflows/${encodeURIComponent(w.id)}`}
-          className="block cursor-pointer hover:opacity-90"
+          className="block min-w-0 cursor-pointer hover:opacity-90"
         >
-          <div className="flex items-center justify-between gap-1 mb-1">
-            <span className="font-mono text-[9px] font-bold truncate text-foreground uppercase tracking-wider">
+          <div className="mb-1 flex min-w-0 items-center justify-between gap-1">
+            <span className="min-w-0 flex-1 break-all font-mono text-[9px] font-bold uppercase tracking-wider text-foreground">
               {w.id}
             </span>
             {isAntigravity && (
@@ -100,10 +100,12 @@ export function KanbanBoard() {
               </span>
             )}
           </div>
-          <p className="text-xs font-medium text-foreground mb-1 line-clamp-2">{w.title}</p>
-          <div className="flex justify-between items-center text-[9px] text-muted-foreground/70 font-mono">
-            <span>Progress: {w.progress}%</span>
-            <span className="truncate max-w-[80px]">
+          <p className="mb-1 line-clamp-3 min-w-0 break-words text-xs font-medium text-foreground">
+            {w.title}
+          </p>
+          <div className="flex min-w-0 flex-wrap items-center justify-between gap-1 font-mono text-[9px] text-muted-foreground">
+            <span className="shrink-0">Progress: {w.progress}%</span>
+            <span className="min-w-0 max-w-full break-all">
               Owner: {w.owner?.replace("agent:", "") || "unassigned"}
             </span>
           </div>
@@ -172,19 +174,19 @@ export function KanbanBoard() {
   };
 
   return (
-    <Card className="border border-border bg-muted/20 rounded-[4px] shadow-none py-0">
-      <CardHeader className="border-b border-border pb-3">
-        <CardTitle className="text-xs font-mono uppercase tracking-wider text-muted-foreground flex items-center justify-between">
-          <span>[Workflow Kanban Lifecycle Stages]</span>
-          <span className="text-[9px] text-muted-foreground/50 font-mono font-normal">
-            Click card · real ACMI status actions
+    <Card className="min-w-0 border border-border bg-card shadow-none">
+      <CardHeader className="border-b border-border">
+        <CardTitle className="flex min-w-0 flex-wrap items-center justify-between gap-2 font-mono text-xs uppercase tracking-wider text-muted-foreground">
+          <span className="break-words">[Workflow Kanban Lifecycle Stages]</span>
+          <span className="shrink-0 font-mono text-[9px] font-normal text-muted-foreground/70 normal-case tracking-normal">
+            Open · Start / Complete / Escalate
           </span>
         </CardTitle>
       </CardHeader>
-      <CardContent className="p-4">
+      <CardContent>
         <div className="overflow-x-auto pb-2">
-          <div className="flex gap-4 min-w-[1000px] lg:min-w-0 lg:grid lg:grid-cols-4 w-full">
-            <div className="border border-border bg-card p-3 space-y-3 w-[240px] shrink-0 lg:w-auto lg:shrink rounded-[4px]">
+          <div className="flex w-full min-w-0 gap-3 lg:grid lg:grid-cols-4">
+            <div className="w-[260px] shrink-0 space-y-3 rounded-lg border border-border bg-muted/30 p-3 lg:w-auto lg:min-w-0">
               <div className="border-b border-border pb-1.5 flex items-center justify-between">
                 <span className="font-mono text-xs font-bold text-foreground uppercase tracking-wider">
                   [01] Backlog
@@ -208,7 +210,7 @@ export function KanbanBoard() {
               </ScrollArea>
             </div>
 
-            <div className="border border-border bg-card p-3 space-y-3 w-[240px] shrink-0 lg:w-auto lg:shrink rounded-[4px]">
+            <div className="w-[260px] shrink-0 space-y-3 rounded-lg border border-border bg-muted/30 p-3 lg:w-auto lg:min-w-0">
               <div className="border-b border-border pb-1.5 flex items-center justify-between">
                 <span className="font-mono text-xs font-bold text-foreground uppercase tracking-wider">
                   [02] Active
@@ -232,7 +234,7 @@ export function KanbanBoard() {
               </ScrollArea>
             </div>
 
-            <div className="border border-border bg-card p-3 space-y-3 w-[240px] shrink-0 lg:w-auto lg:shrink rounded-[4px]">
+            <div className="w-[260px] shrink-0 space-y-3 rounded-lg border border-border bg-muted/30 p-3 lg:w-auto lg:min-w-0">
               <div className="border-b border-border pb-1.5 flex items-center justify-between">
                 <span className="font-mono text-xs font-bold text-foreground uppercase tracking-wider">
                   [03] Stalled
@@ -256,7 +258,7 @@ export function KanbanBoard() {
               </ScrollArea>
             </div>
 
-            <div className="border border-border bg-card p-3 space-y-3 w-[240px] shrink-0 lg:w-auto lg:shrink rounded-[4px]">
+            <div className="w-[260px] shrink-0 space-y-3 rounded-lg border border-border bg-muted/30 p-3 lg:w-auto lg:min-w-0">
               <div className="border-b border-border pb-1.5 flex items-center justify-between">
                 <span className="font-mono text-xs font-bold text-foreground uppercase tracking-wider">
                   [04] Completed

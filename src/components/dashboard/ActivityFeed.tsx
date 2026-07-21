@@ -46,16 +46,16 @@ export function ActivityFeed() {
   const totalEventsCount = filteredRecentEvents.length + filteredBusEvents.length;
 
   return (
-    <Card className="border border-border bg-card rounded-[4px] shadow-none">
-      <CardHeader className="pb-2 border-b border-border">
-        <CardTitle className="text-xs font-mono uppercase tracking-wider text-muted-foreground flex items-center justify-between">
-          <span>[Console Activity Log Stream]</span>
-          <Badge className="bg-muted text-foreground border border-border rounded-none font-mono text-[9px] py-0 shadow-none">
+    <Card className="min-w-0 border border-border bg-card shadow-none">
+      <CardHeader className="border-b border-border">
+        <CardTitle className="flex min-w-0 items-center justify-between gap-2 font-mono text-xs uppercase tracking-wider text-muted-foreground">
+          <span className="min-w-0 break-words">[Console Activity Log Stream]</span>
+          <Badge className="shrink-0 rounded-none border border-border bg-muted py-0 font-mono text-[9px] text-foreground shadow-none">
             {totalEventsCount} events
           </Badge>
         </CardTitle>
       </CardHeader>
-      <CardContent className="pt-3">
+      <CardContent>
         <ScrollArea className="h-[320px] pr-2">
           <div className="space-y-1 font-mono text-[11px] leading-relaxed">
             {/* Bus events */}
@@ -64,14 +64,14 @@ export function ActivityFeed() {
               return (
                 <div
                   key={`bus-${i}`}
-                  className="flex gap-2 py-1 border-b border-border/30 last:border-0 text-muted-foreground items-center justify-between"
+                  className="flex items-start justify-between gap-2 border-b border-border/40 py-2 text-muted-foreground last:border-0"
                 >
-                  <div className="flex gap-2 min-w-0 flex-1 items-center">
-                    <span className="shrink-0 font-bold text-muted-foreground/45">
+                  <div className="flex min-w-0 flex-1 flex-col gap-0.5 sm:flex-row sm:items-start sm:gap-2">
+                    <span className="shrink-0 font-bold text-muted-foreground/50">
                       [{formatSafeTime(evt.ts)}]
                     </span>
-                    <span className="shrink-0 text-foreground font-bold">{evt.source}</span>
-                    <span className="truncate text-muted-foreground/90 font-mono text-[11px]">
+                    <span className="shrink-0 font-bold break-all text-foreground">{evt.source}</span>
+                    <span className="min-w-0 flex-1 break-words text-muted-foreground">
                       {String(payloadObj?.summary || evt.type)}
                     </span>
                   </div>
@@ -99,18 +99,20 @@ export function ActivityFeed() {
             {filteredRecentEvents.map((evt) => (
               <div
                 key={evt.id}
-                className="flex gap-2 py-1 border-b border-border/30 last:border-0 text-muted-foreground/80 justify-between items-center"
+                className="flex items-start justify-between gap-2 border-b border-border/40 py-2 text-muted-foreground last:border-0"
               >
-                <div className="flex gap-2 min-w-0 flex-1 items-center">
-                  <span className="shrink-0 text-muted-foreground/45">
+                <div className="flex min-w-0 flex-1 flex-col gap-0.5 sm:flex-row sm:items-start sm:gap-2">
+                  <span className="shrink-0 text-muted-foreground/50">
                     [{formatSafeTime(evt.ts)}]
                   </span>
-                  <span className="shrink-0 font-bold text-foreground">{evt.source}</span>
-                  <span className="truncate text-[11px] text-muted-foreground/90">{evt.summary}</span>
+                  <span className="shrink-0 font-bold break-all text-foreground">{evt.source}</span>
+                  <span className="min-w-0 flex-1 break-words text-[11px] text-muted-foreground">
+                    {evt.summary}
+                  </span>
                 </div>
                 <Badge
                   variant="outline"
-                  className="text-[8px] rounded-none px-1 border-border text-muted-foreground bg-muted py-0 leading-none h-4 shrink-0"
+                  className="h-4 shrink-0 rounded-none border-border bg-muted px-1 py-0 font-mono text-[8px] leading-none text-muted-foreground"
                 >
                   {evt.kind}
                 </Badge>

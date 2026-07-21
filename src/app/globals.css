@@ -1,4 +1,4 @@
-/* ACMI Fleet dashboard — foundation CSS (legacy system, all routes) */
+/* ACMI Fleet — global foundation (all legacy pages) */
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
@@ -6,11 +6,11 @@
 @custom-variant dark (&:is(.dark *));
 
 /*
- * FIRST FIX (app-wide): never let theme tokens circular-ref or collide.
- * --font-sans must NOT be var(--font-sans). Mono uses JetBrains from next/font.
+ * Fix #1 (app-wide): theme font tokens must NOT circular-ref.
+ * --font-sans: var(--font-sans) was breaking type + spacing everywhere.
  */
 @theme inline {
-  --font-sans: var(--font-raleway), var(--font-geist-sans), system-ui, sans-serif;
+  --font-sans: var(--font-raleway), var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
   --font-mono: var(--font-jetbrains), var(--font-geist-mono), ui-monospace, Menlo, monospace;
   --font-heading: var(--font-newsreader), var(--font-sans);
 
@@ -45,6 +45,7 @@
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
+
   --radius-sm: calc(var(--radius) * 0.6);
   --radius-md: calc(var(--radius) * 0.8);
   --radius-lg: var(--radius);
@@ -54,92 +55,81 @@
   --radius-4xl: calc(var(--radius) * 2.6);
 }
 
-/* Light — parchment / forest (Mad EZ-adjacent, distinct layers) */
+/* Light: parchment layers (distinct bg / muted / card) */
 :root {
   --radius: 6px;
-  --background: #faf9f5;
-  --foreground: #20241f;
+  --background: #fbfaf5;
+  --foreground: #0d1b2a;
   --card: #ffffff;
-  --card-foreground: #20241f;
+  --card-foreground: #0d1b2a;
   --popover: #ffffff;
-  --popover-foreground: #20241f;
+  --popover-foreground: #0d1b2a;
   --primary: #2d4a3e;
-  --primary-foreground: #ffffff;
-  --secondary: #f4f2e9;
-  --secondary-foreground: #20241f;
-  /* muted must differ from background or panels look "broken" */
-  --muted: #f0eee4;
-  --muted-foreground: #63705f;
-  --accent: #f0eee4;
+  --primary-foreground: #fbfaf5;
+  --secondary: #f5f4ed;
+  --secondary-foreground: #0d1b2a;
+  --muted: #f0eee6;
+  --muted-foreground: #4a5560;
+  --accent: #f0eee6;
   --accent-foreground: #2d4a3e;
-  --destructive: #a63c30;
-  --border: #e2dfd2;
-  --input: #e2dfd2;
+  --destructive: #c0392b;
+  --border: #e5e3d7;
+  --input: #e5e3d7;
   --ring: #2d4a3e;
   --chart-1: #2d4a3e;
-  --chart-2: #0e8f66;
-  --chart-3: #b07f14;
-  --chart-4: #a63c30;
-  --chart-5: #63705f;
-  --sidebar: #ffffff;
-  --sidebar-foreground: #20241f;
+  --chart-2: #2c3e50;
+  --chart-3: #d35400;
+  --chart-4: #c0392b;
+  --chart-5: #27ae60;
+  --sidebar: #fbfaf5;
+  --sidebar-foreground: #0d1b2a;
   --sidebar-primary: #2d4a3e;
-  --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #f4f2e9;
-  --sidebar-accent-foreground: #20241f;
-  --sidebar-border: #e2dfd2;
+  --sidebar-primary-foreground: #fbfaf5;
+  --sidebar-accent: #f0eee6;
+  --sidebar-accent-foreground: #0d1b2a;
+  --sidebar-border: #e5e3d7;
   --sidebar-ring: #2d4a3e;
-  --success: #0e8f66;
-  --success-muted: rgba(14, 143, 102, 0.1);
-  --warning: #b07f14;
-  --warning-muted: rgba(176, 127, 20, 0.1);
 }
 
-/* Dark — solid layers (card ≠ bg ≠ muted) */
+/* Dark: solid stacked surfaces */
 .dark {
   color-scheme: dark;
-  --background: #151714;
+  --background: #0f1412;
   --foreground: #e9e7dc;
-  --card: #1d201c;
+  --card: #1a1f1c;
   --card-foreground: #e9e7dc;
-  --popover: #1d201c;
+  --popover: #1a1f1c;
   --popover-foreground: #e9e7dc;
   --primary: #6cae8c;
-  --primary-foreground: #111510;
-  --secondary: #22261f;
+  --primary-foreground: #0f1412;
+  --secondary: #222820;
   --secondary-foreground: #e9e7dc;
-  --muted: #22261f;
+  --muted: #222820;
   --muted-foreground: #a3ab9c;
-  --accent: #272b25;
+  --accent: #2a3028;
   --accent-foreground: #6cae8c;
-  --destructive: #df6a5d;
+  --destructive: #e74c3c;
   --border: #2e332c;
   --input: #2e332c;
   --ring: #6cae8c;
   --chart-1: #6cae8c;
-  --chart-2: #3fc491;
-  --chart-3: #dca43d;
-  --chart-4: #df6a5d;
-  --chart-5: #a3ab9c;
-  --sidebar: #1d201c;
+  --chart-2: #a3ab9c;
+  --chart-3: #e67e22;
+  --chart-4: #e74c3c;
+  --chart-5: #2ecc71;
+  --sidebar: #141916;
   --sidebar-foreground: #e9e7dc;
   --sidebar-primary: #6cae8c;
-  --sidebar-primary-foreground: #111510;
-  --sidebar-accent: #22261f;
+  --sidebar-primary-foreground: #0f1412;
+  --sidebar-accent: #1f2621;
   --sidebar-accent-foreground: #e9e7dc;
   --sidebar-border: #2e332c;
   --sidebar-ring: #6cae8c;
-  --success: #3fc491;
-  --success-muted: rgba(63, 196, 145, 0.12);
-  --warning: #dca43d;
-  --warning-muted: rgba(220, 164, 61, 0.12);
 }
 
 @layer base {
-  *,
-  *::before,
-  *::after {
-    border-color: var(--border);
+  * {
+    @apply border-border;
     box-sizing: border-box;
   }
 
@@ -150,29 +140,42 @@
   }
 
   body {
+    @apply bg-background text-foreground;
     min-height: 100%;
     min-height: 100dvh;
     margin: 0;
-    background: var(--background);
-    color: var(--foreground);
-    font-family: var(--font-raleway), var(--font-geist-sans), system-ui, sans-serif;
+    line-height: 1.5;
     overflow-x: hidden;
   }
 
-  /* Mono everywhere font-mono is used — force JetBrains (was broken via theme circular ref) */
+  /* Default: text wraps (override only with .truncate / whitespace-nowrap) */
+  p,
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6,
+  li,
+  td,
+  th,
+  label {
+    overflow-wrap: break-word;
+    word-wrap: break-word;
+  }
+
   .font-mono,
   code,
   kbd,
   pre,
   samp {
-    font-family: var(--font-jetbrains), var(--font-geist-mono), ui-monospace, Menlo, monospace !important;
+    font-family: var(--font-jetbrains), var(--font-geist-mono), ui-monospace, Menlo, monospace;
   }
 
   .font-serif {
-    font-family: var(--font-newsreader), ui-serif, Georgia, serif !important;
+    font-family: var(--font-newsreader), ui-serif, Georgia, serif;
   }
 
-  /* Interactive defaults — same as first "buttons work" fix */
   button,
   [data-slot="button"],
   [role="button"],
@@ -181,21 +184,17 @@
   }
 
   button:disabled,
-  [data-slot="button"][disabled],
   [disabled] {
     cursor: not-allowed;
   }
 }
 
-/* ── App shell: full-height sidebar + scrollable main (all routes) ─────── */
+/* ── App shell (sidebar + main) — all routes ───────────────────────────── */
 .fleet-app-shell {
   display: flex;
   flex-direction: column;
   width: 100%;
   min-height: 100dvh;
-  height: 100dvh;
-  max-height: 100dvh;
-  overflow: hidden;
   background: var(--background);
   color: var(--foreground);
 }
@@ -203,13 +202,21 @@
 @media (min-width: 1024px) {
   .fleet-app-shell {
     flex-direction: row;
+    height: 100dvh;
+    max-height: 100dvh;
+    overflow: hidden;
   }
 }
 
 .fleet-app-shell__sidebar {
   flex-shrink: 0;
-  height: 100%;
-  max-height: 100dvh;
+}
+
+@media (min-width: 1024px) {
+  .fleet-app-shell__sidebar {
+    height: 100%;
+    max-height: 100dvh;
+  }
 }
 
 .fleet-app-shell__main {
@@ -218,75 +225,126 @@
   min-height: 0;
   display: flex;
   flex-direction: column;
-  overflow: hidden;
   background: var(--background);
 }
 
 .fleet-app-shell__scroll {
   flex: 1 1 auto;
+  min-width: 0;
   min-height: 0;
   overflow-x: hidden;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
-  padding: 1rem;
-  background: var(--background);
+  padding: 1rem 1rem 2rem;
+  /* critical for nested flex children to shrink + wrap */
+  width: 100%;
 }
 
 @media (min-width: 1024px) {
   .fleet-app-shell__scroll {
-    padding: 1.25rem 1.5rem;
+    padding: 1.25rem 1.5rem 2.5rem;
   }
 }
 
-/* ── Global component polish (no rebuilds) ─────────────────────────────── */
+/* ── Component shape defaults (no rebuild) ─────────────────────────────── */
 @layer components {
   .cockpit-page {
-    max-width: 1600px;
     width: 100%;
+    max-width: 1600px;
+    min-width: 0;
   }
 
-  /* Cards: visible edges, no shadow soup */
-  [data-slot="card"],
-  .cockpit-page [data-slot="card"] {
+  /* Every flex/grid child can shrink so text wraps */
+  .fleet-app-shell__scroll > *,
+  .cockpit-page > * {
+    min-width: 0;
+  }
+
+  /* Cards: real padding, real border, wrap text */
+  [data-slot="card"] {
     box-shadow: none !important;
-    background: var(--card);
-    border-color: var(--border);
+    background-color: var(--card);
     color: var(--card-foreground);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    min-width: 0;
+    overflow: hidden;
   }
 
-  /* Inputs readable on dark/light */
+  [data-slot="card-header"] {
+    padding-left: 1rem !important;
+    padding-right: 1rem !important;
+    min-width: 0;
+  }
+
+  [data-slot="card-content"] {
+    padding-left: 1rem !important;
+    padding-right: 1rem !important;
+    min-width: 0;
+    overflow-wrap: break-word;
+  }
+
+  [data-slot="card-title"] {
+    overflow-wrap: break-word;
+    word-break: break-word;
+  }
+
+  /* Inputs */
   input,
   textarea,
   select,
   [data-slot="input"] {
+    min-width: 0;
+    max-width: 100%;
     background-color: var(--card);
     color: var(--foreground);
     border-color: var(--border);
   }
 
-  /* Badges don't steal pointer from sibling buttons */
+  /* Badges shouldn't steal clicks or stretch layouts */
   [data-slot="badge"] {
-    pointer-events: none;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
   /* KPI grid */
-  .cockpit-page .gsd-kpi-grid {
-    gap: 0.75rem;
+  .gsd-kpi-grid {
+    display: grid;
     width: 100%;
+    min-width: 0;
+    gap: 0.75rem;
+    grid-template-columns: 1fr;
+  }
+
+  @media (min-width: 640px) {
+    .gsd-kpi-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+
+  @media (min-width: 1024px) {
+    .gsd-kpi-grid {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
   }
 
   @media (min-width: 1280px) {
-    .cockpit-page .gsd-kpi-grid {
+    .gsd-kpi-grid {
       grid-template-columns: repeat(5, minmax(0, 1fr));
     }
   }
 
-  /* Sidebar: fill shell height, no double scroll trap */
+  .gsd-kpi-grid > * {
+    min-width: 0;
+  }
+
+  /* Sidebar solid */
   .fleet-sidebar {
-    height: 100%;
-    max-height: 100dvh;
     display: flex;
     flex-direction: column;
+    height: 100%;
+    max-height: 100dvh;
     background: var(--sidebar);
     color: var(--sidebar-foreground);
     border-right: 1px solid var(--sidebar-border);
@@ -294,19 +352,5 @@
 
   .fleet-sidebar a {
     text-decoration: none;
-  }
-
-  /* Success / warning utilities used in legacy components */
-  .text-emerald-500 {
-    color: var(--success) !important;
-  }
-  .bg-emerald-500 {
-    background-color: var(--success) !important;
-  }
-  .bg-emerald-500\/10 {
-    background-color: var(--success-muted) !important;
-  }
-  .border-emerald-500\/20 {
-    border-color: color-mix(in srgb, var(--success) 25%, transparent) !important;
   }
 }

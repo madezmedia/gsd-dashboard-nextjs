@@ -16,34 +16,38 @@ function KpiCard({ title, value, icon: Icon, description, variant = "default" }:
   return (
     <Card
       className={cn(
-        "border border-border bg-card rounded-md hover:border-primary/40 transition-all shadow-none overflow-hidden relative flex flex-col justify-between p-4 sm:p-5 min-h-[110px] sm:min-h-[120px]",
-        variant === "danger" && "border-destructive/30 bg-destructive/[0.02]",
-        variant === "warning" && "border-amber-500/30 bg-amber-500/[0.02]"
+        "relative min-h-[112px] justify-between border border-border bg-card p-4 shadow-none transition-colors hover:border-primary/40",
+        variant === "danger" && "border-destructive/40 bg-destructive/5",
+        variant === "warning" && "border-amber-500/40 bg-amber-500/5"
       )}
     >
-      {variant === "danger" && <div className="absolute top-0 left-0 right-0 h-[2px] bg-destructive" />}
-      {variant === "warning" && <div className="absolute top-0 left-0 right-0 h-[2px] bg-amber-500" />}
-      {variant === "success" && <div className="absolute top-0 left-0 right-0 h-[2px] bg-emerald-500" />}
-      
-      <div className="flex flex-row items-center justify-between w-full pb-1">
-        <span className="font-mono text-[9px] text-muted-foreground uppercase tracking-wider">{title}</span>
+      {variant === "danger" && <div className="absolute top-0 right-0 left-0 h-0.5 bg-destructive" />}
+      {variant === "warning" && <div className="absolute top-0 right-0 left-0 h-0.5 bg-amber-500" />}
+      {variant === "success" && <div className="absolute top-0 right-0 left-0 h-0.5 bg-emerald-500" />}
+
+      <div className="flex w-full min-w-0 flex-row items-start justify-between gap-2 pb-1">
+        <span className="min-w-0 flex-1 font-mono text-[9px] uppercase tracking-wider text-muted-foreground break-words">
+          {title}
+        </span>
         <Icon
           className={cn(
             "h-4 w-4 shrink-0",
             variant === "success" && "text-emerald-500",
             variant === "warning" && "text-amber-500",
             variant === "danger" && "text-destructive",
-            variant === "default" && "text-muted-foreground/40"
+            variant === "default" && "text-muted-foreground/50"
           )}
         />
       </div>
-      <div className="flex-1 flex flex-col justify-end mt-2">
-        <div className="text-2xl font-serif font-bold text-foreground leading-none">{value}</div>
-        {description && (
-          <p className="text-[9px] font-mono text-muted-foreground/70 uppercase tracking-tight mt-1.5 pb-1">
+      <div className="mt-2 flex min-w-0 flex-1 flex-col justify-end">
+        <div className="break-all font-serif text-2xl font-bold leading-none text-foreground">
+          {value}
+        </div>
+        {description ? (
+          <p className="mt-2 break-words pb-0.5 font-mono text-[9px] uppercase tracking-tight text-muted-foreground">
             {description}
           </p>
-        )}
+        ) : null}
       </div>
     </Card>
   );
@@ -97,7 +101,7 @@ export function KpiGrid() {
   ).length;
 
   return (
-    <div className="gsd-kpi-grid grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3 w-full min-w-0">
+    <div className="gsd-kpi-grid w-full min-w-0">
       <KpiCard
         title="Total Swarms"
         value={safeRollup.totalAgents}

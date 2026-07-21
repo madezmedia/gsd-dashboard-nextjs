@@ -15,14 +15,17 @@ export function CockpitHeader({ handleForceSync }: CockpitHeaderProps) {
   };
 
   return (
-    <header className="relative border border-border bg-card/40 p-5 rounded-[4px] flex flex-col gap-4 shadow-none">
-      <div className="absolute left-0 top-0 bottom-0 w-[4px] bg-primary" />
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-        <div>
-          <h1 className="text-sm font-bold tracking-[0.2em] text-foreground uppercase font-serif flex items-center gap-2">
-            Fleet <span className="text-muted-foreground italic font-light font-sans">Command Cockpit</span>
+    <header className="relative flex min-w-0 flex-col gap-4 rounded-lg border border-border bg-card p-4 shadow-none sm:p-5">
+      <div className="absolute top-0 bottom-0 left-0 w-1 bg-primary" />
+      <div className="flex min-w-0 flex-col gap-4 pl-2 md:flex-row md:items-center md:justify-between">
+        <div className="min-w-0">
+          <h1 className="flex flex-wrap items-center gap-2 font-serif text-sm font-bold tracking-[0.15em] text-foreground uppercase">
+            Fleet{" "}
+            <span className="font-sans text-sm font-light italic tracking-normal text-muted-foreground normal-case">
+              Command Cockpit
+            </span>
           </h1>
-          <p className="text-[10px] text-muted-foreground/70 uppercase tracking-wider mt-1 font-mono">
+          <p className="mt-1 break-words font-mono text-[10px] tracking-wider text-muted-foreground uppercase">
             ACMI Swarm Operations Center & Multi-Tenant Integration Console
           </p>
         </div>
@@ -71,7 +74,7 @@ export function CockpitHeader({ handleForceSync }: CockpitHeaderProps) {
       </div>
 
       {/* Tenant selector buttons */}
-      <div className="border-t border-border mt-3 pt-5 pb-1 flex flex-wrap items-center justify-between gap-4">
+      <div className="border-t border-border mt-3 pt-5 pb-2 flex flex-wrap items-center justify-between gap-4">
         <div className="flex items-center gap-1.5">
           <span className="text-[9px] font-mono text-muted-foreground/70 uppercase mr-2 flex items-center gap-1">
             <Layers className="h-3 w-3" /> Scope:
