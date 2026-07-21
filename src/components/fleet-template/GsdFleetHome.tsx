@@ -15,44 +15,12 @@ import { ActivityFeed } from "@/components/dashboard/ActivityFeed";
 import { GatewayServices } from "@/components/dashboard/GatewayServices";
 import { KanbanBoard } from "@/components/dashboard/KanbanBoard";
 import { RefreshCw } from "lucide-react";
+import { FLEET_NAV } from "@/lib/fleet-nav";
 import "./gsd-shell.css";
 import "./gsd-components.css";
 
-const NAV = [
-  {
-    title: "Operate",
-    items: [
-      { href: "/", label: "Overview", badge: "LIVE" },
-      { href: "/hitl", label: "Approvals", badge: "HITL" },
-      { href: "/acmi", label: "Activity", badge: "BUS" },
-    ],
-  },
-  {
-    title: "Work",
-    items: [
-      { href: "/workflows", label: "Pipeline", badge: "" },
-      { href: "/todo", label: "Kanban", badge: "KBN" },
-      { href: "/calendar", label: "Calendar", badge: "" },
-    ],
-  },
-  {
-    title: "Agents",
-    items: [
-      { href: "/agents", label: "Agents", badge: "" },
-      { href: "/a2a", label: "Comms Graph", badge: "" },
-      { href: "/voice", label: "Voice", badge: "" },
-    ],
-  },
-  {
-    title: "System",
-    items: [
-      { href: "/services", label: "Services", badge: "SYS" },
-      { href: "/integrations", label: "Integrations", badge: "" },
-      { href: "/settings", label: "Settings", badge: "" },
-      { href: "/legacy-cockpit", label: "Legacy UI", badge: "" },
-    ],
-  },
-];
+/** Full legacy sidebar — every ACMI page must stay one click away */
+const NAV = FLEET_NAV;
 
 const TENANTS: TenantType[] = ["all", "madez", "duane", "suzanne", "avery"];
 
@@ -90,6 +58,7 @@ export function GsdFleetHome() {
                     key={it.href}
                     href={it.href}
                     className={`gsd-nav-item${active ? " is-active" : ""}`}
+                    title={it.note || it.label}
                   >
                     <span className="gsd-nav-dot" />
                     <span className="gsd-nav-label">{it.label}</span>
@@ -99,6 +68,30 @@ export function GsdFleetHome() {
               })}
             </div>
           ))}
+          <div>
+            <span className="gsd-nav-cat-title">More</span>
+            <Link
+              href="/legacy-cockpit"
+              className={`gsd-nav-item${pathname === "/legacy-cockpit" ? " is-active" : ""}`}
+            >
+              <span className="gsd-nav-dot" />
+              <span className="gsd-nav-label">Legacy Cockpit</span>
+            </Link>
+            <Link
+              href="/acmi/pipeline"
+              className={`gsd-nav-item${pathname.startsWith("/acmi/pipeline") ? " is-active" : ""}`}
+            >
+              <span className="gsd-nav-dot" />
+              <span className="gsd-nav-label">ACMI Pipeline</span>
+            </Link>
+            <Link
+              href="/acmi/roundtable"
+              className={`gsd-nav-item${pathname.startsWith("/acmi/roundtable") ? " is-active" : ""}`}
+            >
+              <span className="gsd-nav-dot" />
+              <span className="gsd-nav-label">Roundtable</span>
+            </Link>
+          </div>
         </nav>
 
         <div className="gsd-aside-foot">

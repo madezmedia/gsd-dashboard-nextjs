@@ -1,0 +1,166 @@
+{
+  "audited_at": "2026-07-20",
+  "app": "gsd-dashboard-nextjs",
+  "prod": "https://gsd-dashboard-nextjs.vercel.app",
+  "principle": "Keep every legacy sidebar route. GSD home is chrome only for /; all other routes use ResponsiveLayout + legacy Sidebar.",
+  "chrome": {
+    "/": "GsdFleetHome (GSD shell, real ACMI components)",
+    "/fleet": "alias → GsdFleetHome",
+    "other_routes": "ResponsiveLayout + Sidebar (full nav)"
+  },
+  "sidebar_routes": [
+    {
+      "href": "/",
+      "label": "Command Center",
+      "data": "acmi",
+      "status": "live",
+      "source": "useCockpitData + KpiGrid/OperationsBoard/ActivityFeed/GatewayServices/KanbanBoard"
+    },
+    {
+      "href": "/acmi",
+      "label": "Fleet Cockpit",
+      "data": "acmi",
+      "status": "live",
+      "source": "acmiClient.fetchLatestRollup + subscribeToBus + AcmiClusterDashboard + acmi_event broadcast",
+      "keep": true,
+      "url": "https://gsd-dashboard-nextjs.vercel.app/acmi"
+    },
+    {
+      "href": "/services",
+      "label": "System Status",
+      "data": "acmi",
+      "status": "live",
+      "source": "fetchServices()"
+    },
+    {
+      "href": "/mikey",
+      "label": "Mikey's Crons",
+      "data": "external",
+      "status": "live",
+      "source": "/api/mikey/crons"
+    },
+    {
+      "href": "/todo",
+      "label": "Todo Kanban",
+      "data": "acmi",
+      "status": "live",
+      "source": "acmiClient task profiles + fetchProjectActivity + bus"
+    },
+    {
+      "href": "/calendar",
+      "label": "Calendar View",
+      "data": "acmi",
+      "status": "live",
+      "source": "ACMI-backed calendar data"
+    },
+    {
+      "href": "/workflows",
+      "label": "Workflow Tracker",
+      "data": "acmi",
+      "status": "live",
+      "source": "ACMI work items; detail /workflows/[id]"
+    },
+    {
+      "href": "/hitl",
+      "label": "HITL Approvals",
+      "data": "acmi",
+      "status": "live",
+      "source": "HITL queue + resolve"
+    },
+    {
+      "href": "/agents",
+      "label": "Agent Console",
+      "data": "acmi",
+      "status": "live",
+      "source": "fetchAgents; detail /agents/[id] bootstrap"
+    },
+    {
+      "href": "/a2a",
+      "label": "A2A Comms Graph",
+      "data": "acmi",
+      "status": "live",
+      "source": "ACMI graph"
+    },
+    {
+      "href": "/voice",
+      "label": "Voice Chat",
+      "data": "mixed",
+      "status": "live",
+      "source": "/api/voice + ACMI context"
+    },
+    {
+      "href": "/nocodb",
+      "label": "NocoDB Database",
+      "data": "external",
+      "status": "live",
+      "source": "/api/nocodb"
+    },
+    {
+      "href": "/docs",
+      "label": "Docs Outline",
+      "data": "acmi",
+      "status": "live",
+      "source": "doc profiles via acmiClient"
+    },
+    {
+      "href": "/archive",
+      "label": "Fleet Archival Trace",
+      "data": "static-or-thin",
+      "status": "keep",
+      "source": "page present; limited ACMI hooks in page.tsx"
+    },
+    {
+      "href": "/notes",
+      "label": "Notes Editor",
+      "data": "acmi",
+      "status": "live",
+      "source": "notes via ACMI"
+    },
+    {
+      "href": "/integrations",
+      "label": "Integrations & Keys",
+      "data": "static",
+      "status": "keep",
+      "source": "config UI"
+    },
+    {
+      "href": "/suzanne",
+      "label": "Suzanne Showcase",
+      "data": "static",
+      "status": "keep",
+      "source": "showcase"
+    },
+    {
+      "href": "/settings",
+      "label": "Settings",
+      "data": "mixed",
+      "status": "keep",
+      "source": "settings + optional ACMI"
+    }
+  ],
+  "nested_acmi_routes": [
+    { "href": "/acmi/pipeline", "data": "acmi", "status": "live" },
+    { "href": "/acmi/search", "data": "acmi", "status": "live-or-thin" },
+    { "href": "/acmi/roundtable", "data": "acmi", "status": "live" },
+    { "href": "/agents/[id]", "data": "acmi", "status": "live" },
+    { "href": "/workflows/[id]", "data": "acmi", "status": "live" },
+    { "href": "/approvals", "data": "acmi", "status": "live", "note": "alt to /hitl" },
+    { "href": "/projects", "data": "acmi", "status": "live" },
+    { "href": "/legacy-cockpit", "data": "acmi", "status": "live", "note": "pre-GSD home" }
+  ],
+  "gaps_fixed_this_pass": [
+    "GsdFleetHome nav was a subset — restored full FLEET_NAV from legacy sidebar so /acmi and all pages stay one click away"
+  ],
+  "do_not_remove": [
+    "/acmi",
+    "/acmi/pipeline",
+    "/acmi/search",
+    "/acmi/roundtable",
+    "/agents",
+    "/agents/[id]",
+    "/todo",
+    "/workflows",
+    "/hitl",
+    "/services"
+  ]
+}
