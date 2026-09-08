@@ -29,8 +29,8 @@ const REDIS_TO_SQLITE_STATUS = {
 };
 
 // 1. Resolve environment credentials
-let REDIS_URL = process.env.REDIS_URL || process.env.UPSTASH_REDIS_REST_URL || "http://152.53.201.27:8081/exec";
-let REDIS_TOKEN = process.env.REDIS_TOKEN || process.env.UPSTASH_REDIS_REST_TOKEN || "default_token";
+let REDIS_URL = process.env.REDIS_URL || process.env.ACMI_BRIDGE_URL || process.env.UPSTASH_REDIS_REST_URL || "https://acmi-redis-u70402.vm.elestio.app/bridge/exec";
+let REDIS_TOKEN = process.env.REDIS_TOKEN || process.env.ACMI_BRIDGE_TOKEN || process.env.UPSTASH_REDIS_REST_TOKEN || "vm-local-bridge";
 
 if (fs.existsSync(ENV_PATH)) {
   const envContent = fs.readFileSync(ENV_PATH, "utf8");

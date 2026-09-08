@@ -10,8 +10,8 @@ const NOCODB_API_KEY = process.env.NOCODB_API_KEY || 'nc_pat_DdPSCZ7WnU3Ra7TdSxm
 const BASE_ID = 'pm9mqdzjuh98a0n';
 const DOCS_TABLE = 'm0mqrqpi5imzs2h'; // Documents table
 
-const REDIS_URL = process.env.UPSTASH_REDIS_REST_URL || 'http://152.53.201.27:8081/exec';
-const REDIS_TOKEN = process.env.UPSTASH_REDIS_REST_TOKEN || 'default_token';
+const REDIS_URL = process.env.ACMI_BRIDGE_URL || process.env.UPSTASH_REDIS_REST_URL || 'https://acmi-redis-u70402.vm.elestio.app/bridge/exec';
+const REDIS_TOKEN = process.env.ACMI_BRIDGE_TOKEN || process.env.UPSTASH_REDIS_REST_TOKEN || 'vm-local-bridge';
 
 // Helper to make API calls to NocoDB
 async function api(method, path, body) {
