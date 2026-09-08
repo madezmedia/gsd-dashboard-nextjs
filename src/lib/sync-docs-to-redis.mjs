@@ -1,7 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 
-const CENTRAL_URL = "http://152.53.201.27:8081/exec";
+const CENTRAL_URL = process.env.ACMI_BRIDGE_URL || process.env.UPSTASH_REDIS_REST_URL || "https://acmi-redis-u70402.vm.elestio.app/bridge/exec";
 const FLEET_DIR = "/Users/michaelshaw/clawd/fleet";
 
 const CANONICAL_DOCS = [
