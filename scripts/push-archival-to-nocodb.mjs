@@ -5,8 +5,12 @@
  * Tasks table: mtizkx4ji0accqt
  */
 
-const NOCODB_URL = "https://nocodb-u70402.vm.elestio.app";
-const API_KEY = "nc_pat_DdPSCZ7WnU3Ra7TdSxmMXgEvlkpiI5GxJnYwUKad";
+const NOCODB_URL = process.env.NOCODB_URL || "https://nocodb-u70402.vm.elestio.app";
+const API_KEY = process.env.NOCODB_API_KEY;
+if (!API_KEY) {
+  console.error("NOCODB_API_KEY is not configured");
+  process.exit(1);
+}
 const TABLE_ID = "mtizkx4ji0accqt";
 const BASE_ID = "plrjwos5se3uu50";
 

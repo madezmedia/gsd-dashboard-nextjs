@@ -6,7 +6,11 @@ import dotenv from 'dotenv';
 dotenv.config({ path: '.env.local' });
 
 const NOCODB_URL = process.env.NOCODB_URL || 'https://nocodb-u70402.vm.elestio.app';
-const NOCODB_API_KEY = process.env.NOCODB_API_KEY || 'nc_pat_DdPSCZ7WnU3Ra7TdSxmMXgEvlkpiI5GxJnYwUKad';
+const NOCODB_API_KEY = process.env.NOCODB_API_KEY;
+if (!NOCODB_API_KEY) {
+  console.error('NOCODB_API_KEY is not configured');
+  process.exit(1);
+}
 const BASE_ID = 'pm9mqdzjuh98a0n';
 const DOCS_TABLE = 'm0mqrqpi5imzs2h'; // Documents table
 

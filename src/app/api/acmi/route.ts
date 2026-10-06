@@ -545,85 +545,16 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Missing required field 'tool'" }, { status: 400 });
     }
 
-    // Phase 2: Custom SaaS Registration Tool Handling
+    // Tenant self-registration is disabled. This used to write saas:tenant,
+    // saas:user_agent, and saas:token with no authentication.
     if (tool === "saas_register_tenant") {
-      const { id, name, redis_url, redis_token } = params || {};
-      if (!id) {
-        return NextResponse.json({ error: "Missing required parameter 'id' for registration" }, { status: 400 });
-      }
-
-      const idStr = String(id);
-      const nameStr = name ? String(name) : `Workspace ${idStr}`;
-      const urlStr = redis_url ? String(redis_url) : "";
-      const tokenStr = redis_token ? String(redis_token) : "";
-
-      const timestamp = String(Date.now());
-      const tenantKey = `saas:tenant:${idStr}`;
-      const userKey = `saas:user_agent:${idStr}_user`;
-      const tokenKey = `saas:token:${idStr}_token`;
-
-      // Always write registration details directly to the central control plane Upstash instance
-      const tenantRes = await fetch(CENTRAL_URL, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${CENTRAL_TOKEN}`,
-          "Content-Type": "application/json",
+      return NextResponse.json(
+        {
+          error:
+            "saas_register_tenant is disabled. Tenant and token creation is not available through this API.",
         },
-        body: JSON.stringify([
-          "HSET",
-          tenantKey,
-          "id", idStr,
-          "name", nameStr,
-          "status", "active",
-          "redis_url", urlStr,
-          "redis_token", tokenStr,
-          "created_at", timestamp,
-        ]),
-      });
-
-      if (!tenantRes.ok) {
-        throw new Error(`Failed to write tenant registry: ${tenantRes.status}`);
-      }
-
-      const userRes = await fetch(CENTRAL_URL, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${CENTRAL_TOKEN}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify([
-          "HSET",
-          userKey,
-          "id", `${idStr}_user`,
-          "type", "human",
-          "role", "admin",
-          "token", `${idStr}_token`,
-          "tenant_id", idStr,
-        ]),
-      });
-
-      if (!userRes.ok) {
-        throw new Error(`Failed to write user registry: ${userRes.status}`);
-      }
-
-      const tokenRes = await fetch(CENTRAL_URL, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${CENTRAL_TOKEN}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(["SET", tokenKey, `${idStr}_user`]),
-      });
-
-      if (!tokenRes.ok) {
-        throw new Error(`Failed to write token map: ${tokenRes.status}`);
-      }
-
-      return NextResponse.json({
-        success: true,
-        token: `${idStr}_token`,
-        tenant_id: idStr,
-      });
+        { status: 403 },
+      );
     }
 
     // Phase 3: SaaS Multi-Tenant Configuration Resolution

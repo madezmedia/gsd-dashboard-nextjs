@@ -34,6 +34,12 @@ export function ResponsiveLayout({ children }: { children: React.ReactNode }) {
     };
   }, []);
 
+  const isAuthScreen =
+    pathname.startsWith("/sign-in") || pathname.startsWith("/sign-up");
+  if (isAuthScreen) {
+    return <>{children}</>;
+  }
+
   return (
     <div className="fleet-app-shell">
       {/* Desktop sidebar */}
