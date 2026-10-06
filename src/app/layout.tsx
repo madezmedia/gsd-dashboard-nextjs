@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { ClerkProvider } from "@clerk/nextjs";
 import { Geist, Geist_Mono, JetBrains_Mono, Newsreader, Raleway } from "next/font/google";
 import { ThemeProvider } from "next-themes";
 import { Suspense } from "react";
@@ -55,30 +56,32 @@ export default function RootLayout({
       suppressHydrationWarning
     >
       <body className="min-h-dvh font-sans antialiased bg-background text-foreground">
-        <PostHogProvider>
-          <ThemeProvider
-            attribute="class"
-            defaultTheme="dark"
-            enableSystem={false}
-            disableTransitionOnChange
-          >
-            <Suspense fallback={null}>
-              <ShortcutHandler />
-            </Suspense>
-            <Suspense
-              fallback={
-                <div className="w-full min-h-dvh flex items-center justify-center font-mono text-[10px] text-muted-foreground uppercase bg-background tracking-widest">
-                  Loading ACMI System...
-                </div>
-              }
+        <ClerkProvider>
+          <PostHogProvider>
+            <ThemeProvider
+              attribute="class"
+              defaultTheme="dark"
+              enableSystem={false}
+              disableTransitionOnChange
             >
-              <ResponsiveLayout>{children}</ResponsiveLayout>
-            </Suspense>
-            <CopilotPanel />
-          </ThemeProvider>
-          <Analytics />
-          <SpeedInsights />
-        </PostHogProvider>
+              <Suspense fallback={null}>
+                <ShortcutHandler />
+              </Suspense>
+              <Suspense
+                fallback={
+                  <div className="w-full min-h-dvh flex items-center justify-center font-mono text-[10px] text-muted-foreground uppercase bg-background tracking-widest">
+                    Loading ACMI System...
+                  </div>
+                }
+              >
+                <ResponsiveLayout>{children}</ResponsiveLayout>
+              </Suspense>
+              <CopilotPanel />
+            </ThemeProvider>
+            <Analytics />
+            <SpeedInsights />
+          </PostHogProvider>
+        </ClerkProvider>
       </body>
     </html>
   );

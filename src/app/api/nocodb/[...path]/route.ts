@@ -1,12 +1,29 @@
 import { NextRequest, NextResponse } from "next/server";
 
 const NOCODB_URL = process.env.NOCODB_URL || "https://nocodb-u70402.vm.elestio.app";
-const NOCODB_API_KEY = process.env.NOCODB_API_KEY || "";
+const NOCODB_API_KEY = process.env.NOCODB_API_KEY;
+
+function readNocoKey():
+  | { key: string }
+  | { error: NextResponse } {
+  if (!NOCODB_API_KEY) {
+    return {
+      error: NextResponse.json(
+        { error: "NOCODB_API_KEY is not configured" },
+        { status: 503 },
+      ),
+    };
+  }
+  return { key: NOCODB_API_KEY };
+}
 
 export async function GET(
   req: NextRequest,
   { params }: { params: Promise<{ path: string[] }> }
 ) {
+  const creds = readNocoKey();
+  if ("error" in creds) return creds.error;
+
   try {
     const resolvedParams = await params;
     const subpath = resolvedParams.path.join("/");
@@ -18,7 +35,7 @@ export async function GET(
     const res = await fetch(targetUrl, {
       method: "GET",
       headers: {
-        "xc-token": NOCODB_API_KEY,
+        "xc-token": creds.key,
         "Accept": "application/json",
       },
     });
@@ -40,6 +57,9 @@ export async function POST(
   req: NextRequest,
   { params }: { params: Promise<{ path: string[] }> }
 ) {
+  const creds = readNocoKey();
+  if ("error" in creds) return creds.error;
+
   try {
     const resolvedParams = await params;
     const subpath = resolvedParams.path.join("/");
@@ -52,7 +72,7 @@ export async function POST(
     const res = await fetch(targetUrl, {
       method: "POST",
       headers: {
-        "xc-token": NOCODB_API_KEY,
+        "xc-token": creds.key,
         "Content-Type": "application/json",
         "Accept": "application/json",
       },

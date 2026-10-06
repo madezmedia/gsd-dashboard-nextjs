@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 
 const NOCODB_URL = process.env.NOCODB_URL || "https://nocodb-u70402.vm.elestio.app";
-const NOCODB_API_KEY = process.env.NOCODB_API_KEY || "nc_pat_DdPSCZ7WnU3Ra7TdSxmMXgEvlkpiI5GxJnYwUKad";
+const NOCODB_API_KEY = process.env.NOCODB_API_KEY;
 
 const BASES = {
   docs: "pm9mqdzjuh98a0n",
@@ -19,13 +19,13 @@ const TABLES = {
   mcp: { base: BASES.instructions, id: "m6n2t7tdb2uavsc" }
 };
 
-async function fetchTableRecords(baseId: string, tableId: string) {
+async function fetchTableRecords(baseId: string, tableId: string, apiKey: string) {
   try {
     const url = `${NOCODB_URL}/api/v3/data/${baseId}/${tableId}/records?limit=100`;
     const res = await fetch(url, {
       method: "GET",
       headers: {
-        "xc-token": NOCODB_API_KEY,
+        "xc-token": apiKey,
         "Accept": "application/json"
       }
     });
@@ -43,15 +43,22 @@ async function fetchTableRecords(baseId: string, tableId: string) {
 }
 
 export async function GET() {
+  if (!NOCODB_API_KEY) {
+    return NextResponse.json(
+      { success: false, error: "NOCODB_API_KEY is not configured" },
+      { status: 503 },
+    );
+  }
+
   try {
     const [documents, procedures, glossary, tasks, checklists, agents, mcp] = await Promise.all([
-      fetchTableRecords(TABLES.documents.base, TABLES.documents.id),
-      fetchTableRecords(TABLES.procedures.base, TABLES.procedures.id),
-      fetchTableRecords(TABLES.glossary.base, TABLES.glossary.id),
-      fetchTableRecords(TABLES.tasks.base, TABLES.tasks.id),
-      fetchTableRecords(TABLES.checklists.base, TABLES.checklists.id),
-      fetchTableRecords(TABLES.agents.base, TABLES.agents.id),
-      fetchTableRecords(TABLES.mcp.base, TABLES.mcp.id)
+      fetchTableRecords(TABLES.documents.base, TABLES.documents.id, NOCODB_API_KEY),
+      fetchTableRecords(TABLES.procedures.base, TABLES.procedures.id, NOCODB_API_KEY),
+      fetchTableRecords(TABLES.glossary.base, TABLES.glossary.id, NOCODB_API_KEY),
+      fetchTableRecords(TABLES.tasks.base, TABLES.tasks.id, NOCODB_API_KEY),
+      fetchTableRecords(TABLES.checklists.base, TABLES.checklists.id, NOCODB_API_KEY),
+      fetchTableRecords(TABLES.agents.base, TABLES.agents.id, NOCODB_API_KEY),
+      fetchTableRecords(TABLES.mcp.base, TABLES.mcp.id, NOCODB_API_KEY)
     ]);
     return NextResponse.json({
       success: true,

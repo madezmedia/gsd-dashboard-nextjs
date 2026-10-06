@@ -1,5 +1,6 @@
 "use client";
 
+import { UserButton } from "@clerk/nextjs";
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 import {
@@ -180,6 +181,7 @@ export function Sidebar({ onToggleDocs }: { onToggleDocs?: () => void }) {
           </span>
         )}
         <div className="flex items-center gap-1">
+          <UserButton />
           {onToggleDocs && (
             <Button
               variant="ghost"
